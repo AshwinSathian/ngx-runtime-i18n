@@ -14,6 +14,23 @@ import {
   RUNTIME_I18N_STATE_KEY,
 } from './tokens';
 
+/**
+ * Register runtime i18n in an Angular app.
+ *
+ * @example
+ * provideRuntimeI18n({
+ *   defaultLang: 'en',
+ *   supported: ['en','hi','de'],
+ *   fetchCatalog: (lang, signal) => fetch(`/i18n/${lang}.json`, { signal }).then(r => r.json()),
+ *   onMissingKey: (k) => k
+ * }, {
+ *   localeLoaders: { en: () => import('@angular/common/locales/global/en') }
+ * });
+ *
+ * @param cfg Core runtime configuration (CSR + SSR).
+ * @param opts Optional: state key prefix and dynamic locale loaders.
+ * @publicApi
+ */
 export function provideRuntimeI18n(
   cfg: RuntimeI18nConfig,
   opts?: {
@@ -35,7 +52,7 @@ export function provideRuntimeI18n(
       useValue: opts?.localeLoaders ?? {},
     },
 
-    // Pre-fill catalogs from TransferState (client)
+    // Client boot: populate catalogs from TransferState if present (SSR→CSR).
     {
       provide: ENVIRONMENT_INITIALIZER,
       multi: true,

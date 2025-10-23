@@ -18,9 +18,16 @@ import {
 } from './tokens';
 
 const isBrowser = typeof window !== 'undefined';
-const dbg = (...a: any[]) =>
-  (window as any).__NGX_I18N_DEBUG__ && console.log('[i18n]', ...a);
 
+/**
+ * Signals-first runtime i18n service.
+ *
+ * - Deterministic SSR→CSR: uses TransferState if present.
+ * - No DOM mutations before first stability (avoids hydration issues).
+ * - Cancellable fetch on rapid language switches.
+ *
+ * @publicApi
+ */
 @Injectable({ providedIn: 'root' })
 export class I18nService {
   private cfg = inject(RUNTIME_I18N_CONFIG);
@@ -35,14 +42,19 @@ export class I18nService {
   private _lang = signal<string>(this.cfg.defaultLang);
   private _ready = signal<boolean>(false);
 
+  /** Currently active language (signal). */
   readonly lang: Signal<string> = this._lang.asReadonly();
+  /** True once the initial locale + catalog are available. */
   readonly ready: Signal<boolean> = this._ready.asReadonly();
 
   private abort?: AbortController;
 
   constructor() {
+    // Defer initial work until app is stable (prevents pre-hydration mutations).
     const sub = this.appRef.isStable.subscribe(async (stable) => {
       if (!stable) return;
+
+      // TransferState bootstrap (SSR→CSR)
       if (this.ts) {
         const key = makeStateKey<{
           lang: string;
@@ -60,6 +72,7 @@ export class I18nService {
           });
         }
       }
+
       await this.ensureLocale(this._lang());
       await this.ensureCatalog(this._lang());
       this._ready.set(true);
@@ -69,6 +82,10 @@ export class I18nService {
     this.destroyRef.onDestroy(() => this.abort?.abort());
   }
 
+  /**
+   * Translate a key using the active language. Supports ICU-lite + interpolation.
+   * Falls back to {@link RuntimeI18nConfig.onMissingKey} or the raw key.
+   */
   t(key: string, params?: Record<string, unknown>): string {
     const lang = this._lang();
     const cat =
@@ -76,6 +93,10 @@ export class I18nService {
     return formatIcu(lang, key, cat, params, this.cfg.onMissingKey);
   }
 
+  /**
+   * Switch the active language. Loads locale data + catalog on demand.
+   * Respects {@link RuntimeI18nConfig.supported}.
+   */
   async setLang(lang: string): Promise<void> {
     if (lang === this._lang()) return;
     if (!this.cfg.supported.includes(lang))
@@ -85,19 +106,22 @@ export class I18nService {
     this._lang.set(lang);
   }
 
+  // --- Internals -------------------------------------------------------------
+
   private async ensureLocale(lang: string) {
-    const b = lang.toLowerCase().split('-')[0];
-    if (this.locales.has(b)) return;
+    const base = lang.toLowerCase().split('-')[0];
+    if (this.locales.has(base)) return;
     if (isBrowser) {
-      const loader = this.localeLoaders[b];
+      const loader = this.localeLoaders[base];
       if (loader) await loader();
     }
-    this.locales.add(b);
+    this.locales.add(base);
   }
 
   private async ensureCatalog(lang: string) {
     if (this.catalogs.has(lang)) return;
 
+    // Hydration snapshot
     const k = makeStateKey<Catalog>(`${this.stateKeyPrefix}:catalog:${lang}`);
     if (this.ts?.hasKey(k)) {
       const cat = this.ts.get(k, {});
@@ -116,9 +140,6 @@ export class I18nService {
       if (this.abort !== ctrl) return; // stale
       const base = this.catalogs.get(this.cfg.defaultLang) ?? {};
       this.catalogs.set(lang, deepMerge(base, fetched));
-    } catch (err: any) {
-      if ((err?.name || '') === 'AbortError') return;
-      throw err;
     } finally {
       if (this.abort === ctrl) this.abort = undefined;
     }
