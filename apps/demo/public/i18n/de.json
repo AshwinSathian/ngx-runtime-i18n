@@ -1,0 +1,8 @@
+{
+  "hello": {
+    "user": "Hallo, {name}!"
+  },
+  "cart": {
+    "items": "{count, plural, =0 {Keine Artikel im Warenkorb} one {1 Artikel im Warenkorb} other {# Artikel im Warenkorb}}"
+  }
+}

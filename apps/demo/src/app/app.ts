@@ -1,13 +1,19 @@
-import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
-import { NxWelcome } from './nx-welcome';
+import { Component, inject, signal } from '@angular/core';
+import { I18nPipe, I18nService } from '@ngx-runtime-i18n/angular';
 
 @Component({
-  imports: [NxWelcome, RouterModule],
   selector: 'app-root',
+  standalone: true,
+  imports: [I18nPipe],
   templateUrl: './app.html',
-  styleUrl: './app.scss',
 })
 export class App {
-  protected title = 'demo';
+  i18n = inject(I18nService);
+  username = 'Ashwin';
+  items = signal([{}, {}, {}]);
+
+  switch(lang: string) {
+    if (!this.i18n.ready()) return;
+    this.i18n.setLang(lang);
+  }
 }

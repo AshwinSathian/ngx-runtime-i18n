@@ -1,2 +1,35 @@
-<app-nx-welcome></app-nx-welcome>
-<router-outlet></router-outlet>
+<div class="app">
+  <h1>{{ 'hello.user' | i18n:{ name: username } }}</h1>
+  <p>{{ 'cart.items' | i18n:{ count: items().length } }}</p>
+
+  <div class="toolbar" role="group" aria-label="Language switcher">
+    <button
+      [class.primary]="i18n.lang() === 'en'"
+      [attr.aria-pressed]="i18n.lang() === 'en'"
+      (click)="switch('en')"
+    >
+      English
+    </button>
+
+    <button
+      [class.primary]="i18n.lang() === 'hi'"
+      [attr.aria-pressed]="i18n.lang() === 'hi'"
+      (click)="switch('hi')"
+    >
+      हिंदी (Hindi)
+    </button>
+
+    <button
+      [class.primary]="i18n.lang() === 'de'"
+      [attr.aria-pressed]="i18n.lang() === 'de'"
+      (click)="switch('de')"
+    >
+      Deutsch (German)
+    </button>
+  </div>
+
+  <div class="status">
+    lang={{ i18n.lang() }} | ready={{ i18n.ready() }} | items={{ items().length
+    }}
+  </div>
+</div>

@@ -1,1 +1,92 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --bg: #0b1020;
+  --card: #131a2b;
+  --text: #e6edf3;
+  --muted: #9fb0c3;
+  --primary: #7aa2ff;
+  --primary-pressed: #5c86e6;
+  --button-bg: #1b2338;
+  --button-hover: #24314f;
+  --ring: 0 0 0 2px rgba(122, 162, 255, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji';
+  background: linear-gradient(180deg, #0a0f1e, #0c1224 40%, #0b1020);
+  color: var(--text);
+}
+
+.app {
+  max-width: 720px;
+  margin: 48px auto;
+  padding: 24px;
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(122, 162, 255, 0.06) inset;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  letter-spacing: 0.25px;
+}
+
+p {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+button {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: var(--button-bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.04s ease, background 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+button:hover {
+  background: var(--button-hover);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button.primary {
+  background: var(--primary);
+  color: #0b1020;
+  border-color: transparent;
+}
+
+button.primary:active {
+  background: var(--primary-pressed);
+}
+
+.status {
+  margin-top: 10px;
+  font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
+    monospace;
+  color: var(--muted);
+  opacity: 0.9;
+}

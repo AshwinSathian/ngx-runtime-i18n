@@ -4,6 +4,7 @@ import {
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideRuntimeI18n } from '@ngx-runtime-i18n/angular';
 import { appRoutes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
@@ -11,5 +12,21 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(appRoutes),
+    provideRuntimeI18n(
+      {
+        defaultLang: 'en',
+        supported: ['en', 'hi', 'de'],
+        fetchCatalog: (lang, signal) =>
+          fetch(`/i18n/${lang}.json`, { signal }).then((r) => r.json()),
+        onMissingKey: (k) => k,
+      },
+      {
+        localeLoaders: {
+          en: () => import('@angular/common/locales/global/en'),
+          hi: () => import('@angular/common/locales/global/hi'),
+          de: () => import('@angular/common/locales/global/de'),
+        },
+      }
+    ),
   ],
 };
