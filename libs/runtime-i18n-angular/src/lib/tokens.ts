@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n';
+import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
 
 export const RUNTIME_I18N_CONFIG = new InjectionToken<RuntimeI18nConfig>(
   'RUNTIME_I18N_CONFIG'

@@ -8,7 +8,7 @@ import {
   signal,
   TransferState,
 } from '@angular/core';
-import { Catalog, formatIcu } from '@ngx-runtime-i18n';
+import { Catalog, formatIcu } from '@ngx-runtime-i18n/core';
 import {
   RUNTIME_I18N_CATALOGS,
   RUNTIME_I18N_CONFIG,

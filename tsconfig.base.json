@@ -15,7 +15,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@ngx-runtime-i18n": ["libs/runtime-i18n/src/index.ts"],
+      "@ngx-runtime-i18n/core": ["libs/runtime-i18n/src/index.ts"],
       "@ngx-runtime-i18n/angular": ["libs/runtime-i18n-angular/src/index.ts"]
     }
   },

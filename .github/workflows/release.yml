@@ -1,0 +1,31 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - '@ngx-runtime-i18n/core@*'
+      - '@ngx-runtime-i18n/angular@*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # needed for provenance
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+      - run: npm ci
+      - run: nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
+      - name: Publish core (if tag matches)
+        if: startsWith(github.ref_name, '@ngx-runtime-i18n/core@')
+        working-directory: dist/libs/runtime-i18n
+        run: npm publish --provenance --access public
+      - name: Publish angular (if tag matches)
+        if: startsWith(github.ref_name, '@ngx-runtime-i18n/angular@')
+        working-directory: dist/libs/runtime-i18n-angular
+        run: npm publish --provenance --access public

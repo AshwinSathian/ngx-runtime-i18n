@@ -16,7 +16,7 @@ export interface I18nSnapshot {
  * This runs inside Angular on the server render (via ENVIRONMENT_INITIALIZER).
  */
 export function i18nServerProviders(snapshot: I18nSnapshot): Provider[] {
-  const STATE_PREFIX = '@ngx-runtime-i18n';
+  const STATE_PREFIX = '@ngx-runtime-i18n/core';
   return [
     {
       provide: ENVIRONMENT_INITIALIZER,

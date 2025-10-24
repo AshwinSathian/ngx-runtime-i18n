@@ -5,7 +5,7 @@ import {
   Provider,
   TransferState,
 } from '@angular/core';
-import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n';
+import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
 import {
   RUNTIME_I18N_CATALOGS,
   RUNTIME_I18N_CONFIG,
@@ -43,7 +43,7 @@ export function provideRuntimeI18n(
 ): Provider[] {
   const catalogs = new Map<string, Catalog>();
   const locales = new Set<string>();
-  const stateKeyPrefix = opts?.stateKeyPrefix ?? '@ngx-runtime-i18n';
+  const stateKeyPrefix = opts?.stateKeyPrefix ?? '@ngx-runtime-i18n/core';
 
   // Ensure a default onMissingKey (echo key) for consistent behavior
   const normalizedCfg: RuntimeI18nConfig = {

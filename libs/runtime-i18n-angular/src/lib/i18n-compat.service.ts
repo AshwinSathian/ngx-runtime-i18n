@@ -1,22 +1,19 @@
-import { Injectable, inject } from '@angular/core';
-import { Catalog, formatIcu } from '@ngx-runtime-i18n';
+import { DestroyRef, Injectable, Injector, inject } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { I18nService } from './i18n.service';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Catalog, formatIcu } from '@ngx-runtime-i18n/core';
 import { RUNTIME_I18N_CATALOGS, RUNTIME_I18N_CONFIG } from './tokens';
+import { I18nService } from './i18n.service';
 
 /**
  * RxJS-backed compatibility service mirroring I18nService.
- * Use when an app hasn’t adopted signals yet.
- *
- * Surface:
- * - lang$: Observable<string>
- * - ready$: Observable<boolean>
- * - t(key,params): string
- * - setLang(lang): Promise<void>
+ * For apps not using signals yet.
  */
 @Injectable({ providedIn: 'root' })
 export class I18nCompatService {
+  private injector = inject(Injector);
+  private destroyRef = inject(DestroyRef); // ✅ pass DestroyRef to takeUntilDestroyed
   private cfg = inject(RUNTIME_I18N_CONFIG);
   private catalogs = inject(RUNTIME_I18N_CATALOGS);
   private signals = inject(I18nService);
@@ -30,14 +27,14 @@ export class I18nCompatService {
   readonly ready$: Observable<boolean> = this._ready$.asObservable();
 
   constructor() {
-    // Bridge from signals → RxJS once service becomes ready
-    // (signals service already defers work until app is stable)
-    const subReady = this.signals.ready.subscribe((r) => this._ready$.next(r));
-    const subLang = this.signals.lang.subscribe((l) => this._lang$.next(l));
+    // Bridge: signals → observables
+    toObservable(this.signals.ready, { injector: this.injector })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((r) => this._ready$.next(r));
 
-    // Cleanup left to Angular’s DI lifecycle; subs are on root singletons
-    void subReady;
-    void subLang;
+    toObservable(this.signals.lang, { injector: this.injector })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((l) => this._lang$.next(l));
   }
 
   t(key: string, params?: Record<string, unknown>): string {

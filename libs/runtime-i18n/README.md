@@ -13,7 +13,7 @@ npm i @ngx-runtime-i18n
 ## Usage
 
 ```ts
-import { formatIcu } from '@ngx-runtime-i18n';
+import { formatIcu } from '@ngx-runtime-i18n/core';
 
 const catalog = {
   hello: 'Hello {name}!',

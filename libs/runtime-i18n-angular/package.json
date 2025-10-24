@@ -1,6 +1,7 @@
 {
   "name": "@ngx-runtime-i18n/angular",
   "version": "0.1.0",
+  "description": "Angular bindings for @ngx-runtime-i18n (signals-first, SSR-safe)",
   "type": "module",
   "sideEffects": false,
   "peerDependencies": {
@@ -8,10 +9,30 @@
     "@angular/common": ">=16 <21",
     "@angular/platform-browser": ">=16 <21"
   },
+  "keywords": [
+    "angular",
+    "i18n",
+    "icu",
+    "signals",
+    "ssr",
+    "hydration"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/ngx-runtime-i18n.git"
+  },
+  "license": "MIT",
   "exports": {
     ".": {
       "types": "./index.d.ts",
       "import": "./fesm2022/ngx-runtime-i18n-angular.mjs"
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

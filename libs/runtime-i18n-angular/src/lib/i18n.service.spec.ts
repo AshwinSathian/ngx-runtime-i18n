@@ -1,6 +1,6 @@
 import { TransferState } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n';
+import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
 import { I18nService } from './i18n.service';
 import { provideRuntimeI18n } from './provide-runtime-i18n';
 import { RUNTIME_I18N_CATALOGS, RUNTIME_I18N_LOCALES } from './tokens';
