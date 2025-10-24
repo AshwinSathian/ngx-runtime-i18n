@@ -11,7 +11,9 @@ import {
   RUNTIME_I18N_CONFIG,
   RUNTIME_I18N_LOCALE_LOADERS,
   RUNTIME_I18N_LOCALES,
+  RUNTIME_I18N_OPTIONS,
   RUNTIME_I18N_STATE_KEY,
+  RuntimeI18nOptions,
 } from './tokens';
 
 /**
@@ -24,18 +26,19 @@ import {
  *   fetchCatalog: (lang, signal) => fetch(`/i18n/${lang}.json`, { signal }).then(r => r.json()),
  *   onMissingKey: (k) => k
  * }, {
- *   localeLoaders: { en: () => import('@angular/common/locales/global/en') }
+ *   localeLoaders: { en: () => import('@angular/common/locales/global/en') },
+ *   autoDetect: true,
+ *   storageKey: '@ngx-runtime-i18n:lang',
+ *   preferNavigatorBase: true
  * });
- *
- * @param cfg Core runtime configuration (CSR + SSR).
- * @param opts Optional: state key prefix and dynamic locale loaders.
- * @publicApi
  */
 export function provideRuntimeI18n(
   cfg: RuntimeI18nConfig,
   opts?: {
     stateKeyPrefix?: string;
     localeLoaders?: Record<string, () => Promise<unknown>>;
+    /** See {@link RuntimeI18nOptions} */
+    options?: RuntimeI18nOptions;
   }
 ): Provider[] {
   const catalogs = new Map<string, Catalog>();
@@ -48,6 +51,12 @@ export function provideRuntimeI18n(
     onMissingKey: cfg.onMissingKey ?? ((k) => k),
   };
 
+  const normalizedOpts: RuntimeI18nOptions = {
+    autoDetect: opts?.options?.autoDetect ?? true,
+    storageKey: opts?.options?.storageKey ?? '@ngx-runtime-i18n:lang',
+    preferNavigatorBase: opts?.options?.preferNavigatorBase ?? true,
+  };
+
   return [
     { provide: RUNTIME_I18N_CONFIG, useValue: normalizedCfg },
     { provide: RUNTIME_I18N_CATALOGS, useValue: catalogs },
@@ -57,6 +66,7 @@ export function provideRuntimeI18n(
       provide: RUNTIME_I18N_LOCALE_LOADERS,
       useValue: opts?.localeLoaders ?? {},
     },
+    { provide: RUNTIME_I18N_OPTIONS, useValue: normalizedOpts },
 
     // Client boot: populate catalogs from TransferState if present (SSR→CSR).
     {

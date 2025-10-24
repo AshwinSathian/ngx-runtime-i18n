@@ -14,7 +14,9 @@ import {
   RUNTIME_I18N_CONFIG,
   RUNTIME_I18N_LOCALE_LOADERS,
   RUNTIME_I18N_LOCALES,
+  RUNTIME_I18N_OPTIONS,
   RUNTIME_I18N_STATE_KEY,
+  RuntimeI18nOptions,
 } from './tokens';
 
 const isBrowser = typeof window !== 'undefined';
@@ -42,6 +44,7 @@ export class I18nService {
   private destroyRef = inject(DestroyRef);
   private stateKeyPrefix = inject(RUNTIME_I18N_STATE_KEY);
   private localeLoaders = inject(RUNTIME_I18N_LOCALE_LOADERS);
+  private options = inject<RuntimeI18nOptions>(RUNTIME_I18N_OPTIONS);
 
   private _lang = signal<string>(this.cfg.defaultLang);
   private _ready = signal<boolean>(false);
@@ -61,7 +64,9 @@ export class I18nService {
     const sub = this.appRef.isStable.subscribe(async (stable) => {
       if (!stable) return;
 
-      // TransferState bootstrap (SSR→CSR)
+      let initial = this.cfg.defaultLang;
+
+      // 1) TransferState bootstrap (SSR→CSR)
       if (this.ts) {
         const key = makeStateKey<{
           lang: string;
@@ -72,7 +77,7 @@ export class I18nService {
             lang: this.cfg.defaultLang,
             catalogs: {},
           });
-          this._lang.set(snap.lang);
+          initial = snap.lang || initial;
           this.ts.remove(key);
           Object.entries(snap.catalogs).forEach(([l, c]) => {
             if (!this.catalogs.has(l)) this.catalogs.set(l, c as Catalog);
@@ -80,8 +85,42 @@ export class I18nService {
         }
       }
 
-      await this.ensureLocale(this._lang());
-      await this.ensureCatalog(this._lang());
+      // 2) If no SSR lang snapshot, try persisted user choice
+      const candidateFromStorage =
+        isBrowser && this.options.storageKey
+          ? safeLocalStorageGet(this.options.storageKey)
+          : null;
+
+      // 3) Else browser auto-detect (navigator.language), with fallback chain
+      const candidateFromNavigator =
+        isBrowser && this.options.autoDetect
+          ? navigator.language || (navigator as any).userLanguage || null
+          : null;
+
+      // Compute best candidate only if SSR didn't supply lang and no persisted value
+      if (!this.ts || !this.ts.hasKey) {
+        // if TransferState existed, initial already set above
+      }
+      if (initial === this.cfg.defaultLang && candidateFromStorage) {
+        const resolved = resolveSupported(
+          this.cfg.supported,
+          candidateFromStorage,
+          !!this.options.preferNavigatorBase
+        );
+        if (resolved) initial = resolved;
+      } else if (initial === this.cfg.defaultLang && candidateFromNavigator) {
+        const resolved = resolveSupported(
+          this.cfg.supported,
+          candidateFromNavigator,
+          !!this.options.preferNavigatorBase
+        );
+        if (resolved) initial = resolved;
+      }
+
+      this._lang.set(initial);
+
+      await this.ensureLocale(initial);
+      await this.ensureCatalog(initial);
       this._ready.set(true);
       sub.unsubscribe();
     });
@@ -113,14 +152,20 @@ export class I18nService {
   /**
    * Switch the active language. Loads locale data + catalog on demand.
    * Respects {@link RuntimeI18nConfig.supported}.
+   * Persists to localStorage when enabled.
    */
   async setLang(lang: string): Promise<void> {
     if (lang === this._lang()) return;
-    if (!this.cfg.supported.includes(lang))
-      throw new Error(`Unsupported lang: ${lang}`);
-    await this.ensureLocale(lang);
-    await this.ensureCatalog(lang);
-    this._lang.set(lang);
+    const resolved = resolveSupported(this.cfg.supported, lang, true);
+    if (!resolved) throw new Error(`Unsupported lang: ${lang}`);
+    await this.ensureLocale(resolved);
+    await this.ensureCatalog(resolved);
+    this._lang.set(resolved);
+    if (isBrowser && this.options.storageKey) {
+      try {
+        localStorage.setItem(this.options.storageKey, resolved);
+      } catch {}
+    }
   }
 
   // --- Internals -------------------------------------------------------------
@@ -178,4 +223,31 @@ function hasKey(obj: unknown, path: string): boolean {
     cur = cur[p];
   }
   return true;
+}
+
+/** Resolve to a supported language: exact tag, or base fallback when allowed. */
+function resolveSupported(
+  supported: string[],
+  candidate: string,
+  allowBaseFallback: boolean
+): string | null {
+  if (!candidate) return null;
+  const lc = candidate.toLowerCase();
+  // exact match (case-insensitive)
+  const exact = supported.find((s) => s.toLowerCase() === lc);
+  if (exact) return exact;
+  if (!allowBaseFallback) return null;
+  // base match: en-GB -> en
+  const base = lc.split('-')[0];
+  const baseHit = supported.find((s) => s.toLowerCase() === base);
+  return baseHit ?? null;
+}
+
+function safeLocalStorageGet(key: string): string | null {
+  try {
+    const v = localStorage.getItem(key);
+    return v || null;
+  } catch {
+    return null;
+  }
 }
