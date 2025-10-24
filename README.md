@@ -1,82 +1,134 @@
-# NgxRuntimeI18n
+# @ngx-runtime-i18n
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+Runtime internationalization for Angular with **signals-first API**, **ICU message formatting**, and **SSR/hydration correctness**.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+- ✅ Runtime language switching
+- ✅ ICU-style messages (interpolation, `plural` with `=n`/`one`/`other`)
+- ✅ SSR + hydration safe (no pre-hydrate DOM mutations)
+- ✅ TransferState snapshot (server → client)
+- ✅ Optional RxJS fallback (`I18nCompatService`)
+- ✅ Locale data loading (`@angular/common/locales/global/<code>`)
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/tutorials/angular-monorepo-tutorial?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+---
 
-## Finish your CI setup
+## Quickstart (CSR)
 
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/yjj4aBP6ZO)
+1. **Install** (once published to npm):
 
+   ```bash
+   npm i @ngx-runtime-i18n
+   ```
 
-## Run tasks
+2. **Provide runtime i18n** in your app config:
 
-To run the dev server for your app, use:
+   ```ts
+   // app.config.ts
+   import { ApplicationConfig } from '@angular/core';
+   import { provideRouter } from '@angular/router';
+   import { provideRuntimeI18n } from '@ngx-runtime-i18n/angular';
 
-```sh
-npx nx serve demo
+   export const appConfig: ApplicationConfig = {
+     providers: [
+       provideRouter([]),
+       provideRuntimeI18n(
+         {
+           defaultLang: 'en',
+           supported: ['en', 'hi', 'de'],
+           fetchCatalog: (lang, signal) => fetch(`/i18n/${lang}.json`, { signal }).then((r) => r.json()),
+         },
+         {
+           localeLoaders: {
+             en: () => import('@angular/common/locales/global/en'),
+             hi: () => import('@angular/common/locales/global/hi'),
+             de: () => import('@angular/common/locales/global/de'),
+           },
+           options: {
+             autoDetect: true,
+             storageKey: '@ngx-runtime-i18n:lang',
+             preferNavigatorBase: true,
+           },
+         }
+       ),
+     ],
+   };
+   ```
+
+3. **Place catalogs** (CSR demo expects public root):
+
+   ```
+   apps/demo/src/public/i18n/
+     ├── en.json
+     ├── hi.json
+     └── de.json
+   ```
+
+4. **Translate in templates**:
+
+   ```html
+   {{ 'hello.user' | i18n:{ name: 'Ashwin' } }} {{ 'cart.items' | i18n:{ count: items.length } }}
+   ```
+
+5. **Switch language**:
+
+   ```ts
+   // any component
+   import { inject, Component } from '@angular/core';
+   import { I18nService } from '@ngx-runtime-i18n/angular';
+
+   @Component({
+     /* ... */
+   })
+   export class MyCmp {
+     private i18n = inject(I18nService);
+     switch(lang: string) {
+       this.i18n.setLang(lang);
+     }
+   }
+   ```
+
+---
+
+## SSR snapshot (overview)
+
+- Server chooses lang (URL/cookie/header), loads catalogs, **seeds TransferState**.
+- Client hydrates using the snapshot (no refetch, no flicker).
+- Client switching happens **after hydration**.
+
+> Our provider reads a `{lang, catalogs}` bootstrap object and per-lang catalog keys:
+> `@ngx-runtime-i18n:bootstrap`, `@ngx-runtime-i18n:catalog:<lang>`.
+
+---
+
+## RxJS fallback
+
+If your app prefers Observables:
+
+```ts
+import { I18nCompatService } from '@ngx-runtime-i18n/angular';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+const i18n = inject(I18nCompatService);
+const lang = toSignal(i18n.lang$, { initialValue: 'en' });
+i18n.setLang('hi');
 ```
 
-To create a production bundle:
+---
 
-```sh
-npx nx build demo
-```
+## Troubleshooting
 
-To see all available targets to run for a project, run:
+- **Missing keys**: In dev, we warn **once per key**. Customize via `onMissingKey`.
+- **Locales**: import from `@angular/common/locales/global/<code>` (e.g. `en`, `hi`, `de`).
+- **Hydration errors (NG0500/NG0501)**: make sure no DOM text changes before first stability; our service defers initial work behind `ApplicationRef.isStable`.
 
-```sh
-npx nx show project demo
-```
+---
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+## Compatibility
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Angular **v16–v20** (signals introduced in v16).  
+Tree-shakable, ESM-first. Works with CSR out of the box; SSR requires seeding `TransferState`.
 
-## Add new projects
+---
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+## License
 
-Use the plugin's generator to create new projects.
-
-To generate a new application, use:
-
-```sh
-npx nx g @nx/angular:app demo
-```
-
-To generate a new library, use:
-
-```sh
-npx nx g @nx/angular:lib mylib
-```
-
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
-
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/getting-started/tutorials/angular-monorepo-tutorial?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+MIT
