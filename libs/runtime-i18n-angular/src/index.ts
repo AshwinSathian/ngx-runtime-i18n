@@ -16,3 +16,5 @@ export {
   RUNTIME_I18N_STATE_KEY,
   RUNTIME_I18N_LOCALE_LOADERS,
 } from './lib/tokens';
+
+export { I18nCompatService } from './lib/i18n-compat.service';
