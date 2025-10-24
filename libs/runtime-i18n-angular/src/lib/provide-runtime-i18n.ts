@@ -42,8 +42,14 @@ export function provideRuntimeI18n(
   const locales = new Set<string>();
   const stateKeyPrefix = opts?.stateKeyPrefix ?? '@ngx-runtime-i18n';
 
+  // Ensure a default onMissingKey (echo key) for consistent behavior
+  const normalizedCfg: RuntimeI18nConfig = {
+    ...cfg,
+    onMissingKey: cfg.onMissingKey ?? ((k) => k),
+  };
+
   return [
-    { provide: RUNTIME_I18N_CONFIG, useValue: cfg },
+    { provide: RUNTIME_I18N_CONFIG, useValue: normalizedCfg },
     { provide: RUNTIME_I18N_CATALOGS, useValue: catalogs },
     { provide: RUNTIME_I18N_LOCALES, useValue: locales },
     { provide: RUNTIME_I18N_STATE_KEY, useValue: stateKeyPrefix },
@@ -65,11 +71,12 @@ export function provideRuntimeI18n(
         }>(`${stateKeyPrefix}:bootstrap`);
         if (ts.hasKey(key)) {
           const snap = ts.get(key, {
-            lang: cfg.defaultLang,
+            lang: normalizedCfg.defaultLang,
             catalogs: {} as Record<string, Catalog>,
           });
-          for (const [l, c] of Object.entries(snap.catalogs))
+          for (const [l, c] of Object.entries(snap.catalogs)) {
             catalogs.set(l, c);
+          }
         }
       },
     },

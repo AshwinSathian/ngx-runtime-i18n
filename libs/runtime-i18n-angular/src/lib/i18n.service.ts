@@ -19,6 +19,10 @@ import {
 
 const isBrowser = typeof window !== 'undefined';
 
+// Angular sets ngDevMode to true in dev builds, undefined in prod (tree-shaken).
+declare const ngDevMode: boolean;
+const DEV = typeof ngDevMode !== 'undefined' && !!ngDevMode;
+
 /**
  * Signals-first runtime i18n service.
  *
@@ -48,6 +52,9 @@ export class I18nService {
   readonly ready: Signal<boolean> = this._ready.asReadonly();
 
   private abort?: AbortController;
+
+  // Track missing keys warned in dev mode (dedup once per key)
+  private _warnedMissing = DEV ? new Set<string>() : undefined;
 
   constructor() {
     // Defer initial work until app is stable (prevents pre-hydration mutations).
@@ -90,6 +97,16 @@ export class I18nService {
     const lang = this._lang();
     const cat =
       this.catalogs.get(lang) ?? this.catalogs.get(this.cfg.defaultLang) ?? {};
+
+    // Dev-only, de-duplicated missing key warning
+    if (DEV && !hasKey(cat, key) && !this._warnedMissing?.has(key)) {
+      console.warn(
+        `[ngx-runtime-i18n] Missing key "${key}" for lang "${lang}". ` +
+          `Provide it in your catalog or customize onMissingKey().`
+      );
+      this._warnedMissing?.add(key);
+    }
+
     return formatIcu(lang, key, cat, params, this.cfg.onMissingKey);
   }
 
@@ -151,4 +168,14 @@ function deepMerge(a: any, b: any): any {
   const out: any = Array.isArray(a) ? [...a] : { ...a };
   for (const k of Object.keys(b)) out[k] = deepMerge(a[k], b[k]);
   return out;
+}
+
+function hasKey(obj: unknown, path: string): boolean {
+  if (!obj || typeof obj !== 'object') return false;
+  let cur: any = obj;
+  for (const p of path.split('.')) {
+    if (cur == null || typeof cur !== 'object' || !(p in cur)) return false;
+    cur = cur[p];
+  }
+  return true;
 }

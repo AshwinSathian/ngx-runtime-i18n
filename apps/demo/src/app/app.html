@@ -1,6 +1,7 @@
 <div class="app">
   <h1>{{ 'hello.user' | i18n:{ name: username } }}</h1>
   <p>{{ 'cart.items' | i18n:{ count: items().length } }}</p>
+  <p style="margin-top: 12px">MISSING → {{ 'not.exists' | i18n }}</p>
 
   <div class="toolbar" role="group" aria-label="Language switcher">
     <button
