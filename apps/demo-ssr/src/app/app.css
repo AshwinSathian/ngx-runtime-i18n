@@ -1,0 +1,131 @@
+:root {
+  --bg: #0b0c10;
+  --panel: #11131a;
+  --muted: #a0a4ae;
+  --text: #e6e8ef;
+  --brand: #71c7ec;
+  --accent: #7fd1a8;
+  --chip: #1b1f2a;
+  --chip-active: #263042;
+  --border: #222636;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: radial-gradient(1200px 800px at 20% -5%, #0f1420, var(--bg));
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji';
+}
+
+.page {
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.header,
+.footer {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 16px 20px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--brand);
+}
+
+.lang-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lang-switch span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.chip {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--chip);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.chip.active {
+  background: var(--chip-active);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.content {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 12px 20px 32px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.card {
+  background: linear-gradient(180deg, #121523, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: #1a2130;
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.btn:hover {
+  border-color: var(--brand);
+}
+.btn.ghost {
+  background: transparent;
+  color: var(--muted);
+}
+
+.diagnostics code {
+  background: #0e111a;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.footer {
+  color: var(--muted);
+  text-align: center;
+}

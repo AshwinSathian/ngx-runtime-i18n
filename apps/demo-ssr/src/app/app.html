@@ -1,0 +1,45 @@
+<div class="page">
+  <header class="header">
+    <div class="brand">ngx-runtime-i18n • demo</div>
+
+    <nav class="lang-switch">
+      <span>Language:</span>
+      <button
+        *ngFor="let l of langs"
+        type="button"
+        class="chip"
+        [class.active]="isActive(l)()"
+        (click)="switchLang(l)"
+      >
+        {{ l }}
+      </button>
+    </nav>
+  </header>
+
+  <main class="content" [attr.lang]="lang()">
+    <section class="card">
+      <h1>{{ 'hello.user' | i18n:{ name: 'Ashwin' } }}</h1>
+
+      <p class="muted">{{ 'cart.items' | i18n:{ count: items() } }}</p>
+
+      <div class="row">
+        <button type="button" class="btn" (click)="dec()">−</button>
+        <button type="button" class="btn" (click)="inc()">＋</button>
+        <button type="button" class="btn ghost" (click)="reset()">reset</button>
+      </div>
+    </section>
+
+    <section class="card diagnostics">
+      <div>ready: <b>{{ ready() }}</b></div>
+      <div>lang: <b>{{ lang() }}</b></div>
+      <div>items: <b>{{ items() }}</b></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <small>
+      ICU demo uses <code>plural</code> with <code>=0</code>, <code>one</code>,
+      and <code>other</code>.
+    </small>
+  </footer>
+</div>

@@ -1,0 +1,8 @@
+{
+  "hello": {
+    "user": "Hello, {name}!"
+  },
+  "cart": {
+    "items": "{count, plural, =0 {No items in your cart} one {1 item in your cart} other {# items in your cart}}"
+  }
+}
