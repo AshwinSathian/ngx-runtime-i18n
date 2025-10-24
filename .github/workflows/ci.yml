@@ -6,29 +6,14 @@ on:
   pull_request:
 
 jobs:
-  build-and-test:
+  build-test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install
-        run: npm ci
-
-      - name: Verify formatting & lint (optional)
-        run: |
-          npm run -s format:check || true
-          nx run-many -t lint -p=runtime-i18n,runtime-i18n-angular || true
-
-      - name: Build libs
-        run: npm run build:libs
-
-      - name: Unit tests
-        run: npm test
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
+      - run: npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular

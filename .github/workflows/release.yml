@@ -1,4 +1,4 @@
-name: Publish
+name: Publish to npm (with provenance)
 
 on:
   push:
@@ -6,26 +6,32 @@ on:
       - '@ngx-runtime-i18n/core@*'
       - '@ngx-runtime-i18n/angular@*'
 
+permissions:
+  id-token: write # required for provenance
+  contents: read
+
+env:
+  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write # needed for provenance
-      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
           registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
+          cache: npm
       - run: npm ci
-      - run: nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
-      - name: Publish core (if tag matches)
+      - run: npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
+
+      - name: Publish core
         if: startsWith(github.ref_name, '@ngx-runtime-i18n/core@')
         working-directory: dist/libs/runtime-i18n
         run: npm publish --provenance --access public
-      - name: Publish angular (if tag matches)
+
+      - name: Publish angular
         if: startsWith(github.ref_name, '@ngx-runtime-i18n/angular@')
         working-directory: dist/libs/runtime-i18n-angular
         run: npm publish --provenance --access public
