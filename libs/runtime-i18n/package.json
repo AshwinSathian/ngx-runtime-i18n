@@ -1,9 +1,12 @@
 {
   "name": "@ngx-runtime-i18n",
-  "version": "0.0.1",
-  "peerDependencies": {
-    "@angular/common": "^20.3.0",
-    "@angular/core": "^20.3.0"
-  },
-  "sideEffects": false
+  "version": "0.1.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./fesm2022/ngx-runtime-i18n.mjs"
+    }
+  }
 }

@@ -2,8 +2,16 @@
   "name": "@ngx-runtime-i18n/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
+  "scripts": {
+    "build:libs": "nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production --parallel",
+    "test": "nx run-many -t test -p=runtime-i18n,runtime-i18n-angular",
+    "ci": "nx run-many -t build,test -p=runtime-i18n,runtime-i18n-angular --configuration=production"
+  },
   "dependencies": {
     "@angular-devkit/build-angular": "~20.3.0",
     "@angular/common": "~20.3.0",

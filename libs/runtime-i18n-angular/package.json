@@ -1,9 +1,17 @@
 {
   "name": "@ngx-runtime-i18n/angular",
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "type": "module",
+  "sideEffects": false,
   "peerDependencies": {
-    "@angular/common": "^20.3.0",
-    "@angular/core": "^20.3.0"
+    "@angular/core": ">=16 <21",
+    "@angular/common": ">=16 <21",
+    "@angular/platform-browser": ">=16 <21"
   },
-  "sideEffects": false
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./fesm2022/ngx-runtime-i18n-angular.mjs"
+    }
+  }
 }
