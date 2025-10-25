@@ -81,28 +81,21 @@
   "release": {
     "projects": ["runtime-i18n", "runtime-i18n-angular"],
     "projectsRelationship": "independent",
-    "releaseTag": {
-      "pattern": "{projectName}@{version}"
+    "git": {
+      "commit": true,
+      "tag": true,
+      "push": true,
+      "commitMessage": "chore(release): {projectName}@{version}"
     },
     "version": {
       "conventionalCommits": true,
-      "git": {
-        "commit": true,
-        "tag": true,
-        "push": true,
-        "commitMessage": "chore(release): {projectName}@{version}"
-      }
+      "updateDependents": "always",
+      "preserveMatchingDependencyRanges": true
     },
     "changelog": {
       "workspaceChangelog": false,
       "projectChangelogs": {
-        "file": "CHANGELOG.md",
-        "createRelease": "github",
-        "git": {
-          "commit": true,
-          "push": true,
-          "commitMessage": "docs(changelog): {projectName}@{version}"
-        }
+        "createRelease": "github"
       }
     }
   }
