@@ -1,5 +1,5 @@
 {
-  "name": "@ngx-runtime-i18n/angular",
+  "name": "ngx-runtime-i18n-angular",
   "version": "0.1.0",
   "description": "Angular bindings for @ngx-runtime-i18n (signals-first, SSR-safe)",
   "type": "module",

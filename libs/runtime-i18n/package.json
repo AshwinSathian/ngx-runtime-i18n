@@ -1,5 +1,5 @@
 {
-  "name": "@ngx-runtime-i18n/core",
+  "name": "ngx-runtime-i18n-core",
   "version": "0.1.0",
   "description": "Runtime i18n core with ICU-lite formatting",
   "type": "module",
