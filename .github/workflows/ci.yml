@@ -30,7 +30,7 @@ jobs:
       - name: Install deps
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
-        run: npm install
+        run: npm install --ignore-scripts --omit=optional
 
       - name: Nx build (libs)
         run: |
