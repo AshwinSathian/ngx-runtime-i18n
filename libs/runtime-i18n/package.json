@@ -20,7 +20,6 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
       "import": "./fesm2022/ngx-runtime-i18n-core.mjs"
     }
   },

@@ -18,7 +18,7 @@
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
         "project": "libs/runtime-i18n-angular/ng-package.json",
-        "tsConfig": "libs/runtime-i18n-angular/tsconfig.lib.json"
+        "tsConfig": "libs/runtime-i18n-angular/tsconfig.lib.build.json"
       },
       "configurations": {
         "production": {

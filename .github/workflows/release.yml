@@ -6,6 +6,10 @@ on:
       - 'ngx-runtime-i18n-core@*'
       - 'ngx-runtime-i18n-angular@*'
 
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
