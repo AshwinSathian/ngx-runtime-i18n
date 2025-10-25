@@ -1,45 +1,77 @@
-name: Publish to npm (with token)
+name: Release (tag → npm publish)
+
 on:
   push:
     tags:
-      - 'runtime-i18n@*'
-      - 'runtime-i18n-angular@*'
+      - 'ngx-runtime-i18n-core@*'
+      - 'ngx-runtime-i18n-angular@*'
+
+permissions:
+  contents: read
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
+    env:
+      # Prevent npm 10 auto-provenance failures
+      NPM_CONFIG_PROVENANCE: 'false'
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: https://registry.npmjs.org
-          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Verify tag → package mapping
+        id: meta
+        run: |
+          TAG="${GITHUB_REF_NAME}"  # e.g. ngx-runtime-i18n-core@0.1.1
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+          PKG_NAME="${TAG%@*}"     # strip @version
+          VERSION="${TAG#*@}"      # strip name@
+
+          case "$PKG_NAME" in
+            ngx-runtime-i18n-core)
+              LIB=runtime-i18n
+              NPM_PKG=ngx-runtime-i18n-core
+              ;;
+            ngx-runtime-i18n-angular)
+              LIB=runtime-i18n-angular
+              NPM_PKG=ngx-runtime-i18n-angular
+              ;;
+            *)
+              echo "Unknown package name in tag: $PKG_NAME"
+              exit 1
+              ;;
+          esac
+
+          echo "lib=$LIB" >> $GITHUB_OUTPUT
+          echo "npm_pkg=$NPM_PKG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Install deps
-        run: npm ci
+        run: npm install
 
-      - name: Build all libs
+      - name: Build target lib
+        run: npx nx run ${{ steps.meta.outputs.lib }}:build:production
+
+      - name: Show built package.json
+        run: cat dist/libs/${{ steps.meta.outputs.lib }}/package.json
+
+      - name: Force publishConfig for npm 10
         run: |
-          npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('dist/libs/${{ steps.meta.outputs.lib }}/package.json','utf8'));p.publishConfig={...(p.publishConfig||{}),access:'public',provenance:false};fs.writeFileSync('dist/libs/${{ steps.meta.outputs.lib }}/package.json',JSON.stringify(p,null,2));console.log(p.publishConfig)"
 
-      - name: Publish @ngx-runtime-i18n/core
-        if: startsWith(github.ref_name, 'runtime-i18n@')
-        working-directory: dist/libs/runtime-i18n
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public
-
-      - name: Publish @ngx-runtime-i18n/angular
-        if: startsWith(github.ref_name, 'runtime-i18n-angular@')
-        working-directory: dist/libs/runtime-i18n-angular
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public
+      - name: Publish to npm
+        working-directory: dist/libs/${{ steps.meta.outputs.lib }}
+        run: |
+          npm publish --access public

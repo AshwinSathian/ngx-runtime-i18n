@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "extends": "nx/presets/npm.json",
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
@@ -76,35 +77,6 @@
     },
     "@nx/angular:component": {
       "style": "css"
-    }
-  },
-  "release": {
-    "projects": ["runtime-i18n", "runtime-i18n-angular"],
-    "projectsRelationship": "independent",
-
-    "git": {
-      "commit": true,
-      "tag": true,
-      "push": true,
-      "commitMessage": "chore(release): {projectName}@{version}"
-    },
-
-    "version": {
-      "conventionalCommits": true,
-      "updateDependents": "always",
-      "preserveMatchingDependencyRanges": true
-    },
-
-    "changelog": {
-      "workspaceChangelog": false,
-      "projectChangelogs": {
-        "createRelease": "github",
-        "git": {
-          "commit": true,
-          "push": true,
-          "commitMessage": "docs(changelog): {projectName}@{version}"
-        }
-      }
     }
   }
 }

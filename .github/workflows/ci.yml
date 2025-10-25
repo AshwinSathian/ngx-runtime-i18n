@@ -1,11 +1,16 @@
 name: CI
+
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  ci:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,15 +21,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: 'npm'
 
       - name: Install deps
-        run: npm ci
+        run: npm install
 
-      - name: Nx build (libs only)
+      - name: Nx build (libs)
         run: |
           npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
 
-      - name: Nx test (libs only)
+      - name: Nx test (libs)
         run: |
           npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular
