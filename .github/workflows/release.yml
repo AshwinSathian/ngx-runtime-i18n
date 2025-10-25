@@ -1,41 +1,45 @@
-name: Publish to npm (with provenance)
-
+name: Publish to npm (with token)
 on:
   push:
     tags:
-      - '@ngx-runtime-i18n/core@*'
-      - '@ngx-runtime-i18n/angular@*'
-
-permissions:
-  id-token: write # required for provenance
-  contents: read
+      - 'runtime-i18n@*'
+      - 'runtime-i18n-angular@*'
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: https://registry.npmjs.org
           cache: npm
-      - run: npm ci
-      - run: npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
 
-      - name: Publish core
-        if: startsWith(github.ref_name, '@ngx-runtime-i18n/core@')
+      - name: Install deps
+        run: npm ci
+
+      - name: Build all libs
+        run: |
+          npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
+
+      - name: Publish @ngx-runtime-i18n/core
+        if: startsWith(github.ref_name, 'runtime-i18n@')
         working-directory: dist/libs/runtime-i18n
         env:
-          # Optional fallback token (used only if --provenance fails and the fallback line runs)
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          npm publish --provenance --access public || npm publish --access public
+        run: npm publish --access public
 
-      - name: Publish angular
-        if: startsWith(github.ref_name, '@ngx-runtime-i18n/angular@')
+      - name: Publish @ngx-runtime-i18n/angular
+        if: startsWith(github.ref_name, 'runtime-i18n-angular@')
         working-directory: dist/libs/runtime-i18n-angular
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          npm publish --provenance --access public || npm publish --access public
+        run: npm publish --access public
