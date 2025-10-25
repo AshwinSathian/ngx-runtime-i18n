@@ -19,7 +19,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/ngx-runtime-i18n.git"
+    "url": "git+https://github.com/AshwinSathian/ngx-runtime-i18n.git"
   },
   "license": "MIT",
   "exports": {
