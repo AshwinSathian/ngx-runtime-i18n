@@ -81,13 +81,29 @@
   "release": {
     "projects": ["runtime-i18n", "runtime-i18n-angular"],
     "projectsRelationship": "independent",
-    "version": {
-      "preVersionCommand": "npx nx run-many -t build"
+    "releaseTag": {
+      "pattern": "{projectName}@{version}"
     },
-    "git": {
-      "commit": true,
-      "tag": true,
-      "push": true
+    "version": {
+      "conventionalCommits": true,
+      "git": {
+        "commit": true,
+        "tag": true,
+        "push": true,
+        "commitMessage": "chore(release): {projectName}@{version}"
+      }
+    },
+    "changelog": {
+      "workspaceChangelog": false,
+      "projectChangelogs": {
+        "file": "CHANGELOG.md",
+        "createRelease": "github",
+        "git": {
+          "commit": true,
+          "push": true,
+          "commitMessage": "docs(changelog): {projectName}@{version}"
+        }
+      }
     }
   }
 }
