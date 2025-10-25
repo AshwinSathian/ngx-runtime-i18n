@@ -63,7 +63,9 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Install deps
-        run: npm install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+        run: npm ci
 
       - name: Build target lib
         run: npx nx run ${{ steps.meta.outputs.lib }}:build:production
