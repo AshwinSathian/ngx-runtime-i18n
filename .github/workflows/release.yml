@@ -65,7 +65,7 @@ jobs:
       - name: Install deps
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
-        run: npm ci
+        run: npm install
 
       - name: Build target lib
         run: npx nx run ${{ steps.meta.outputs.lib }}:build:production
