@@ -1,13 +1,14 @@
 {
-  "name": "ngx-runtime-i18n-angular",
-  "version": "1.1.0",
+  "name": "@ngx-runtime-i18n/angular",
+  "version": "1.2.0",
   "description": "Angular bindings for @ngx-runtime-i18n (signals-first, SSR-safe)",
   "type": "module",
   "sideEffects": false,
   "peerDependencies": {
     "@angular/core": ">=16 <21",
     "@angular/common": ">=16 <21",
-    "@angular/platform-browser": ">=16 <21"
+    "@angular/platform-browser": ">=16 <21",
+    "@ngx-runtime-i18n/core": "^1.2.0"
   },
   "keywords": [
     "angular",
@@ -33,5 +34,10 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "@ngx-runtime-i18n/core": {
+      "optional": false
+    }
   }
 }

@@ -6,36 +6,35 @@ on:
   pull_request:
     branches: [main]
 
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      NX_DAEMON: 'false'
+      CI: 'true'
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
 
-      - name: Install deps
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
-        run: npm install --ignore-scripts --omit=optional
-
-      - name: Nx build (libs)
+      - name: Install
         run: |
-          npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-      - name: Nx test (libs)
+      - name: Build libs (prod)
+        run: npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
+
+      - name: Test libs
         run: |
+          npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular --configuration=ci || \
           npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular
