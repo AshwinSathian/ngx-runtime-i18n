@@ -41,19 +41,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="${GITHUB_REF_NAME}"  # e.g., @ngx-runtime-i18n/angular@1.0.0
-          LIB_FROM_TAG="${TAG%@*}"  # → "@ngx-runtime-i18n/angular"  (remove shortest '@*' from end)
-          VER_FROM_TAG="${TAG##*@}" # → "1.0.0" (take after last '@')
+          TAG="${GITHUB_REF_NAME}"          # e.g., @ngx-runtime-i18n/angular@1.0.0
+          LIB_FROM_TAG="${TAG%@*}"          # → "@ngx-runtime-i18n/angular"
+          VER_FROM_TAG="${TAG##*@}"         # → "1.0.0"
 
           case "$LIB_FROM_TAG" in
             @ngx-runtime-i18n/core)    PROJECT="runtime-i18n" ;;
             @ngx-runtime-i18n/angular) PROJECT="runtime-i18n-angular" ;;
-            *) echo "Unknown library from tag: $LIB_FROM_TAG (tag was: $TAG)"; exit 1 ;;
+            *) echo "Unknown library from tag: $LIB_FROM_TAG (tag: $TAG)"; exit 1 ;;
           esac
 
           echo "lib_scope=$LIB_FROM_TAG"   >> $GITHUB_OUTPUT
           echo "lib_project=$PROJECT"      >> $GITHUB_OUTPUT
           echo "lib_version=$VER_FROM_TAG" >> $GITHUB_OUTPUT
+          echo "Parsed: $LIB_FROM_TAG :: $PROJECT :: $VER_FROM_TAG"
 
       - name: Build from source (prod)
         run: npx nx build ${{ steps.meta.outputs.lib_project }} --configuration=production
@@ -63,17 +64,18 @@ jobs:
         run: |
           set -euo pipefail
           DIST_PKG="dist/libs/${{ steps.meta.outputs.lib_project }}/package.json"
+          echo "Checking version in: $DIST_PKG"
           test -f "$DIST_PKG"
-          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.DIST_PKG,'utf8'));if(p.version!==process.env.TAG_VER){console.error('Version mismatch:',p.version,'!=',process.env.TAG_VER);process.exit(1)}" \
-            DIST_PKG="$DIST_PKG" TAG_VER="${{ steps.meta.outputs.lib_version }}"
+          DIST_PKG="$DIST_PKG" TAG_VER="${{ steps.meta.outputs.lib_version }}" node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.DIST_PKG,'utf8'));if(p.version!==process.env.TAG_VER){console.error(\`Version mismatch: \${p.version} != \${process.env.TAG_VER}\`);process.exit(1)}else{console.log('Version OK:',p.version)}"
 
       - name: Force public publishConfig + keep provenance disabled
         shell: bash
         run: |
           set -euo pipefail
           DIST_PKG="dist/libs/${{ steps.meta.outputs.lib_project }}/package.json"
-          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.DIST_PKG,'utf8'));p.publishConfig=p.publishConfig||{};p.publishConfig.access='public';p.publishConfig.provenance=false;fs.writeFileSync(process.env.DIST_PKG,JSON.stringify(p,null,2));console.log('publishConfig:',p.publishConfig)" \
-            DIST_PKG="$DIST_PKG"
+          echo "Patching publishConfig in: $DIST_PKG"
+          test -f "$DIST_PKG"
+          DIST_PKG="$DIST_PKG" node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.DIST_PKG,'utf8'));p.publishConfig=p.publishConfig||{};p.publishConfig.access='public';p.publishConfig.provenance=false;fs.writeFileSync(process.env.DIST_PKG,JSON.stringify(p,null,2));console.log('publishConfig:',p.publishConfig)"
 
       - name: Publish to npm (org-scoped, public, provenance off)
         working-directory: dist/libs/${{ steps.meta.outputs.lib_project }}
