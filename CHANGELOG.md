@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.2 (2025-10-27)
+## 1.0.3 (2025-10-27)
 
 - Initial stable release of `@ngx-runtime-i18n`
 - Added SSR + CSR demos (Angular 20)
