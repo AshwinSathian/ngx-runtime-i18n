@@ -34,48 +34,62 @@ jobs:
 
       - name: Install deps
         run: |
-          if [ -f package-lock.json ]; then npm ci --prefer-offline --no-audit --fund=false; else npm install --prefer-offline --no-audit --fund=false; fi
+          if [ -f package-lock.json ]; then
+            npm ci --prefer-offline --no-audit --fund=false
+          else
+            npm install --prefer-offline --no-audit --fund=false
+          fi
 
       - name: Parse tag → lib + version
         id: meta
         shell: bash
         run: |
           set -euo pipefail
-          TAG="${GITHUB_REF_NAME}"          # e.g., @ngx-runtime-i18n/angular@1.0.0
+          TAG="${GITHUB_REF_NAME}"          # e.g. @ngx-runtime-i18n/angular@1.0.0
           LIB_FROM_TAG="${TAG%@*}"          # → "@ngx-runtime-i18n/angular"
           VER_FROM_TAG="${TAG##*@}"         # → "1.0.0"
 
           case "$LIB_FROM_TAG" in
             @ngx-runtime-i18n/core)    PROJECT="runtime-i18n" ;;
             @ngx-runtime-i18n/angular) PROJECT="runtime-i18n-angular" ;;
-            *) echo "Unknown library from tag: $LIB_FROM_TAG (tag: $TAG)"; exit 1 ;;
+            *) echo "Unknown library from tag: $LIB_FROM_TAG (tag: $TAG)" >&2; exit 1 ;;
           esac
 
           echo "lib_scope=$LIB_FROM_TAG"   >> $GITHUB_OUTPUT
           echo "lib_project=$PROJECT"      >> $GITHUB_OUTPUT
           echo "lib_version=$VER_FROM_TAG" >> $GITHUB_OUTPUT
-          echo "Parsed: $LIB_FROM_TAG :: $PROJECT :: $VER_FROM_TAG"
+          echo "Parsed → $LIB_FROM_TAG | project=$PROJECT | version=$VER_FROM_TAG"
 
       - name: Build from source (prod)
         run: npx nx build ${{ steps.meta.outputs.lib_project }} --configuration=production
 
-      - name: Ensure dist package.json version === tag version
+      - name: Ensure dist package.json version === tag version (jq)
         shell: bash
         run: |
           set -euo pipefail
           DIST_PKG="dist/libs/${{ steps.meta.outputs.lib_project }}/package.json"
-          echo "Checking version in: $DIST_PKG"
+          echo "Checking version in $DIST_PKG ..."
           test -f "$DIST_PKG"
-          DIST_PKG="$DIST_PKG" TAG_VER="${{ steps.meta.outputs.lib_version }}" node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.DIST_PKG,'utf8'));if(p.version!==process.env.TAG_VER){console.error(\`Version mismatch: \${p.version} != \${process.env.TAG_VER}\`);process.exit(1)}else{console.log('Version OK:',p.version)}"
+          DIST_VER="$(jq -r '.version' "$DIST_PKG")"
+          TAG_VER="${{ steps.meta.outputs.lib_version }}"
+          echo "dist version: $DIST_VER | tag version: $TAG_VER"
+          if [ "$DIST_VER" != "$TAG_VER" ]; then
+            echo "Version mismatch: $DIST_VER != $TAG_VER" >&2
+            exit 1
+          fi
 
       - name: Force public publishConfig + keep provenance disabled
         shell: bash
         run: |
           set -euo pipefail
           DIST_PKG="dist/libs/${{ steps.meta.outputs.lib_project }}/package.json"
-          echo "Patching publishConfig in: $DIST_PKG"
+          echo "Patching publishConfig in $DIST_PKG ..."
           test -f "$DIST_PKG"
-          DIST_PKG="$DIST_PKG" node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.DIST_PKG,'utf8'));p.publishConfig=p.publishConfig||{};p.publishConfig.access='public';p.publishConfig.provenance=false;fs.writeFileSync(process.env.DIST_PKG,JSON.stringify(p,null,2));console.log('publishConfig:',p.publishConfig)"
+          tmp="$(mktemp)"
+          jq '.publishConfig = (.publishConfig // {}) | .publishConfig.access="public" | .publishConfig.provenance=false' "$DIST_PKG" > "$tmp"
+          mv "$tmp" "$DIST_PKG"
+          echo "publishConfig:"
+          jq '.publishConfig' "$DIST_PKG"
 
       - name: Publish to npm (org-scoped, public, provenance off)
         working-directory: dist/libs/${{ steps.meta.outputs.lib_project }}
