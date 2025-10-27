@@ -12,31 +12,35 @@ export interface I18nSnapshot {
 }
 
 /**
- * Server-only providers that seed TransferState with the active lang and catalogs.
- * This runs inside Angular on the server render (via ENVIRONMENT_INITIALIZER).
+ * Server-only providers that seed TransferState with the active lang and any
+ * preloaded catalogs. This prevents refetch/flicker on first client view and
+ * guarantees hydration-safe text.
+ *
+ * Usage (server.ts):
+ *   const snapshot: I18nSnapshot = { lang, catalogs: { [lang]: catalogJson } };
+ *   const providers = i18nServerProviders(snapshot);
+ *   engine = new AngularNodeAppEngine(serverDistFolder, { providers });
  */
 export function i18nServerProviders(snapshot: I18nSnapshot): Provider[] {
-  const STATE_PREFIX = '@ngx-runtime-i18n/core';
+  const STATE_PREFIX = '@ngx-runtime-i18n';
+
   return [
     {
       provide: ENVIRONMENT_INITIALIZER,
       multi: true,
-      useValue: () => {
+      useFactory: () => {
         const ts = inject(TransferState);
 
-        // Bootstrap snapshot: {lang, catalogs}
-        const bootKey = makeStateKey<{
-          lang: string;
-          catalogs: Record<string, unknown>;
-        }>(`${STATE_PREFIX}:bootstrap`);
+        // Seed the "bootstrap" snapshot: { lang, catalogs }
+        const bootKey = makeStateKey<I18nSnapshot>(`${STATE_PREFIX}:bootstrap`);
         ts.set(bootKey, { lang: snapshot.lang, catalogs: snapshot.catalogs });
 
-        // Individual catalog keys for client lookups (avoid refetch on first view)
-        for (const [l, cat] of Object.entries(snapshot.catalogs)) {
+        // Also seed individual catalog keys for quick client lookups.
+        for (const [lang, catalog] of Object.entries(snapshot.catalogs)) {
           const k = makeStateKey<Record<string, unknown>>(
-            `${STATE_PREFIX}:catalog:${l}`
+            `${STATE_PREFIX}:catalog:${lang}`
           );
-          ts.set(k, cat);
+          ts.set(k, catalog);
         }
       },
     },

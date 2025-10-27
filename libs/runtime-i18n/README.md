@@ -1,31 +1,80 @@
-# @ngx-runtime-i18n
+# @ngx-runtime-i18n/core
 
-Lightweight runtime internationalization core (framework-agnostic).
+Framework‑agnostic primitives for runtime internationalisation:
 
-Provides the core ICU-like formatting engine and catalog management.
+- Tiny, dependency‑free **ICU‑lite** formatter (interpolation + basic `plural`).
+- Shared types used by the Angular wrapper.
+
+This package is designed to be used directly or via `@ngx-runtime-i18n/angular`.
+
+---
 
 ## Install
 
 ```bash
-npm i @ngx-runtime-i18n
+npm i @ngx-runtime-i18n/core
 ```
 
-## Usage
+---
+
+## Quick Start
 
 ```ts
-import { formatIcu } from '@ngx-runtime-i18n/core';
+import { formatIcu, type Catalog } from '@ngx-runtime-i18n/core';
 
-const catalog = {
-  hello: 'Hello {name}!',
-  'cart.items': '{count, plural, =0 {No items} one {1 item} other {# items}} in your cart',
+const catalog: Catalog = {
+  hello: { user: 'Hello, {name}!' },
+  cart: { items: '{count, plural, one {1 item} other {# items}}' },
 };
 
-formatIcu('en', 'hello', catalog, { name: 'Ashwin' });
-// → "Hello Ashwin!"
+formatIcu('en', 'hello.user', catalog, { name: 'Ashwin' }); // "Hello, Ashwin!"
+formatIcu('en', 'cart.items', catalog, { count: 2 }); // "2 items"
 ```
 
-This package contains:
+- `key` supports dotted paths (e.g., `hello.user`).
+- `plural` supports `one`, `other`, and exact matches like `=0`, `=2`.
+- The function is pure and side‑effect free.
 
-- `formatIcu(lang, key, catalog, params, onMissingKey?)`
-- Type definitions (`Catalog`, `RuntimeI18nConfig`)
-- Utilities for Angular bindings (`@ngx-runtime-i18n/angular`)
+---
+
+## API
+
+### `formatIcu(lang, key, catalog, params?, onMissingKey?)`
+
+- **`lang: string`** — current language (for plural rules and future features).
+- **`key: string`** — dotted path into the catalog.
+- **`catalog: Catalog`** — a nested object of strings/objects.
+- **`params?: Record<string, unknown>`** — interpolation values.
+- **`onMissingKey?: (key: string) => string`** — transform for missing keys (defaults to returning the key).
+
+### Types
+
+- **`Catalog`** — `Record<string, unknown>` (nested object).
+- **`RuntimeI18nConfig`** — shape shared with the Angular wrapper for consistency.
+
+---
+
+## Catalog structure
+
+```json
+{
+  "hello": { "user": "Hello, {name}!" },
+  "cart": { "items": "{count, plural, one {1 item} other {# items}}" }
+}
+```
+
+> Keep catalogs per language (e.g., `en.json`, `hi.json`).
+
+---
+
+## Pitfalls & Notes
+
+- Not a full ICU implementation; aims to cover common 80% with a tiny footprint.
+- If you need Angular binding or SSR helpers, prefer `@ngx-runtime-i18n/angular`.
+- Keep your catalogs **flat-ish and predictable** to avoid fragile deep paths.
+
+---
+
+## License
+
+MIT

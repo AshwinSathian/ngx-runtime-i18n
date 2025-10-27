@@ -12,22 +12,34 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(appRoutes),
+
+    // Recommended consumer usage: install catalogs into /public/i18n/<lang>.json
+    // and fetch them via a simple, idempotent (abortable) fetch.
     provideRuntimeI18n(
       {
         defaultLang: 'en',
         supported: ['en', 'hi', 'de'],
-        fetchCatalog: (lang, signal) =>
-          fetch(`/i18n/${lang}.json`, { signal }).then((r) => r.json()),
+        fetchCatalog: (lang: string, signal?: AbortSignal) =>
+          fetch(`/i18n/${lang}.json`, { signal }).then((r) => {
+            if (!r.ok) throw new Error(`Failed to load catalog: ${lang}`);
+            return r.json() as Promise<Record<string, unknown>>;
+          }),
+        // Keep missing keys visible during development.
+        onMissingKey: (key) => key,
       },
       {
+        // Make Angular pipes (DatePipe, DecimalPipe, etc.) locale-aware per language.
         localeLoaders: {
           en: () => import('@angular/common/locales/global/en'),
           hi: () => import('@angular/common/locales/global/hi'),
           de: () => import('@angular/common/locales/global/de'),
         },
         options: {
+          // First boot only: try persisted -> navigator -> defaultLang.
           autoDetect: true,
+          // Persist the chosen lang (set falsy to disable).
           storageKey: '@ngx-runtime-i18n:lang',
+          // If navigator gives "en-GB" and only "en" exists, prefer its base.
           preferNavigatorBase: true,
         },
       }

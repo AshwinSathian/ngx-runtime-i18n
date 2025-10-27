@@ -11,6 +11,8 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(appRoutes),
+
+    // Recommended hydration transfer cache settings (no POST caching).
     provideClientHydration(
       withHttpTransferCacheOptions({ includePostRequests: false })
     ),
@@ -19,13 +21,14 @@ export const appConfig: ApplicationConfig = {
       {
         defaultLang: 'en',
         supported: ['en', 'hi', 'de'],
-        // CSR path: catalogs live under /i18n at public root (and dist/browser/i18n after build)
-        fetchCatalog: (lang, signal) =>
-          fetch(`/i18n/${lang}.json`, { signal }).then((r) => r.json()),
-        onMissingKey: (k) => k,
+        fetchCatalog: (lang: string, signal?: AbortSignal) =>
+          fetch(`/i18n/${lang}.json`, { signal }).then((r) => {
+            if (!r.ok) throw new Error(`Failed to load catalog: ${lang}`);
+            return r.json() as Promise<Record<string, unknown>>;
+          }),
+        onMissingKey: (key) => key,
       },
       {
-        // Load Angular locale data for pipes at runtime
         localeLoaders: {
           en: () => import('@angular/common/locales/global/en'),
           hi: () => import('@angular/common/locales/global/hi'),
