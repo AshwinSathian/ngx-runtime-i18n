@@ -14,27 +14,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  libs:
+    name: Build & Test (libs)
     runs-on: ubuntu-latest
     env:
-      NX_DAEMON: 'false'
-      CI: 'true'
+      CI: true
+      NX_DAEMON: false
+      NX_SKIP_NX_CACHE: false
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x with npm cache
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Install
+      - name: Install deps
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          if [ -f package-lock.json ]; then npm ci --prefer-offline --no-audit --fund=false; else npm install --prefer-offline --no-audit --fund=false; fi
 
       - name: Build libs (prod)
         run: npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
 
       - name: Test libs
-        run: |
-          npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular --configuration=ci || \
-          npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular
+        run: npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular --configuration=ci --runInBand

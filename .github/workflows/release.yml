@@ -14,57 +14,66 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     env:
-      NX_DAEMON: 'false'
-      CI: 'true'
+      CI: true
+      NX_DAEMON: false
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      NPM_CONFIG_PROVENANCE: 'false'
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Use Node.js 20.x (with npm cache)
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: 'https://registry.npmjs.org'
           cache: npm
+          registry-url: 'https://registry.npmjs.org'
 
-      - name: Install
+      - name: Install deps
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          if [ -f package-lock.json ]; then npm ci --prefer-offline --no-audit --fund=false; else npm install --prefer-offline --no-audit --fund=false; fi
 
-      - name: Derive lib + version from tag
+      - name: Parse tag → lib + version
         id: meta
         shell: bash
         run: |
-          TAG="${GITHUB_REF_NAME}"  # e.g., @ngx-runtime-i18n/core@1.2.0
-          LIB_FROM_TAG="${TAG%%@*}" # → "@ngx-runtime-i18n/core"
-          VER_FROM_TAG="${TAG##*@}" # → "1.2.0"
+          TAG="${GITHUB_REF_NAME}"  # e.g., @ngx-runtime-i18n/core@1.0.0
+          LIB_FROM_TAG="${TAG%%@*}" # "@ngx-runtime-i18n/core"
+          VER_FROM_TAG="${TAG##*@}" # "1.0.0"
 
           case "$LIB_FROM_TAG" in
             @ngx-runtime-i18n/core)    PROJECT="runtime-i18n" ;;
             @ngx-runtime-i18n/angular) PROJECT="runtime-i18n-angular" ;;
-            *) echo "Unknown tag prefix: $LIB_FROM_TAG"; exit 1 ;;
+            *) echo "Unknown library from tag: $LIB_FROM_TAG" >&2; exit 1 ;;
           esac
 
-          echo "lib_npm=$LIB_FROM_TAG"   >> $GITHUB_OUTPUT
-          echo "lib_project=$PROJECT"    >> $GITHUB_OUTPUT
-          echo "version=$VER_FROM_TAG"   >> $GITHUB_OUTPUT
+          echo "lib_scope=$LIB_FROM_TAG"   >> $GITHUB_OUTPUT
+          echo "lib_project=$PROJECT"      >> $GITHUB_OUTPUT
+          echo "lib_version=$VER_FROM_TAG" >> $GITHUB_OUTPUT
+          echo "Parsed: $LIB_FROM_TAG :: $PROJECT :: $VER_FROM_TAG"
 
-      - name: Build target lib (prod)
-        run: npx nx run ${{ steps.meta.outputs.lib_project }}:build:production
+      - name: Build from source (prod)
+        run: npx nx build ${{ steps.meta.outputs.lib_project }} --configuration=production
 
-      - name: Patch dist package.json version to match tag
+      - name: Ensure dist package.json version === tag version
         shell: bash
         run: |
           DIST_PKG="dist/libs/${{ steps.meta.outputs.lib_project }}/package.json"
-          TAG_VER="${{ steps.meta.outputs.version }}"
-          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.DIST_PKG,'utf8'));if(p.version!==process.env.TAG_VER){p.version=process.env.TAG_VER;fs.writeFileSync(process.env.DIST_PKG,JSON.stringify(p,null,2));console.log('Patched to',process.env.TAG_VER)}else{console.log('Version OK',p.version)}"
+          test -f "$DIST_PKG" || { echo "Missing $DIST_PKG"; exit 1; }
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.DIST_PKG,'utf8'));if(p.version!==process.env.TAG_VER){console.error('Version mismatch:',p.version,'!=',process.env.TAG_VER);process.exit(1)}else{console.log('Version OK',p.version)}" \
+            DIST_PKG="$DIST_PKG" TAG_VER="${{ steps.meta.outputs.lib_version }}"
 
-      - name: Ensure publishConfig & force public + provenance=false
+      - name: Force public publishConfig + keep provenance disabled
         shell: bash
         run: |
           DIST_PKG="dist/libs/${{ steps.meta.outputs.lib_project }}/package.json"
-          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.DIST_PKG,'utf8'));p.publishConfig=p.publishConfig||{};p.publishConfig.access='public';p.publishConfig.provenance=false;fs.writeFileSync(process.env.DIST_PKG,JSON.stringify(p,null,2));console.log('publishConfig=',p.publishConfig)"
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.DIST_PKG,'utf8'));p.publishConfig=p.publishConfig||{};p.publishConfig.access='public';p.publishConfig.provenance=false;fs.writeFileSync(process.env.DIST_PKG,JSON.stringify(p,null,2));console.log('publishConfig=',p.publishConfig)" \
+            DIST_PKG="$DIST_PKG"
 
-      - name: Publish to npm
+      - name: Publish to npm (org-scoped, public, provenance off)
         working-directory: dist/libs/${{ steps.meta.outputs.lib_project }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
