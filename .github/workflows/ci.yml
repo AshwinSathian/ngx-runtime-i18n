@@ -21,6 +21,9 @@ jobs:
       CI: true
       NX_DAEMON: false
       NX_SKIP_NX_CACHE: false
+      # hard-disable Nx Cloud in CI
+      NX_CLOUD: 'false'
+      NX_DISABLE_CLOUD: 'true'
 
     steps:
       - name: Checkout
@@ -36,8 +39,13 @@ jobs:
         run: |
           if [ -f package-lock.json ]; then npm ci --prefer-offline --no-audit --fund=false; else npm install --prefer-offline --no-audit --fund=false; fi
 
+      # In case Nx still picks up nxCloudId from nx.json, strip it before running
+      - name: Disable Nx Cloud via nx.json patch
+        run: |
+          node -e "const fs=require('fs');const p='./nx.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));if(j.nxCloudId){delete j.nxCloudId;fs.writeFileSync(p,JSON.stringify(j,null,2));console.log('Removed nxCloudId from nx.json');}else{console.log('nxCloudId not present');}"
+
       - name: Build libs (prod)
-        run: npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
+        run: npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production --skip-nx-cache=false
 
       - name: Test libs
-        run: npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular --configuration=ci --runInBand
+        run: npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular --configuration=ci --runInBand --skip-nx-cache=false
