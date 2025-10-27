@@ -36,10 +36,5 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "peerDependenciesMeta": {
-    "@ngx-runtime-i18n/core": {
-      "optional": false
-    }
   }
 }

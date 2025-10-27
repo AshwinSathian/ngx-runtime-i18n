@@ -3,5 +3,6 @@
   "dest": "../../dist/libs/runtime-i18n-angular",
   "lib": {
     "entryFile": "src/index.ts"
-  }
+  },
+  "allowedNonPeerDependencies": ["@ngx-runtime-i18n/core"]
 }
