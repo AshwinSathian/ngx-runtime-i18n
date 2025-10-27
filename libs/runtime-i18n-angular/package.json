@@ -1,14 +1,16 @@
 {
   "name": "@ngx-runtime-i18n/angular",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Angular bindings for @ngx-runtime-i18n (signals-first, SSR-safe)",
   "type": "module",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/core": ">=16 <21",
     "@angular/common": ">=16 <21",
-    "@angular/platform-browser": ">=16 <21",
-    "@ngx-runtime-i18n/core": "^1.0.0"
+    "@angular/core": ">=16 <21",
+    "@angular/platform-browser": ">=16 <21"
+  },
+  "dependencies": {
+    "@ngx-runtime-i18n/core": "^1.0.2"
   },
   "keywords": [
     "angular",
