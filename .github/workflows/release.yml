@@ -63,33 +63,40 @@ jobs:
       - name: Build from source (prod)
         run: npx nx build ${{ steps.meta.outputs.lib_project }} --configuration=production
 
-      - name: Ensure dist package.json version === tag version (jq)
+      - name: Sanitize dist package.json, enforce version & publishConfig
         shell: bash
         run: |
           set -euo pipefail
           DIST_PKG="dist/libs/${{ steps.meta.outputs.lib_project }}/package.json"
-          echo "Checking version in $DIST_PKG ..."
+          echo "Sanitizing $DIST_PKG ..."
           test -f "$DIST_PKG"
-          DIST_VER="$(jq -r '.version' "$DIST_PKG")"
+
           TAG_VER="${{ steps.meta.outputs.lib_version }}"
-          echo "dist version: $DIST_VER | tag version: $TAG_VER"
+          tmp="$(mktemp)"
+          # 1) Enforce version from tag
+          jq --arg v "$TAG_VER" '.version = $v' "$DIST_PKG" > "$tmp" && mv "$tmp" "$DIST_PKG"
+
+          # 2) Remove fields npm registry rejects on publish
+          tmp="$(mktemp)"
+          jq 'del(.deprecations, .deprecated, .publishConfig.deprecations)' "$DIST_PKG" > "$tmp" && mv "$tmp" "$DIST_PKG"
+
+          # 3) Ensure public access + provenance disabled (explicit)
+          tmp="$(mktemp)"
+          jq '
+            .publishConfig = (.publishConfig // {}) |
+            .publishConfig.access = "public" |
+            .publishConfig.provenance = false
+          ' "$DIST_PKG" > "$tmp" && mv "$tmp" "$DIST_PKG"
+
+          echo "Final manifest:"
+          cat "$DIST_PKG"
+
+          # 4) Double-check version equality
+          DIST_VER="$(jq -r '.version' "$DIST_PKG")"
           if [ "$DIST_VER" != "$TAG_VER" ]; then
             echo "Version mismatch: $DIST_VER != $TAG_VER" >&2
             exit 1
           fi
-
-      - name: Force public publishConfig + keep provenance disabled
-        shell: bash
-        run: |
-          set -euo pipefail
-          DIST_PKG="dist/libs/${{ steps.meta.outputs.lib_project }}/package.json"
-          echo "Patching publishConfig in $DIST_PKG ..."
-          test -f "$DIST_PKG"
-          tmp="$(mktemp)"
-          jq '.publishConfig = (.publishConfig // {}) | .publishConfig.access="public" | .publishConfig.provenance=false' "$DIST_PKG" > "$tmp"
-          mv "$tmp" "$DIST_PKG"
-          echo "publishConfig:"
-          jq '.publishConfig' "$DIST_PKG"
 
       - name: Publish to npm (org-scoped, public, provenance off)
         working-directory: dist/libs/${{ steps.meta.outputs.lib_project }}
