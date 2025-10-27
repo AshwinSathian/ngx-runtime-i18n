@@ -1,9 +1,23 @@
 {
   "name": "@ngx-runtime-i18n/core",
-  "version": "1.0.3",
+  "version": "1.0.2",
   "description": "Runtime i18n core with ICU-lite formatting",
   "type": "module",
   "sideEffects": false,
+  "keywords": [
+    "angular",
+    "i18n",
+    "internationalization",
+    "icu",
+    "runtime",
+    "ssr",
+    "signals"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AshwinSathian/ngx-runtime-i18n.git"
+  },
+  "license": "MIT",
   "exports": {
     ".": {
       "import": "./fesm2022/ngx-runtime-i18n-core.mjs"

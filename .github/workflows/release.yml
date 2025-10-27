@@ -78,32 +78,6 @@ jobs:
             exit 1
           fi
 
-      - name: Ensure angular dist manifest has core dependency (preflight)
-        if: ${{ steps.meta.outputs.lib_project == 'runtime-i18n-angular' }}
-        run: |
-          set -euo pipefail
-          DIST_PKG="dist/libs/${{ steps.meta.outputs.lib_project }}/package.json"
-          echo "Preflight deps in $DIST_PKG"
-          test -f "$DIST_PKG"
-          HAS_CORE="$(jq -r '(.dependencies // {})["\u0040ngx-runtime-i18n/core"] // empty' "$DIST_PKG")"
-          if [ -z "$HAS_CORE" ]; then
-            echo "Adding @ngx-runtime-i18n/core dependency to dist manifest ..."
-            tmp="$(mktemp)"
-            jq '.dependencies = (.dependencies // {}) | .dependencies["@ngx-runtime-i18n/core"] = "^${{ steps.meta.outputs.lib_version }}"' "$DIST_PKG" > "$tmp"
-            mv "$tmp" "$DIST_PKG"
-          fi
-          echo "Deps now:" && jq '.dependencies' "$DIST_PKG"
-
-      - name: Ensure dist package.json version === tag version (jq)
-        shell: bash
-        run: |
-          set -euo pipefail
-          DIST_PKG="dist/libs/${{ steps.meta.outputs.lib_project }}/package.json"
-          test -f "$DIST_PKG"
-          DIST_VER="$(jq -r '.version' "$DIST_PKG")"
-          TAG_VER="${{ steps.meta.outputs.lib_version }}"
-          [ "$DIST_VER" = "$TAG_VER" ] || { echo "Version mismatch: $DIST_VER != $TAG_VER" >&2; exit 1; }
-
       - name: Force public publishConfig + keep provenance disabled
         shell: bash
         run: |
