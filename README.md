@@ -124,7 +124,7 @@ Pair these with Angular `effect()`/`computed()` to display diagnostics in dev to
 - Configure `RuntimeI18nConfig.fallbacks?: string[]`. Lookup order is **active language → each fallback (in order) → `defaultLang`**. Missing keys then flow to `onMissingKey`.
 - `RuntimeI18nOptions.cacheMode` controls persistence:
   - `none` — keep only the active fallback chain in memory
-  - `memory` *(default)* — cache every loaded language for the session
+  - `memory` _(default)_ — cache every loaded language for the session
   - `storage` — hydrate catalogs from `localStorage`, then refresh them in the background (`cacheKeyPrefix` controls storage keys)
 - Server environments never touch `localStorage`; hydration stays deterministic when you seed TransferState.
 
