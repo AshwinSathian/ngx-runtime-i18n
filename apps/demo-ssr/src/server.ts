@@ -58,6 +58,7 @@ function readCatalogSafe(lang: string): Record<string, unknown> | undefined {
 
 function buildSnapshot(req: Request): I18nSnapshot {
   const supported = ['en', 'hi', 'de'];
+  const fallbacks = ['de'];
   const lang = pickLang(req, supported, 'en');
 
   // Always include default catalog if available; include active lang if different
@@ -68,6 +69,12 @@ function buildSnapshot(req: Request): I18nSnapshot {
   if (lang !== 'en') {
     const cur = readCatalogSafe(lang);
     if (cur) catalogs[lang] = cur;
+  }
+
+  for (const fb of fallbacks) {
+    if (fb === 'en' || fb === lang) continue;
+    const snap = readCatalogSafe(fb);
+    if (snap) catalogs[fb] = snap;
   }
 
   return { lang, catalogs };

@@ -27,6 +27,10 @@ export interface RuntimeI18nOptions {
   autoDetect?: boolean;
   /** LocalStorage key to persist the chosen language. Set falsy/empty to disable. (default: '@ngx-runtime-i18n:lang') */
   storageKey?: string | null;
+  /** Catalog caching strategy: 'none' (keep active chain only), 'memory' (default), or 'storage' (persist to localStorage). */
+  cacheMode?: 'none' | 'memory' | 'storage';
+  /** localStorage prefix used when `cacheMode === 'storage'`. */
+  cacheKeyPrefix?: string;
   /**
    * When navigator is a regional tag (e.g., en-GB) but only base exists (en), prefer base if exact not supported.
    * (default: true)

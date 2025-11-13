@@ -3,6 +3,9 @@
     "user": "Hello, {name}!"
   },
   "cart": {
-    "items": "{count, plural, one {1 item} other {# items}}"
+    "items": "{count, plural, =0 {No items yet} one {1 item} other {# items}}"
+  },
+  "legacy": {
+    "title": "Docs live in English when untranslated"
   }
 }

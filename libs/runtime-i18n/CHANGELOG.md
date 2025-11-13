@@ -1,3 +1,14 @@
+## 1.1.0 (2025-11-14)
+
+### 🚀 Features
+
+- expose optional `fallbacks[]` on `RuntimeI18nConfig` for ordered catalog resolution
+- document the new API + fallback behavior in the core README
+
+### ❤️ Thank You
+
+- AshwinSathian
+
 ## 0.2.0 (2025-10-25)
 
 ### 🚀 Features

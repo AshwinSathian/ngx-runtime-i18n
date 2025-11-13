@@ -21,6 +21,7 @@ export const appConfig: ApplicationConfig = {
       {
         defaultLang: 'en',
         supported: ['en', 'hi', 'de'],
+        fallbacks: ['de'],
         fetchCatalog: (lang: string, signal?: AbortSignal) =>
           fetch(`/i18n/${lang}.json`, { signal }).then((r) => {
             if (!r.ok) throw new Error(`Failed to load catalog: ${lang}`);
@@ -37,6 +38,8 @@ export const appConfig: ApplicationConfig = {
         options: {
           autoDetect: true,
           storageKey: '@ngx-runtime-i18n:lang',
+           cacheMode: 'storage',
+           cacheKeyPrefix: '@ngx-runtime-i18n:catalog:',
           preferNavigatorBase: true,
         },
       }

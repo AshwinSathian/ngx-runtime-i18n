@@ -1,3 +1,24 @@
+## 1.1.0 (2025-11-14)
+
+### 🚀 Features
+
+- add configurable fallback chains with per-key resolution in `I18nService`
+- introduce catalog caching modes (`none`, `memory`, `storage`) with storage hydration + revalidation
+- expose DX helpers (`getCurrentLang`, `getLoadedLangs`, `hasKey`) on `I18nService`
+- enhance demos + docs to reflect the current Angular API and SSR flow
+
+### 🩹 Fixes
+
+- ensure missing-key warnings respect the entire fallback chain
+
+### 🧱 Updated Dependencies
+
+- Updated runtime-i18n to 1.1.0
+
+### ❤️ Thank You
+
+- AshwinSathian
+
 ## 0.2.0 (2025-10-25)
 
 ### 🚀 Features

@@ -46,14 +46,25 @@ export function provideRuntimeI18n(
   const stateKeyPrefix = opts?.stateKeyPrefix ?? '@ngx-runtime-i18n/core';
 
   // Ensure a default onMissingKey (echo key) for consistent behavior
+  const dedupedFallbacks = Array.from(
+    new Set(
+      (cfg.fallbacks ?? [])
+        .map((lang) => lang?.trim())
+        .filter((lang): lang is string => !!lang && lang !== cfg.defaultLang)
+    )
+  );
+
   const normalizedCfg: RuntimeI18nConfig = {
     ...cfg,
+    fallbacks: dedupedFallbacks.length ? dedupedFallbacks : undefined,
     onMissingKey: cfg.onMissingKey ?? ((k) => k),
   };
 
   const normalizedOpts: RuntimeI18nOptions = {
     autoDetect: opts?.options?.autoDetect ?? true,
     storageKey: opts?.options?.storageKey ?? '@ngx-runtime-i18n:lang',
+    cacheMode: opts?.options?.cacheMode ?? 'memory',
+    cacheKeyPrefix: opts?.options?.cacheKeyPrefix ?? '@ngx-runtime-i18n:catalog:',
     preferNavigatorBase: opts?.options?.preferNavigatorBase ?? true,
   };
 

@@ -7,6 +7,7 @@ Lean, SSR‑safe Angular wrapper around `@ngx-runtime-i18n/core`.
 - SSR‑aware: TransferState snapshot on the server, hydration‑safe on the client
 - Cancellation‑aware language switching (rapid toggles won’t corrupt state)
 - Lazy Angular **locale data** per language to power pipes (`DatePipe`, `DecimalPipe`, ...)
+- Configurable fallback chains with in-memory or localStorage catalog caching
 
 Peer support: `@angular/* >=16 <21`
 
@@ -54,6 +55,7 @@ export const appConfig: ApplicationConfig = {
       {
         defaultLang: 'en',
         supported: ['en', 'hi', 'de'],
+        fallbacks: ['de'],
         fetchCatalog: (lang, signal) =>
           fetch(`/i18n/${lang}.json`, { signal }).then((r) => {
             if (!r.ok) throw new Error(`Failed to load catalog: ${lang}`);
@@ -70,6 +72,8 @@ export const appConfig: ApplicationConfig = {
         options: {
           autoDetect: true,
           storageKey: '@ngx-runtime-i18n:lang',
+          cacheMode: 'storage',
+          cacheKeyPrefix: '@ngx-runtime-i18n:catalog:',
           preferNavigatorBase: true,
         },
       }
@@ -109,7 +113,30 @@ export class SomeCmp {
 
 ---
 
+## DX helpers
+
+`I18nService` exposes introspection helpers for debugging and tooling:
+
+- `getCurrentLang()` — synchronous snapshot of the active language
+- `getLoadedLangs()` — languages currently cached in memory
+- `hasKey(key, lang = current)` — check if a catalog contains a key without formatting it
+
+Use them inside `effect()`/`computed()` if you want templates to react when catalogs load.
+
+---
+
+## Fallback chains & caching
+
+- Configure `RuntimeI18nConfig.fallbacks?: string[]` to build a per-key lookup chain. Resolution order is: **active language → each configured fallback → `defaultLang`**. Values are de‑duplicated automatically.
+- Catalog caching lives in `RuntimeI18nOptions.cacheMode`:  
+  `none` keeps only the active fallback chain in memory, `memory` (default) caches every loaded language for the session, `storage` hydrates from `localStorage` and revalidates in the background (`cacheKeyPrefix` controls the key).
+- LocalStorage access only runs in the browser, so SSR stays safe by default.
+
+---
+
 ## SSR + Hydration
+
+See `apps/demo-ssr` in this repo for a complete Express + Angular SSR demo (including TransferState seeding and catalog fallbacks).
 
 On the server, **seed TransferState** with a minimal bootstrap snapshot to avoid refetch/flicker on the client.
 
@@ -150,6 +177,7 @@ Use the same `provideRuntimeI18n(...)` on both server and client app bootstraps.
 ### `provideRuntimeI18n(config, { localeLoaders?, options?, stateKeyPrefix? })`
 
 - **`config.defaultLang: string`** — fallback language.
+- **`config.fallbacks?: string[]`** — ordered fallback catalog chain before the default.
 - **`config.supported: string[]`** — allowed languages (authoritative list).
 - **`config.fetchCatalog(lang, signal?)`** — async catalog loader (should be idempotent; honor `AbortSignal`).
 - **`config.onMissingKey?: (key) => string`** — transform missing keys (dev‑only suggestion: return the key).
@@ -157,6 +185,8 @@ Use the same `provideRuntimeI18n(...)` on both server and client app bootstraps.
 **`localeLoaders`** — map of language to dynamic imports of Angular locale data (enables localized pipes).  
 **`options.autoDetect`** — on first boot: persisted → navigator → default.  
 **`options.storageKey`** — localStorage key for the chosen language (falsy to disable).  
+**`options.cacheMode`** — `'none' | 'memory' | 'storage'` for catalog caching strategy (default: `'memory'`).  
+**`options.cacheKeyPrefix`** — storage prefix when `cacheMode === 'storage'`.  
 **`options.preferNavigatorBase`** — map `en-GB` → `en` if `en` is in `supported`.  
 **`stateKeyPrefix`** — advanced: customize TransferState keys if you embed multiple i18n instances.
 

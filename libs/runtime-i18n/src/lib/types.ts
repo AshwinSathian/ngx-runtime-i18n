@@ -23,6 +23,12 @@ export interface RuntimeI18nConfig {
   defaultLang: string;
 
   /**
+   * Optional ordered list of fallback languages (per key).
+   * Missing keys resolve using: active → fallbacks → defaultLang.
+   */
+  fallbacks?: string[];
+
+  /**
    * The set of allowed languages. `setLang()` will guard against values not in this list.
    * Use BCP-47 tags (e.g., "en", "en-GB", "hi").
    */

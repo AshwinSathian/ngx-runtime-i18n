@@ -1,6 +1,12 @@
 <div class="app">
   <h1>{{ 'hello.user' | i18n:{ name: username } }}</h1>
   <p>{{ 'cart.items' | i18n:{ count: items().length } }}</p>
+  <p class="hint">
+    Fallback chain → <strong>{{ 'legacy.title' | i18n }}</strong>
+  </p>
+  <p class="hint small">
+    missing in active catalog? {{ missingLegacy() ? 'yes' : 'no' }}
+  </p>
   <p style="margin-top: 12px">MISSING → {{ 'not.exists' | i18n }}</p>
 
   <div class="toolbar" role="group" aria-label="Language switcher">
@@ -32,5 +38,8 @@
   <div class="status">
     lang={{ i18n.lang() }} | ready={{ i18n.ready() }} | items={{ items().length
     }}
+  </div>
+  <div class="status">
+    loaded={{ loaded().join(', ') || '∅' }} | cache=storage (localStorage)
   </div>
 </div>

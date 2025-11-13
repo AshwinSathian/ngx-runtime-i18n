@@ -3,6 +3,9 @@
     "user": "Hallo, {name}!"
   },
   "cart": {
-    "items": "{count, plural, one {1 Artikel} other {# Artikel}}"
+    "items": "{count, plural, =0 {Keine Artikel} one {1 Artikel} other {# Artikel}}"
+  },
+  "legacy": {
+    "title": "Altinhalt aus dem Fallback (DE)"
   }
 }

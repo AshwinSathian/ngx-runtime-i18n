@@ -19,14 +19,23 @@ describe('I18nService', () => {
             items:
               '{count, plural, =0 {No items} one {1 item} other {# items}}',
           },
+          defaultsOnly: 'Default only',
+        } as Catalog,
+      ],
+      [
+        'de',
+        {
+          hello: { user: 'Hallo, {name}!' },
+          germanOnly: 'Nur Deutsch',
         } as Catalog,
       ],
     ]);
-    const seededLocales = new Set<string>(['en', 'hi']);
+    const seededLocales = new Set<string>(['en', 'hi', 'de']);
 
     const cfg: RuntimeI18nConfig = {
       defaultLang: 'en',
-      supported: ['en', 'hi'],
+      supported: ['en', 'hi', 'de'],
+      fallbacks: ['de'],
       // Not used in these tests (we avoid network); still required by type.
       fetchCatalog: async () => ({}),
       onMissingKey: (k) => k,
@@ -73,5 +82,25 @@ describe('I18nService', () => {
 
     const s = service.t('hello.user', { name: 'Ashwin' });
     expect(s).toBe('नमस्ते, Ashwin!');
+  });
+
+  it('falls back through configured chain before defaultLang', async () => {
+    const catalogs = TestBed.inject(RUNTIME_I18N_CATALOGS);
+    catalogs.set('hi', {
+      hello: { user: 'नमस्ते, {name}!' },
+    });
+
+    await service.setLang('hi');
+    expect(service.t('germanOnly')).toBe('Nur Deutsch'); // via fallback "de"
+    expect(service.t('defaultsOnly')).toBe('Default only'); // via default "en"
+  });
+
+  it('exposes DX helper methods', () => {
+    expect(service.getCurrentLang()).toBe('en');
+    const loaded = service.getLoadedLangs();
+    expect(loaded).toEqual(expect.arrayContaining(['en', 'de']));
+    expect(service.hasKey('hello.user')).toBe(true);
+    expect(service.hasKey('germanOnly')).toBe(false);
+    expect(service.hasKey('germanOnly', 'de')).toBe(true);
   });
 });

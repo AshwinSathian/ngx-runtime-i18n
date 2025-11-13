@@ -48,13 +48,15 @@ export class I18nService {
 
   private _lang = signal<string>(this.cfg.defaultLang);
   private _ready = signal<boolean>(false);
+  private catalogFetches = new Map<
+    string,
+    { controller?: AbortController; promise: Promise<void> }
+  >();
 
   /** Currently active language (signal). */
   readonly lang: Signal<string> = this._lang.asReadonly();
   /** True once the initial locale + catalog are available. */
   readonly ready: Signal<boolean> = this._ready.asReadonly();
-
-  private abort?: AbortController;
 
   // Track missing keys warned in dev mode (dedup once per key)
   private _warnedMissing = DEV ? new Set<string>() : undefined;
@@ -97,10 +99,6 @@ export class I18nService {
           ? navigator.language || (navigator as any).userLanguage || null
           : null;
 
-      // Compute best candidate only if SSR didn't supply lang and no persisted value
-      if (!this.ts || !this.ts.hasKey) {
-        // if TransferState existed, initial already set above
-      }
       if (initial === this.cfg.defaultLang && candidateFromStorage) {
         const resolved = resolveSupported(
           this.cfg.supported,
@@ -119,13 +117,19 @@ export class I18nService {
 
       this._lang.set(initial);
 
+      const keep = new Set(this.getFallbackChain(initial));
+
       await this.ensureLocale(initial);
       await this.ensureCatalog(initial);
+      this.cancelFetchesOutside(keep);
+      if (this.options.cacheMode === 'none') {
+        this.pruneCatalogCache(keep);
+      }
       this._ready.set(true);
       sub.unsubscribe();
     });
 
-    this.destroyRef.onDestroy(() => this.abort?.abort());
+    this.destroyRef.onDestroy(() => this.abortAllFetches());
   }
 
   /**
@@ -133,20 +137,45 @@ export class I18nService {
    * Falls back to {@link RuntimeI18nConfig.onMissingKey} or the raw key.
    */
   t(key: string, params?: Record<string, unknown>): string {
-    const lang = this._lang();
-    const cat =
-      this.catalogs.get(lang) ?? this.catalogs.get(this.cfg.defaultLang) ?? {};
+    const chain = this.getFallbackChain(this._lang());
+    for (const candidate of chain) {
+      const catalog = this.catalogs.get(candidate);
+      if (!catalog || !hasKey(catalog, key)) continue;
+      return formatIcu(
+        candidate,
+        key,
+        catalog,
+        params,
+        this.cfg.onMissingKey
+      );
+    }
 
-    // Dev-only, de-duplicated missing key warning
-    if (DEV && !hasKey(cat, key) && !this._warnedMissing?.has(key)) {
+    if (DEV && !this._warnedMissing?.has(key)) {
       console.warn(
-        `[ngx-runtime-i18n] Missing key "${key}" for lang "${lang}". ` +
-          `Provide it in your catalog or customize onMissingKey().`
+        `[ngx-runtime-i18n] Missing key "${key}" across fallback chain [${chain.join(
+          ' → '
+        )}]. Provide it in a catalog or customize onMissingKey().`
       );
       this._warnedMissing?.add(key);
     }
 
-    return formatIcu(lang, key, cat, params, this.cfg.onMissingKey);
+    return this.cfg.onMissingKey ? this.cfg.onMissingKey(key) : key;
+  }
+
+  /** Expose the current language without subscribing to the signal. */
+  getCurrentLang(): string {
+    return this._lang();
+  }
+
+  /** Returns the set of languages with catalogs cached in memory. */
+  getLoadedLangs(): string[] {
+    return Array.from(this.catalogs.keys());
+  }
+
+  /** Whether a key exists in a loaded catalog (defaults to current lang). */
+  hasKey(key: string, lang = this._lang()): boolean {
+    const catalog = this.catalogs.get(lang);
+    return hasKey(catalog, key);
   }
 
   /**
@@ -158,8 +187,13 @@ export class I18nService {
     if (lang === this._lang()) return;
     const resolved = resolveSupported(this.cfg.supported, lang, true);
     if (!resolved) throw new Error(`Unsupported lang: ${lang}`);
+    const chain = new Set(this.getFallbackChain(resolved));
     await this.ensureLocale(resolved);
     await this.ensureCatalog(resolved);
+    this.cancelFetchesOutside(chain);
+    if (this.options.cacheMode === 'none') {
+      this.pruneCatalogCache(chain);
+    }
     this._lang.set(resolved);
     if (isBrowser && this.options.storageKey) {
       try {
@@ -180,39 +214,152 @@ export class I18nService {
     this.locales.add(base);
   }
 
-  private async ensureCatalog(lang: string) {
+  private async ensureCatalog(
+    lang: string,
+    includeFallbacks = true,
+    visited = new Set<string>()
+  ) {
+    if (visited.has(lang)) return;
+    visited.add(lang);
+
+    await this.loadCatalog(lang);
+
+    if (!includeFallbacks) return;
+
+    const fallbacks = this.getFallbackChain(lang).slice(1);
+    for (const fb of fallbacks) {
+      await this.ensureCatalog(fb, false, visited);
+    }
+  }
+
+  private async loadCatalog(lang: string): Promise<void> {
     if (this.catalogs.has(lang)) return;
 
-    // Hydration snapshot
-    const k = makeStateKey<Catalog>(`${this.stateKeyPrefix}:catalog:${lang}`);
-    if (this.ts?.hasKey(k)) {
-      const cat = this.ts.get(k, {});
+    const stateKey = makeStateKey<Catalog>(
+      `${this.stateKeyPrefix}:catalog:${lang}`
+    );
+    if (this.ts?.hasKey(stateKey)) {
+      const cat = this.ts.get(stateKey, {});
       this.catalogs.set(lang, cat);
-      this.ts.remove(k);
+      this.ts.remove(stateKey);
       return;
     }
 
     if (!isBrowser) return;
 
-    this.abort?.abort();
-    const ctrl = new AbortController();
-    this.abort = ctrl;
-    try {
-      const fetched = await this.cfg.fetchCatalog(lang, ctrl.signal);
-      if (this.abort !== ctrl) return; // stale
-      const base = this.catalogs.get(this.cfg.defaultLang) ?? {};
-      this.catalogs.set(lang, deepMerge(base, fetched));
-    } finally {
-      if (this.abort === ctrl) this.abort = undefined;
+    const cacheMode = this.options.cacheMode ?? 'memory';
+    if (
+      cacheMode === 'storage' &&
+      this.hydrateCatalogFromStorage(
+        lang,
+        this.options.cacheKeyPrefix ?? '@ngx-runtime-i18n:catalog:'
+      )
+    ) {
+      void this.fetchCatalogFromNetwork(lang, true);
+      return;
+    }
+
+    await this.fetchCatalogFromNetwork(lang);
+  }
+
+  private async fetchCatalogFromNetwork(
+    lang: string,
+    background = false
+  ): Promise<void> {
+    if (!isBrowser) return;
+
+    const existing = this.catalogFetches.get(lang);
+    if (existing) {
+      if (background) {
+        existing.promise.catch(() => {});
+        return;
+      }
+      await existing.promise;
+      return;
+    }
+
+    const controller = new AbortController();
+    const promise = (async () => {
+      try {
+        const fetched = await this.cfg.fetchCatalog(lang, controller.signal);
+        if (controller.signal.aborted) return;
+        this.catalogs.set(lang, fetched);
+        if ((this.options.cacheMode ?? 'memory') === 'storage') {
+          writeCatalogToStorage(
+            this.options.cacheKeyPrefix ?? '@ngx-runtime-i18n:catalog:',
+            lang,
+            fetched
+          );
+        }
+      } finally {
+        const current = this.catalogFetches.get(lang);
+        if (current?.controller === controller) {
+          this.catalogFetches.delete(lang);
+        }
+      }
+    })();
+
+    this.catalogFetches.set(lang, { controller, promise });
+
+    if (background) {
+      promise.catch(() => {});
+      return;
+    }
+    await promise;
+  }
+
+  private hydrateCatalogFromStorage(lang: string, prefix: string): boolean {
+    if (!isBrowser) return false;
+    const catalog = readCatalogFromStorage(prefix, lang);
+    if (!catalog) return false;
+    this.catalogs.set(lang, catalog);
+    return true;
+  }
+
+  private getFallbackChain(lang: string): string[] {
+    const chain: string[] = [];
+    const seen = new Set<string>();
+    const push = (candidate: string | null) => {
+      if (!candidate) return;
+      const resolved = resolveSupported(
+        this.cfg.supported,
+        candidate,
+        true
+      );
+      if (!resolved || seen.has(resolved)) return;
+      seen.add(resolved);
+      chain.push(resolved);
+    };
+    push(lang);
+    for (const fallback of this.cfg.fallbacks ?? []) {
+      push(fallback);
+    }
+    push(this.cfg.defaultLang);
+    return chain;
+  }
+
+  private pruneCatalogCache(keep: Set<string>) {
+    if ((this.options.cacheMode ?? 'memory') !== 'none') return;
+    for (const lang of Array.from(this.catalogs.keys())) {
+      if (!keep.has(lang)) this.catalogs.delete(lang);
     }
   }
-}
 
-function deepMerge(a: any, b: any): any {
-  if (typeof a !== 'object' || typeof b !== 'object' || !a || !b) return b ?? a;
-  const out: any = Array.isArray(a) ? [...a] : { ...a };
-  for (const k of Object.keys(b)) out[k] = deepMerge(a[k], b[k]);
-  return out;
+  private cancelFetchesOutside(keep: Set<string>) {
+    for (const [lang, entry] of this.catalogFetches.entries()) {
+      if (!keep.has(lang)) {
+        entry.controller?.abort();
+        this.catalogFetches.delete(lang);
+      }
+    }
+  }
+
+  private abortAllFetches() {
+    for (const entry of this.catalogFetches.values()) {
+      entry.controller?.abort();
+    }
+    this.catalogFetches.clear();
+  }
 }
 
 function hasKey(obj: unknown, path: string): boolean {
@@ -249,5 +396,27 @@ function safeLocalStorageGet(key: string): string | null {
     return v || null;
   } catch {
     return null;
+  }
+}
+
+function readCatalogFromStorage(
+  prefix: string,
+  lang: string
+): Catalog | null {
+  try {
+    const raw = localStorage.getItem(`${prefix}${lang}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as Catalog) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCatalogToStorage(prefix: string, lang: string, cat: Catalog) {
+  try {
+    localStorage.setItem(`${prefix}${lang}`, JSON.stringify(cat));
+  } catch {
+    // ignore quota / SSR errors
   }
 }

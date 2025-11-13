@@ -2,8 +2,7 @@ import { DestroyRef, Injectable, Injector, inject } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Catalog, formatIcu } from '@ngx-runtime-i18n/core';
-import { RUNTIME_I18N_CATALOGS, RUNTIME_I18N_CONFIG } from './tokens';
+import { RUNTIME_I18N_CONFIG } from './tokens';
 import { I18nService } from './i18n.service';
 
 /**
@@ -15,7 +14,6 @@ export class I18nCompatService {
   private injector = inject(Injector);
   private destroyRef = inject(DestroyRef); // ✅ pass DestroyRef to takeUntilDestroyed
   private cfg = inject(RUNTIME_I18N_CONFIG);
-  private catalogs = inject(RUNTIME_I18N_CATALOGS);
   private signals = inject(I18nService);
 
   private _lang$ = new BehaviorSubject<string>(this.cfg.defaultLang);
@@ -38,10 +36,7 @@ export class I18nCompatService {
   }
 
   t(key: string, params?: Record<string, unknown>): string {
-    const lang = this._lang$.value;
-    const cat =
-      this.catalogs.get(lang) ?? this.catalogs.get(this.cfg.defaultLang) ?? {};
-    return formatIcu(lang, key, cat as Catalog, params, this.cfg.onMissingKey);
+    return this.signals.t(key, params);
   }
 
   async setLang(lang: string): Promise<void> {

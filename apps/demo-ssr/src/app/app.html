@@ -21,6 +21,10 @@
       <h1>{{ 'hello.user' | i18n:{ name: 'Ashwin' } }}</h1>
 
       <p class="muted">{{ 'cart.items' | i18n:{ count: items() } }}</p>
+      <p class="muted">
+        Fallback → <strong>{{ 'legacy.title' | i18n }}</strong>
+        <small>(missing? {{ missingLegacy() ? 'yes' : 'no' }})</small>
+      </p>
 
       <div class="row">
         <button type="button" class="btn" (click)="dec()">−</button>
@@ -33,6 +37,7 @@
       <div>ready: <b>{{ ready() }}</b></div>
       <div>lang: <b>{{ lang() }}</b></div>
       <div>items: <b>{{ items() }}</b></div>
+      <div>loaded: <b>{{ loaded().join(', ') || '∅' }}</b></div>
     </section>
   </main>
 
