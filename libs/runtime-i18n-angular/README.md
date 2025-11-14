@@ -115,22 +115,35 @@ export class SomeCmp {
 
 ## DX helpers
 
-`I18nService` exposes introspection helpers for debugging and tooling:
+`I18nService` exposes synchronous helpers that pair nicely with Angular signals during development:
 
-- `getCurrentLang()` — synchronous snapshot of the active language
-- `getLoadedLangs()` — languages currently cached in memory
-- `hasKey(key, lang = current)` — check if a catalog contains a key without formatting it
+- `getCurrentLang()` — snapshot the current language without subscribing to `lang()`.
+- `getLoadedLangs()` — inspect which catalogs are resident in memory.
+- `hasKey(key, lang = current)` — check catalog coverage without formatting.
 
-Use them inside `effect()`/`computed()` if you want templates to react when catalogs load.
+```ts
+const lang = i18n.getCurrentLang();
+const loaded = i18n.getLoadedLangs();
+const missingLegacy = !i18n.hasKey('legacy.title');
+```
+
+Render these in diagnostics panels or dev tools to confirm when catalogs hydrate.
 
 ---
 
-## Fallback chains & caching
+## Fallback chains
 
-- Configure `RuntimeI18nConfig.fallbacks?: string[]` to build a per-key lookup chain. Resolution order is: **active language → each configured fallback → `defaultLang`**. Values are de‑duplicated automatically.
-- Catalog caching lives in `RuntimeI18nOptions.cacheMode`:  
-  `none` keeps only the active fallback chain in memory, `memory` (default) caches every loaded language for the session, `storage` hydrates from `localStorage` and revalidates in the background (`cacheKeyPrefix` controls the key).
-- LocalStorage access only runs in the browser, so SSR stays safe by default.
+- Configure `RuntimeI18nConfig.fallbacks?: string[]` to build an ordered lookup. Resolution always runs as **active language → each configured fallback → `defaultLang`**.
+- Values are deduped automatically and trimmed against `supported`, so accidental repeats or unsupported tags are ignored.
+- Missing keys emit a single dev-mode warning and then flow through `onMissingKey()`.
+
+## Catalog caching
+
+- `RuntimeI18nOptions.cacheMode` chooses your strategy:
+  - `none` keeps only the active fallback chain in memory (good for memory-constrained apps).
+  - `memory` (default) caches every loaded catalog for the current session.
+  - `storage` hydrates catalogs from `localStorage`, serves them instantly, and refreshes them in the background. Use `cacheKeyPrefix` to isolate multiple apps.
+- LocalStorage I/O never runs on the server, so SSR stays deterministic when you seed TransferState.
 
 ---
 

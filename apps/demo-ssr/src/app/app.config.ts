@@ -38,8 +38,8 @@ export const appConfig: ApplicationConfig = {
         options: {
           autoDetect: true,
           storageKey: '@ngx-runtime-i18n:lang',
-           cacheMode: 'storage',
-           cacheKeyPrefix: '@ngx-runtime-i18n:catalog:',
+          cacheMode: 'storage',
+          cacheKeyPrefix: '@ngx-runtime-i18n:catalog:',
           preferNavigatorBase: true,
         },
       }

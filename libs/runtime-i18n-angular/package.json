@@ -1,6 +1,6 @@
 {
   "name": "@ngx-runtime-i18n/angular",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Angular bindings for @ngx-runtime-i18n (signals-first, SSR-safe)",
   "type": "module",
   "sideEffects": false,
@@ -10,7 +10,7 @@
     "@angular/platform-browser": ">=16 <21"
   },
   "dependencies": {
-    "@ngx-runtime-i18n/core": "^1.1.0"
+    "@ngx-runtime-i18n/core": "^1.2.0"
   },
   "keywords": [
     "angular",

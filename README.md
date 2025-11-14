@@ -115,7 +115,13 @@ Need RxJS? Inject `I18nCompatService` for `lang$`, `ready$`, and `t()` without s
 - `getLoadedLangs()` — list of catalogs currently cached in memory
 - `hasKey(key, lang = current)` — determine if a key exists before rendering
 
-Pair these with Angular `effect()`/`computed()` to display diagnostics in dev tools.
+Pair these with Angular `effect()`/`computed()` to display diagnostics in dev tools:
+
+```ts
+const lang = this.i18n.getCurrentLang();
+const loaded = this.i18n.getLoadedLangs();
+const missingLegacy = !this.i18n.hasKey('legacy.title');
+```
 
 ---
 

@@ -285,11 +285,10 @@ export class I18nService {
         if (controller.signal.aborted) return;
         this.catalogs.set(lang, fetched);
         if ((this.options.cacheMode ?? 'memory') === 'storage') {
-          writeCatalogToStorage(
-            this.options.cacheKeyPrefix ?? '@ngx-runtime-i18n:catalog:',
-            lang,
-            fetched
-          );
+          const prefix =
+            this.options.cacheKeyPrefix ?? '@ngx-runtime-i18n:catalog:';
+          const cacheKey = `${prefix}${lang}`;
+          safeLocalStorageSet(cacheKey, this.catalogs.get(lang) ?? fetched);
         }
       } finally {
         const current = this.catalogFetches.get(lang);
@@ -310,10 +309,19 @@ export class I18nService {
 
   private hydrateCatalogFromStorage(lang: string, prefix: string): boolean {
     if (!isBrowser) return false;
-    const catalog = readCatalogFromStorage(prefix, lang);
-    if (!catalog) return false;
-    this.catalogs.set(lang, catalog);
-    return true;
+    const cacheKey = `${prefix}${lang}`;
+    const raw = safeLocalStorageGet(cacheKey);
+    if (!raw) return false;
+    try {
+      const parsed = JSON.parse(raw) as Catalog;
+      if (parsed && typeof parsed === 'object') {
+        this.catalogs.set(lang, parsed);
+        return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
   }
 
   private getFallbackChain(lang: string): string[] {
@@ -399,23 +407,9 @@ function safeLocalStorageGet(key: string): string | null {
   }
 }
 
-function readCatalogFromStorage(
-  prefix: string,
-  lang: string
-): Catalog | null {
+function safeLocalStorageSet(key: string, value: unknown): void {
   try {
-    const raw = localStorage.getItem(`${prefix}${lang}`);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? (parsed as Catalog) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeCatalogToStorage(prefix: string, lang: string, cat: Catalog) {
-  try {
-    localStorage.setItem(`${prefix}${lang}`, JSON.stringify(cat));
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // ignore quota / SSR errors
   }

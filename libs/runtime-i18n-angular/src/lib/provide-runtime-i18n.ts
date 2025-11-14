@@ -54,6 +54,8 @@ export function provideRuntimeI18n(
     )
   );
 
+  const providedOptions = opts?.options;
+
   const normalizedCfg: RuntimeI18nConfig = {
     ...cfg,
     fallbacks: dedupedFallbacks.length ? dedupedFallbacks : undefined,
@@ -61,11 +63,15 @@ export function provideRuntimeI18n(
   };
 
   const normalizedOpts: RuntimeI18nOptions = {
-    autoDetect: opts?.options?.autoDetect ?? true,
-    storageKey: opts?.options?.storageKey ?? '@ngx-runtime-i18n:lang',
-    cacheMode: opts?.options?.cacheMode ?? 'memory',
-    cacheKeyPrefix: opts?.options?.cacheKeyPrefix ?? '@ngx-runtime-i18n:catalog:',
-    preferNavigatorBase: opts?.options?.preferNavigatorBase ?? true,
+    autoDetect: providedOptions?.autoDetect ?? true,
+    storageKey:
+      providedOptions?.storageKey === undefined
+        ? '@ngx-runtime-i18n:lang'
+        : providedOptions.storageKey,
+    cacheMode: providedOptions?.cacheMode ?? 'memory',
+    cacheKeyPrefix:
+      providedOptions?.cacheKeyPrefix ?? '@ngx-runtime-i18n:catalog:',
+    preferNavigatorBase: providedOptions?.preferNavigatorBase ?? true,
   };
 
   return [
