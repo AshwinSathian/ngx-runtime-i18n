@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, Injector, inject } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RUNTIME_I18N_CONFIG } from './tokens';
 import { I18nService } from './i18n.service';
@@ -45,6 +45,6 @@ export class I18nCompatService {
 
   /** Helper for legacy components: await readiness before first render. */
   async whenReady(): Promise<void> {
-    await firstValueFrom(this.ready$.pipe(map(Boolean)));
+    await firstValueFrom(this.ready$.pipe(filter(Boolean)));
   }
 }
