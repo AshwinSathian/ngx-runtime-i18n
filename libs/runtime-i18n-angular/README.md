@@ -129,6 +129,37 @@ const missingLegacy = !i18n.hasKey('legacy.title');
 
 Render these in diagnostics panels or dev tools to confirm when catalogs hydrate.
 
+## Switching & preloading
+
+`I18nService` now exposes two additional signals:
+
+- `switching()` becomes `true` as soon as you call `setLang()` with a new language, so you can show a spinner or disable controls.
+- `activeSwitchLang()` mirrors the requested language (`null` otherwise), letting you render “Switching to fr…” helper text.
+
+It also adds preload helpers that warm the same loaders used by `setLang()` without mutating the active language:
+
+- `preloadLang(lang)` for a single language (includes fallback catalogs).
+- `preloadLangs(langs)` for parallel prefetches (good when the user’s likely languages are known up front).
+- `preloadFallbackChain(lang?)` to hydrate a language and its configured fallbacks (defaults to the active lang if none is passed).
+
+```ts
+const i18n = inject(I18nService);
+
+// Disable the switcher while the next catalog downloads.
+readonly onSwitch = (lang: string) => {
+  if (i18n.switching()) return;
+  i18n.setLang(lang);
+};
+
+// Warm caches for a user who usually toggles between German and Hindi.
+await i18n.preloadLangs(['de', 'hi']);
+
+// Preload the active route’s fallback chain before navigation.
+await i18n.preloadFallbackChain('fr');
+```
+
+Use this to preload catalogs during login, before showing a heavy route, or while waiting for other async work; the currently active language and UI stay stable.
+
 ---
 
 ## Fallback chains

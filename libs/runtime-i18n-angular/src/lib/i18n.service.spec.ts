@@ -121,6 +121,99 @@ describe('I18nService', () => {
     expect(s).toBe('नमस्ते, Ashwin!');
   });
 
+  it('reports switching state while loading a new language', async () => {
+    let resolveFetch: (catalog: Catalog) => void;
+    const fetchPromise = new Promise<Catalog>((resolve) => {
+      resolveFetch = resolve;
+    });
+    await setup({
+      config: {
+        fetchCatalog: () => fetchPromise,
+      },
+    });
+
+    const pending = service.setLang('hi');
+    expect(service.switching()).toBe(true);
+    expect(service.activeSwitchLang()).toBe('hi');
+
+    resolveFetch!({
+      hello: { user: 'नमस्ते, {name}!' },
+    } as Catalog);
+
+    await pending;
+    expect(service.switching()).toBe(false);
+    expect(service.activeSwitchLang()).toBeNull();
+  });
+
+  it('resets switching when a language fails to load', async () => {
+    await setup({
+      config: {
+        fetchCatalog: async () => {
+          throw new Error('network');
+        },
+      },
+    });
+
+    await expect(service.setLang('hi')).rejects.toThrow('network');
+
+    expect(service.switching()).toBe(false);
+    expect(service.activeSwitchLang()).toBeNull();
+  });
+
+  it('preloads a language without mutating the active lang', async () => {
+    await setup();
+    fetchCatalogMock.mockClear();
+
+    await service.preloadLang('hi');
+
+    expect(service.lang()).toBe('en');
+    expect(fetchCatalogMock).toHaveBeenCalledWith(
+      'hi',
+      expect.any(AbortSignal)
+    );
+  });
+
+  it('preloads multiple languages', async () => {
+    const baseCatalogs = createDefaultCatalogs();
+    const initialCatalogs = new Map<string, Catalog>([
+      ['en', requiredCatalog(baseCatalogs, 'en')],
+    ]);
+    await setup({ catalogs: initialCatalogs });
+    fetchCatalogMock.mockClear();
+
+    await service.preloadLangs(['hi', 'de']);
+
+    expect(fetchCatalogMock).toHaveBeenCalledWith(
+      'hi',
+      expect.any(AbortSignal)
+    );
+    expect(fetchCatalogMock).toHaveBeenCalledWith(
+      'de',
+      expect.any(AbortSignal)
+    );
+  });
+
+  it('preloads the fallback chain for a requested lang', async () => {
+    const baseCatalogs = createDefaultCatalogs();
+    const initialCatalogs = new Map<string, Catalog>([
+      ['en', requiredCatalog(baseCatalogs, 'en')],
+    ]);
+    await setup({ catalogs: initialCatalogs });
+    fetchCatalogMock.mockClear();
+
+    await service.preloadFallbackChain('hi');
+
+    expect(fetchCatalogMock).toHaveBeenCalledWith(
+      'hi',
+      expect.any(AbortSignal)
+    );
+    expect(fetchCatalogMock).toHaveBeenCalledWith(
+      'de',
+      expect.any(AbortSignal)
+    );
+    expect(service.lang()).toBe('en');
+  });
+
   it('exposes DX helper methods', async () => {
     await service.setLang('en');
     expect(service.getCurrentLang()).toBe('en');

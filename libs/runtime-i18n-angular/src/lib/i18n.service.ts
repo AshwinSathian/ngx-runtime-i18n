@@ -57,6 +57,8 @@ export class I18nService {
 
   private _lang = signal<string>(this.cfg.defaultLang);
   private _ready = signal<boolean>(false);
+  private _switching = signal(false);
+  private _activeSwitchLang = signal<string | null>(null);
   private catalogFetches = new Map<
     string,
     { controller?: AbortController; promise: Promise<void> }
@@ -66,6 +68,11 @@ export class I18nService {
   readonly lang: Signal<string> = this._lang.asReadonly();
   /** True once the initial locale + catalog are available. */
   readonly ready: Signal<boolean> = this._ready.asReadonly();
+  /** True while a language switch is in progress. */
+  readonly switching: Signal<boolean> = this._switching.asReadonly();
+  /** Requested language that is currently being applied. */
+  readonly activeSwitchLang: Signal<string | null> =
+    this._activeSwitchLang.asReadonly();
 
   // Track missing keys warned in dev mode (dedup once per key)
   private _warnedMissing = DEV ? new Set<string>() : undefined;
@@ -193,22 +200,47 @@ export class I18nService {
    */
   async setLang(lang: string): Promise<void> {
     if (lang === this._lang()) return;
-    const resolved = resolveSupported(this.cfg.supported, lang, true);
-    if (!resolved) throw new Error(`Unsupported lang: ${lang}`);
+    const resolved = this.resolveLangOrThrow(lang);
     const chain = new Set(this.getFallbackChain(resolved));
+    this._switching.set(true);
+    this._activeSwitchLang.set(resolved);
+    try {
+      await this.ensureLocale(resolved);
+      await this.ensureCatalog(resolved);
+      this.cancelFetchesOutside(chain);
+      if (this.options.cacheMode === 'none') {
+        this.pruneCatalogCache(chain);
+      }
+      this._lang.set(resolved);
+      if (this.isBrowserPlatform && this.options.storageKey) {
+        try {
+          localStorage.setItem(this.options.storageKey, resolved);
+        } catch (error) {
+          void error;
+        }
+      }
+    } finally {
+      this._switching.set(false);
+      this._activeSwitchLang.set(null);
+    }
+  }
+
+  async preloadLang(lang: string): Promise<void> {
+    const resolved = this.resolveLangOrThrow(lang);
     await this.ensureLocale(resolved);
     await this.ensureCatalog(resolved);
-    this.cancelFetchesOutside(chain);
-    if (this.options.cacheMode === 'none') {
-      this.pruneCatalogCache(chain);
-    }
-    this._lang.set(resolved);
-    if (this.isBrowserPlatform && this.options.storageKey) {
-      try {
-        localStorage.setItem(this.options.storageKey, resolved);
-      } catch (error) {
-        void error;
-      }
+  }
+
+  async preloadLangs(langs: string[]): Promise<void> {
+    await Promise.all(langs.map((lang) => this.preloadLang(lang)));
+  }
+
+  async preloadFallbackChain(lang?: string): Promise<void> {
+    const base = lang ?? this._lang();
+    const chain = this.getFallbackChain(base);
+    for (const candidate of chain) {
+      await this.ensureLocale(candidate);
+      await this.ensureCatalog(candidate, false);
     }
   }
 
@@ -270,6 +302,12 @@ export class I18nService {
     }
 
     await this.fetchCatalogFromNetwork(lang);
+  }
+
+  private resolveLangOrThrow(lang: string): string {
+    const resolved = resolveSupported(this.cfg.supported, lang, true);
+    if (!resolved) throw new Error(`Unsupported lang: ${lang}`);
+    return resolved;
   }
 
   private async fetchCatalogFromNetwork(
