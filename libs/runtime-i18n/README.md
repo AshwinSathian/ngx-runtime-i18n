@@ -75,6 +75,23 @@ formatIcu('en', 'cart.items', catalog, { count: 2 }); // "2 items"
 
 ---
 
+## ICU-lite support
+
+### Supported
+
+- Basic `{param}` interpolation (tokens may include dots and hyphens for nested data).
+- `plural` blocks with `one`, `other`, and `=n` selectors plus `#` replacement.
+- Nested placeholders inside plural option bodies (balanced braces are retained).
+
+### Not supported
+
+- `select` or other ICU argument types beyond `plural`.
+- Full ICU-style escaping, quoting, or nested plural/select grammar.
+- Plural blocks inside other plural blocks (depth beyond one level is skipped).
+- Escaping braces beyond the literals above; unmatched braces must not resemble valid tokens.
+
+---
+
 ## License
 
 MIT

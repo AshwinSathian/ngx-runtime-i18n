@@ -5,6 +5,9 @@
  */
 import type { Catalog } from './types';
 
+// Tokens may include dots or hyphens so nested object keys like "user.name" are practical.
+const INTERPOLATION_PATTERN = /\{([a-zA-Z_][a-zA-Z0-9_.-]*)\}/g;
+
 export function formatIcu(
   _lang: string,
   key: string,
@@ -33,7 +36,8 @@ export function formatIcu(
   });
 
   // 2) Simple {name} interpolation AFTER plural branch selection.
-  out = out.replace(/\{(\w+)\}/g, (_m: string, p1: string) =>
+  INTERPOLATION_PATTERN.lastIndex = 0;
+  out = out.replace(INTERPOLATION_PATTERN, (_m: string, p1: string) =>
     params[p1] != null ? String(params[p1]) : `{${p1}}`
   );
 
@@ -103,17 +107,57 @@ function replacePluralBlocks(
   return out;
 }
 
-/** Parse a simple ICU plural clause body: e.g. `one {A} other {B} =0 {C}` */
+/**
+ * Parse a simple ICU plural clause body: e.g. `one {A} other {B} =0 {C}`.
+ * Only literal selectors and balanced brace bodies are supported; nested plural/select forms are intentionally skipped.
+ */
 function parsePluralBody(body: string): Record<string, string> {
   const map: Record<string, string> = {};
-  // Allow balanced inner {...} in the value (non-greedy over balanced chunks is complex;
-  // we approximate by accepting any sequence without unbalanced braces at top level).
-  const re = /(one|other|=\d+)\s*\{((?:[^{}]|\{[^{}]*\})*)\}/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(body)) !== null) {
-    const key = m[1] as string;
-    const val = (m[2] ?? '') as string;
-    map[key] = val;
+  let i = 0;
+
+  while (i < body.length) {
+    // Skip whitespace between selectors.
+    while (i < body.length && /\s/.test(body.charAt(i))) {
+      i++;
+    }
+    if (i >= body.length) {
+      break;
+    }
+
+    const keyStart = i;
+    while (i < body.length && !/\s|\{/.test(body.charAt(i))) {
+      i++;
+    }
+    if (keyStart === i) {
+      break;
+    }
+    const key = body.slice(keyStart, i);
+
+    // Skip whitespace before the opening brace.
+    while (i < body.length && /\s/.test(body.charAt(i))) {
+      i++;
+    }
+    if (body.charAt(i) !== '{') {
+      break;
+    }
+    i++; // Consume '{'
+
+    const valueStart = i;
+    let depth = 1;
+    // Consume until the matching closing brace; supports nested braces for placeholders.
+    while (i < body.length && depth > 0) {
+      const ch = body.charAt(i++);
+      if (ch === '{') depth++;
+      else if (ch === '}') depth--;
+    }
+    if (depth !== 0) {
+      // Unbalanced braces (malformed plural); bail out to avoid infinite loops.
+      break;
+    }
+
+    const valueEnd = i - 1;
+    map[key] = body.slice(valueStart, valueEnd);
   }
+
   return map;
 }
