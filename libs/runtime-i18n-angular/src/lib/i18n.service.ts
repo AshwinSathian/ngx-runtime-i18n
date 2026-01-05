@@ -20,6 +20,10 @@ import {
   RUNTIME_I18N_STATE_KEY,
   RuntimeI18nOptions,
 } from './tokens';
+import {
+  getRuntimeI18nBootstrapStateKey,
+  getRuntimeI18nCatalogStateKey,
+} from './transfer-state-keys';
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -78,7 +82,7 @@ export class I18nService {
         const key = makeStateKey<{
           lang: string;
           catalogs: Record<string, Catalog>;
-        }>(`${this.stateKeyPrefix}:bootstrap`);
+        }>(getRuntimeI18nBootstrapStateKey(this.stateKeyPrefix));
         if (this.ts.hasKey(key)) {
           const snap = this.ts.get(key, {
             lang: this.cfg.defaultLang,
@@ -242,7 +246,7 @@ export class I18nService {
     if (this.catalogs.has(lang)) return;
 
     const stateKey = makeStateKey<Catalog>(
-      `${this.stateKeyPrefix}:catalog:${lang}`
+      getRuntimeI18nCatalogStateKey(this.stateKeyPrefix, lang)
     );
     if (this.ts?.hasKey(stateKey)) {
       const cat = this.ts.get(stateKey, {});

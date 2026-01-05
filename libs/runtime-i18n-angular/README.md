@@ -151,35 +151,19 @@ Render these in diagnostics panels or dev tools to confirm when catalogs hydrate
 
 See `apps/demo-ssr` in this repo for a complete Express + Angular SSR demo (including TransferState seeding and catalog fallbacks).
 
-On the server, **seed TransferState** with a minimal bootstrap snapshot to avoid refetch/flicker on the client.
+On the server, use the exported helper to seed TransferState with the same keys that `provideRuntimeI18n()` reads on the client:
 
 ```ts
 // i18n.server.providers.ts
-import { ENVIRONMENT_INITIALIZER, Provider, TransferState, makeStateKey, inject } from '@angular/core';
+import { Provider } from '@angular/core';
+import { RuntimeI18nSsrSnapshot, provideRuntimeI18nSsr } from '@ngx-runtime-i18n/angular';
 
-export interface I18nSnapshot {
-  lang: string;
-  catalogs: Record<string, unknown>;
-}
-
-export function i18nServerProviders(snapshot: I18nSnapshot): Provider[] {
-  const PREFIX = '@ngx-runtime-i18n';
-  return [
-    {
-      provide: ENVIRONMENT_INITIALIZER,
-      multi: true,
-      useFactory: () => () => {
-        const ts = inject(TransferState);
-        const bootKey = makeStateKey<I18nSnapshot>(`${PREFIX}:bootstrap`);
-        ts.set(bootKey, snapshot);
-        for (const [lang, c] of Object.entries(snapshot.catalogs)) {
-          ts.set(makeStateKey(`${PREFIX}:catalog:${lang}`), c);
-        }
-      },
-    },
-  ];
+export function i18nServerProviders(snapshot: RuntimeI18nSsrSnapshot): Provider[] {
+  return provideRuntimeI18nSsr(snapshot);
 }
 ```
+
+`RuntimeI18nSsrSnapshot.bootstrap` holds the active language catalog and `catalogs` can optionally seed additional locales. Everything defaults to the same prefix as `provideRuntimeI18n()` (`@ngx-runtime-i18n/core`), but pass `stateKeyPrefix` to both helpers when you override it.
 
 Use the same `provideRuntimeI18n(...)` on both server and client app bootstraps. The wrapper reads TransferState on the client first and only fetches missing catalogs as needed.
 

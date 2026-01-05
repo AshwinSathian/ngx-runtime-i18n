@@ -15,6 +15,10 @@ import {
   RUNTIME_I18N_STATE_KEY,
   RuntimeI18nOptions,
 } from './tokens';
+import {
+  DEFAULT_RUNTIME_I18N_STATE_KEY_PREFIX,
+  getRuntimeI18nBootstrapStateKey,
+} from './transfer-state-keys';
 
 /**
  * Register runtime i18n in an Angular app.
@@ -43,7 +47,8 @@ export function provideRuntimeI18n(
 ): Provider[] {
   const catalogs = new Map<string, Catalog>();
   const locales = new Set<string>();
-  const stateKeyPrefix = opts?.stateKeyPrefix ?? '@ngx-runtime-i18n/core';
+  const stateKeyPrefix =
+    opts?.stateKeyPrefix ?? DEFAULT_RUNTIME_I18N_STATE_KEY_PREFIX;
 
   // Ensure a default onMissingKey (echo key) for consistent behavior
   const dedupedFallbacks = Array.from(
@@ -95,7 +100,7 @@ export function provideRuntimeI18n(
         const key = makeStateKey<{
           lang: string;
           catalogs: Record<string, Catalog>;
-        }>(`${stateKeyPrefix}:bootstrap`);
+        }>(getRuntimeI18nBootstrapStateKey(stateKeyPrefix));
         if (ts.hasKey(key)) {
           const snap = ts.get(key, {
             lang: normalizedCfg.defaultLang,

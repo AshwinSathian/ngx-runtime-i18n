@@ -4,6 +4,7 @@ import {
   isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
+import type { Catalog } from '@ngx-runtime-i18n/core';
 import type { Request } from 'express';
 import express from 'express';
 import { readFileSync } from 'node:fs';
@@ -46,7 +47,7 @@ function pickLang(
   return fallback;
 }
 
-function readCatalogSafe(lang: string): Record<string, unknown> | undefined {
+function readCatalogSafe(lang: string): Catalog | undefined {
   try {
     const p = join(i18nDir, `${lang}.json`);
     const json = readFileSync(p, 'utf8');
@@ -62,7 +63,7 @@ function buildSnapshot(req: Request): I18nSnapshot {
   const lang = pickLang(req, supported, 'en');
 
   // Always include default catalog if available; include active lang if different
-  const catalogs: Record<string, unknown> = {};
+  const catalogs: Record<string, Catalog> = {};
   const en = readCatalogSafe('en');
   if (en) catalogs['en'] = en;
 
@@ -77,7 +78,8 @@ function buildSnapshot(req: Request): I18nSnapshot {
     if (snap) catalogs[fb] = snap;
   }
 
-  return { lang, catalogs };
+  const bootstrap = catalogs[lang] ?? catalogs['en'] ?? ({} as Catalog);
+  return { lang, catalogs, bootstrap };
 }
 
 /**

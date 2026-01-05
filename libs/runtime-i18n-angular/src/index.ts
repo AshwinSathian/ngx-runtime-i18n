@@ -5,6 +5,7 @@
  */
 
 export { provideRuntimeI18n } from './lib/provide-runtime-i18n';
+export * from './lib/ssr/provide-runtime-i18n-ssr';
 export { I18nService } from './lib/i18n.service';
 export { I18nPipe } from './lib/i18n.pipe';
 
