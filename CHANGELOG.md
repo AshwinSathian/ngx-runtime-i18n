@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.0 (2026-01-05)
+
+- Bumped `@ngx-runtime-i18n/*` packages to v2.0.0.
+- Broadened Angular peer dependency range to `>=16 <22`.
+- No runtime behavior changes in this release commit; follow-up epics address bug fixes and enhancements.
+
 ## 1.2.0 (2025-11-14)
 
 - Added configurable fallback chains via `RuntimeI18nConfig.fallbacks` with ordered resolution inside `I18nService.t()`.

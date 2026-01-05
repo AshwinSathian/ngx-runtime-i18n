@@ -13,6 +13,10 @@ describe('I18nService', () => {
   let service: I18nService;
   let fetchCatalogMock: jest.Mock<Promise<Catalog>, [string, AbortSignal?]>;
   const defaultLocales = new Set<string>(['en', 'hi', 'de']);
+  type I18nServiceInternals = {
+    options: RuntimeI18nOptions;
+    fetchCatalogFromNetwork(lang: string): Promise<void>;
+  };
 
   interface SetupOptions {
     catalogs?: Map<string, Catalog>;
@@ -26,7 +30,11 @@ describe('I18nService', () => {
     const seededCatalogs = opts.catalogs ?? createDefaultCatalogs();
     const fetchImpl =
       opts.config?.fetchCatalog ??
-      (async (_lang?: string, _signal?: AbortSignal) => opts.fetchResult ?? {});
+      (async (_lang?: string, _signal?: AbortSignal) => {
+        void _lang;
+        void _signal;
+        return opts.fetchResult ?? {};
+      });
     fetchCatalogMock = jest.fn<Promise<Catalog>, [string, AbortSignal?]>(
       (lang, signal) => fetchImpl(lang, signal)
     );
@@ -88,7 +96,9 @@ describe('I18nService', () => {
   });
 
   it('warns once when a key is missing throughout the chain', () => {
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warnSpy = jest
+      .spyOn(console, 'warn')
+      .mockImplementation(() => undefined);
     const result = service.t('totally.missing');
     expect(result).toBe('totally.missing');
     expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -114,7 +124,9 @@ describe('I18nService', () => {
   it('exposes DX helper methods', async () => {
     await service.setLang('en');
     expect(service.getCurrentLang()).toBe('en');
-    expect(service.getLoadedLangs()).toEqual(expect.arrayContaining(['en', 'de']));
+    expect(service.getLoadedLangs()).toEqual(
+      expect.arrayContaining(['en', 'de'])
+    );
     expect(service.hasKey('hello.user')).toBe(true);
     expect(service.hasKey('does.not.exist')).toBe(false);
   });
@@ -132,17 +144,20 @@ describe('I18nService', () => {
       return { hello: { user: 'नमस्ते, {name}!' } } satisfies Catalog;
     };
 
+    const baseCatalogs = createDefaultCatalogs();
+
     await setup({
       catalogs: new Map<string, Catalog>([
-        ['en', createDefaultCatalogs().get('en')!],
-        ['de', createDefaultCatalogs().get('de')!],
+        ['en', requiredCatalog(baseCatalogs, 'en')],
+        ['de', requiredCatalog(baseCatalogs, 'de')],
       ]),
       options: { cacheMode: 'storage', cacheKeyPrefix: '@cache:' },
       config: { fetchCatalog: slowFetch },
     });
 
-    expect((service as any).options.cacheMode).toBe('storage');
-    expect((service as any).options.cacheKeyPrefix).toBe('@cache:');
+    const internals = service as unknown as I18nServiceInternals;
+    expect(internals.options.cacheMode).toBe('storage');
+    expect(internals.options.cacheKeyPrefix).toBe('@cache:');
 
     await service.setLang('hi');
     expect(service.t('hello.user', { name: 'Ashwin' })).toBe(
@@ -153,7 +168,7 @@ describe('I18nService', () => {
       expect.any(AbortSignal)
     );
 
-    await (service as any).fetchCatalogFromNetwork('hi');
+    await internals.fetchCatalogFromNetwork('hi');
     expect(storage.getItem('@cache:hi')).toBe(
       JSON.stringify({ hello: { user: 'नमस्ते, {name}!' } })
     );
@@ -173,6 +188,14 @@ describe('I18nService', () => {
   );
 });
 
+function requiredCatalog(map: Map<string, Catalog>, key: string): Catalog {
+  const catalog = map.get(key);
+  if (!catalog) {
+    throw new Error(`Missing default catalog for "${key}"`);
+  }
+  return catalog;
+}
+
 function createDefaultCatalogs(): Map<string, Catalog> {
   return new Map<string, Catalog>([
     [
@@ -180,8 +203,7 @@ function createDefaultCatalogs(): Map<string, Catalog> {
       {
         hello: { user: 'Hello, {name}!' },
         cart: {
-          items:
-            '{count, plural, =0 {No items} one {1 item} other {# items}}',
+          items: '{count, plural, =0 {No items} one {1 item} other {# items}}',
         },
         defaultsOnly: 'Default only',
       } as Catalog,

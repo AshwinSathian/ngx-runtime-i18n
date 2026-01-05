@@ -1,6 +1,6 @@
 {
   "name": "@ngx-runtime-i18n/source",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "license": "MIT",
   "private": true,
   "workspaces": [
@@ -27,8 +27,8 @@
     "@angular/platform-server": "~20.3.0",
     "@angular/router": "~20.3.0",
     "@angular/ssr": "~20.3.0",
-    "@ngx-runtime-i18n/angular": "^1.2.0",
-    "@ngx-runtime-i18n/core": "^1.2.0",
+    "@ngx-runtime-i18n/angular": "^2.0.0",
+    "@ngx-runtime-i18n/core": "^2.0.0",
     "express": "^4.21.2",
     "rxjs": "~7.8.0",
     "zone.js": "~0.15.0"

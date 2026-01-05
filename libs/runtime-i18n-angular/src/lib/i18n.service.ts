@@ -4,11 +4,13 @@ import {
   inject,
   Injectable,
   makeStateKey,
+  PLATFORM_ID,
   Signal,
   signal,
   TransferState,
 } from '@angular/core';
 import { Catalog, formatIcu } from '@ngx-runtime-i18n/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
   RUNTIME_I18N_CATALOGS,
   RUNTIME_I18N_CONFIG,
@@ -45,6 +47,9 @@ export class I18nService {
   private stateKeyPrefix = inject(RUNTIME_I18N_STATE_KEY);
   private localeLoaders = inject(RUNTIME_I18N_LOCALE_LOADERS);
   private options = inject<RuntimeI18nOptions>(RUNTIME_I18N_OPTIONS);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowserPlatform =
+    isBrowser && isPlatformBrowser(this.platformId);
 
   private _lang = signal<string>(this.cfg.defaultLang);
   private _ready = signal<boolean>(false);
@@ -89,15 +94,20 @@ export class I18nService {
 
       // 2) If no SSR lang snapshot, try persisted user choice
       const candidateFromStorage =
-        isBrowser && this.options.storageKey
+        this.isBrowserPlatform && this.options.storageKey
           ? safeLocalStorageGet(this.options.storageKey)
           : null;
 
       // 3) Else browser auto-detect (navigator.language), with fallback chain
-      const candidateFromNavigator =
-        isBrowser && this.options.autoDetect
-          ? navigator.language || (navigator as any).userLanguage || null
-          : null;
+      const candidateFromNavigator = (() => {
+        if (!this.isBrowserPlatform || !this.options.autoDetect) return null;
+        const browserNavigator = navigator as Navigator & {
+          userLanguage?: string;
+        };
+        return (
+          browserNavigator.language || browserNavigator.userLanguage || null
+        );
+      })();
 
       if (initial === this.cfg.defaultLang && candidateFromStorage) {
         const resolved = resolveSupported(
@@ -141,13 +151,7 @@ export class I18nService {
     for (const candidate of chain) {
       const catalog = this.catalogs.get(candidate);
       if (!catalog || !hasKey(catalog, key)) continue;
-      return formatIcu(
-        candidate,
-        key,
-        catalog,
-        params,
-        this.cfg.onMissingKey
-      );
+      return formatIcu(candidate, key, catalog, params, this.cfg.onMissingKey);
     }
 
     if (DEV && !this._warnedMissing?.has(key)) {
@@ -195,10 +199,12 @@ export class I18nService {
       this.pruneCatalogCache(chain);
     }
     this._lang.set(resolved);
-    if (isBrowser && this.options.storageKey) {
+    if (this.isBrowserPlatform && this.options.storageKey) {
       try {
         localStorage.setItem(this.options.storageKey, resolved);
-      } catch {}
+      } catch (error) {
+        void error;
+      }
     }
   }
 
@@ -207,7 +213,7 @@ export class I18nService {
   private async ensureLocale(lang: string) {
     const base = lang.toLowerCase().split('-')[0];
     if (this.locales.has(base)) return;
-    if (isBrowser) {
+    if (this.isBrowserPlatform) {
       const loader = this.localeLoaders[base];
       if (loader) await loader();
     }
@@ -245,7 +251,7 @@ export class I18nService {
       return;
     }
 
-    if (!isBrowser) return;
+    if (!this.isBrowserPlatform) return;
 
     const cacheMode = this.options.cacheMode ?? 'memory';
     if (
@@ -266,12 +272,12 @@ export class I18nService {
     lang: string,
     background = false
   ): Promise<void> {
-    if (!isBrowser) return;
+    if (!this.isBrowserPlatform) return;
 
     const existing = this.catalogFetches.get(lang);
     if (existing) {
       if (background) {
-        existing.promise.catch(() => {});
+        existing.promise.catch(() => void 0);
         return;
       }
       await existing.promise;
@@ -301,14 +307,14 @@ export class I18nService {
     this.catalogFetches.set(lang, { controller, promise });
 
     if (background) {
-      promise.catch(() => {});
+      promise.catch(() => void 0);
       return;
     }
     await promise;
   }
 
   private hydrateCatalogFromStorage(lang: string, prefix: string): boolean {
-    if (!isBrowser) return false;
+    if (!this.isBrowserPlatform) return false;
     const cacheKey = `${prefix}${lang}`;
     const raw = safeLocalStorageGet(cacheKey);
     if (!raw) return false;
@@ -329,11 +335,7 @@ export class I18nService {
     const seen = new Set<string>();
     const push = (candidate: string | null) => {
       if (!candidate) return;
-      const resolved = resolveSupported(
-        this.cfg.supported,
-        candidate,
-        true
-      );
+      const resolved = resolveSupported(this.cfg.supported, candidate, true);
       if (!resolved || seen.has(resolved)) return;
       seen.add(resolved);
       chain.push(resolved);
@@ -372,10 +374,10 @@ export class I18nService {
 
 function hasKey(obj: unknown, path: string): boolean {
   if (!obj || typeof obj !== 'object') return false;
-  let cur: any = obj;
+  let cur: unknown = obj;
   for (const p of path.split('.')) {
     if (cur == null || typeof cur !== 'object' || !(p in cur)) return false;
-    cur = cur[p];
+    cur = (cur as Record<string, unknown>)[p];
   }
   return true;
 }
