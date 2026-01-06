@@ -2,9 +2,56 @@
 
 ## 2.0.0 (2026-01-05)
 
-- Bumped `@ngx-runtime-i18n/*` packages to v2.0.0.
-- Broadened Angular peer dependency range to `>=16 <22`.
-- No runtime behavior changes in this release commit; follow-up epics address bug fixes and enhancements.
+### 🚀 Major Release Highlights
+
+This release marks a **major evolution** of `ngx-runtime-i18n`, with improved SSR correctness, better developer experience, stronger ICU-lite guarantees, and the introduction of an optional UI-library adapter package.
+
+### ✨ New Features
+
+#### **First-class SSR support**
+
+- Added an **official SSR provider API** for Angular, removing the need for demo-only or copy-pasted server logic.
+- Fixed TransferState hydration by ensuring **SSR seeding and client consumption share a single, consistent key strategy**.
+- Updated SSR demo and documentation to use the exported SSR helper.
+
+#### **Language switching UX improvements**
+
+- Introduced an explicit **language switching/loading signal** in the Angular service, enabling UIs to react during runtime language changes.
+- Added **preload APIs** to warm language and catalog data without mutating the active language (useful for route prefetching and profile/settings screens).
+
+#### **New PrimeNG integration package**
+
+- Added **`@ngx-runtime-i18n/primeng`**, an optional adapter that:
+
+  - Reacts to runtime language changes
+  - Applies translations via `PrimeNGConfig`
+  - Supports sync or async translation resolution
+  - Remains fully decoupled from core and Angular packages
+
+- No PrimeNG dependency leakage into existing packages.
+
+### 🐞 Bug Fixes
+
+- Fixed `I18nCompatService.whenReady()` resolving prematurely by correcting RxJS readiness handling.
+- Eliminated SSR hydration mismatches caused by inconsistent TransferState key prefixes.=
+
+### 🧩 ICU-lite Improvements
+
+- Expanded interpolation token support to include common patterns such as dotted and hyphenated keys (e.g. `{user.name}`, `{user-name}`).
+- Hardened plural parsing to safely handle nested placeholders within plural option bodies.
+- Added clearer documentation and tests to explicitly define **supported vs unsupported ICU features**, preserving the intended “ICU-lite” scope.
+
+### 📦 Package & Ecosystem Updates
+
+- Bumped all `@ngx-runtime-i18n/*` packages to **v2.0.0**.
+- Broadened Angular peer dependency support to **`>=16 <22`**.
+- Added comprehensive tests across new APIs to prevent regressions.
+- Improved documentation across packages to reflect new capabilities and integration options.
+
+### ⚠️ Notes
+
+- This is a **non-breaking major release** in terms of runtime behavior; the major version reflects API surface growth, SSR guarantees, and ecosystem expansion.
+- No full ICU runtime is introduced; advanced ICU features such as `select` remain intentionally out of scope.
 
 ## 1.2.0 (2025-11-14)
 
