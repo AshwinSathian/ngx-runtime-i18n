@@ -5,9 +5,9 @@
   "type": "module",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/core": ">=16 <22",
+    "@angular/core": ">=16 <21",
     "@ngx-runtime-i18n/angular": "^2.0.0",
-    "primeng": ">=17 <24"
+    "primeng": ">=17 <20.4.0"
   },
   "keywords": [
     "primeng",
