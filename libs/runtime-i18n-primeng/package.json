@@ -1,0 +1,35 @@
+{
+  "name": "@ngx-runtime-i18n/primeng",
+  "version": "2.0.0",
+  "description": "PrimeNG adapter for @ngx-runtime-i18n/angular",
+  "type": "module",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@angular/core": ">=16 <22",
+    "@ngx-runtime-i18n/angular": "^2.0.0",
+    "primeng": ">=17 <24"
+  },
+  "keywords": [
+    "primeng",
+    "angular",
+    "i18n",
+    "translations"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AshwinSathian/ngx-runtime-i18n.git"
+  },
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": "./fesm2022/ngx-runtime-i18n-primeng.mjs"
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": false
+  }
+}

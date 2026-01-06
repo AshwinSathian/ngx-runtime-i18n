@@ -164,6 +164,7 @@ Catalog JSON lives under `apps/demo*/public/i18n/<lang>.json`.
 | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
 | [`@ngx-runtime-i18n/core`](libs/runtime-i18n/README.md)            | Framework-agnostic primitives (ICU-lite formatter, shared types). |
 | [`@ngx-runtime-i18n/angular`](libs/runtime-i18n-angular/README.md) | Angular wrapper (signals, SSR-safe service, pipes).               |
+| [`@ngx-runtime-i18n/primeng`](libs/runtime-i18n-primeng/README.md) | Optional PrimeNG adapter that mirrors runtime language changes.   |
 
 ---
 
@@ -171,6 +172,7 @@ Catalog JSON lives under `apps/demo*/public/i18n/<lang>.json`.
 
 - [Angular package README](libs/runtime-i18n-angular/README.md)
 - [Core package README](libs/runtime-i18n/README.md)
+- [PrimeNG adapter README](libs/runtime-i18n-primeng/README.md)
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
 

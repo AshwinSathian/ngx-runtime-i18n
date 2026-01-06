@@ -8,13 +8,15 @@
     "libs/*"
   ],
   "scripts": {
-    "build:libs": "nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production --parallel",
-    "test": "nx run-many -t test -p=runtime-i18n,runtime-i18n-angular",
-    "ci": "nx run-many -t build,test -p=runtime-i18n,runtime-i18n-angular --configuration=production",
+    "build:libs": "nx run-many -t build -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-primeng --configuration=production --parallel",
+    "test": "nx run-many -t test -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-primeng",
+    "ci": "nx run-many -t build,test -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-primeng --configuration=production",
     "pack:core": "cd dist/libs/runtime-i18n && npm pack",
     "pack:angular": "cd dist/libs/runtime-i18n-angular && npm pack",
+    "pack:primeng": "cd dist/libs/runtime-i18n-primeng && npm pack",
     "publish:core:dry": "cd dist/libs/runtime-i18n && npm publish --dry-run",
-    "publish:angular:dry": "cd dist/libs/runtime-i18n-angular && npm publish --dry-run"
+    "publish:angular:dry": "cd dist/libs/runtime-i18n-angular && npm publish --dry-run",
+    "publish:primeng:dry": "cd dist/libs/runtime-i18n-primeng && npm publish --dry-run"
   },
   "dependencies": {
     "@angular-devkit/build-angular": "~20.3.0",

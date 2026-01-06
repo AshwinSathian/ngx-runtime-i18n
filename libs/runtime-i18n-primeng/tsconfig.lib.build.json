@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "paths": {
+      "@ngx-runtime-i18n/angular": [
+        "dist/libs/runtime-i18n-angular/index.d.ts"
+      ],
+      "primeng/api": ["libs/runtime-i18n-primeng/types/primeng-api.d.ts"]
+    }
+  }
+}
