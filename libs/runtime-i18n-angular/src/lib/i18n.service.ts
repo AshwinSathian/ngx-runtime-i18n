@@ -158,6 +158,13 @@ export class I18nService {
     });
 
     this.destroyRef.onDestroy(() => this.abortAllFetches());
+
+    // Dev-only: connect DevTools bridge
+    if (typeof ngDevMode !== 'undefined' && ngDevMode) {
+      import('./devtools/i18n-devtools').then(({ I18nDevtools }) => {
+        new I18nDevtools(this).connect();
+      });
+    }
   }
 
   /**
