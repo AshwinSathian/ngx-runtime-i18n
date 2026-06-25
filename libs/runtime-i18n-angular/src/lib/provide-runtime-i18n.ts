@@ -5,13 +5,15 @@ import {
   Provider,
   TransferState,
 } from '@angular/core';
-import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
+import { getLocalePluralCase, Plural } from '@angular/common';
+import type { Catalog, PluralCategory, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
 import {
   RUNTIME_I18N_CATALOGS,
   RUNTIME_I18N_CONFIG,
   RUNTIME_I18N_LOCALE_LOADERS,
   RUNTIME_I18N_LOCALES,
   RUNTIME_I18N_OPTIONS,
+  RUNTIME_I18N_PLURAL_RESOLVER,
   RUNTIME_I18N_STATE_KEY,
   RuntimeI18nOptions,
 } from './tokens';
@@ -89,6 +91,26 @@ export function provideRuntimeI18n(
       useValue: opts?.localeLoaders ?? {},
     },
     { provide: RUNTIME_I18N_OPTIONS, useValue: normalizedOpts },
+
+    {
+      provide: RUNTIME_I18N_PLURAL_RESOLVER,
+      useValue: (count: number, locale: string): PluralCategory => {
+        const CLDR_MAP: Record<number, PluralCategory> = {
+          [Plural.Zero]: 'zero',
+          [Plural.One]: 'one',
+          [Plural.Two]: 'two',
+          [Plural.Few]: 'few',
+          [Plural.Many]: 'many',
+          [Plural.Other]: 'other',
+        };
+        try {
+          const plural = getLocalePluralCase(locale)(count);
+          return CLDR_MAP[plural] ?? 'other';
+        } catch {
+          return count === 1 ? 'one' : 'other';
+        }
+      },
+    },
 
     // Client boot: populate catalogs from TransferState if present (SSR→CSR).
     {
