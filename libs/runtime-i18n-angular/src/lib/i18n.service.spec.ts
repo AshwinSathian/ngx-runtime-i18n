@@ -1,4 +1,4 @@
-import { TransferState } from '@angular/core';
+import { signal, TransferState } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
 import { I18nService } from './i18n.service';
@@ -279,6 +279,96 @@ describe('I18nService', () => {
       expect(storage.getItem('@cache:hi')).toBeNull();
     }
   );
+
+  describe('scope catalogs', () => {
+    it('loadScope fetches and stores scope-specific catalog entries', async () => {
+      // Seed scope catalog via fetchCatalog
+      await setup({
+        config: {
+          fetchCatalog: async (lang: string) => {
+            if (lang === 'checkout/en.json') {
+              return { checkout: { title: 'Checkout' } };
+            }
+            return {};
+          },
+        },
+      });
+
+      await service.loadScope('checkout');
+      expect(service.t('checkout.title')).toBe('Checkout');
+    });
+
+    it('scope key takes precedence over global catalog', async () => {
+      const catalogs = TestBed.inject(RUNTIME_I18N_CATALOGS);
+      catalogs.set('en', { checkout: { title: 'Global Checkout' } });
+
+      await setup({
+        config: {
+          fetchCatalog: async (lang: string) => {
+            if (lang === 'checkout/en.json') {
+              return { checkout: { title: 'Scope Checkout' } };
+            }
+            return {};
+          },
+        },
+      });
+
+      await service.loadScope('checkout');
+      expect(service.t('checkout.title')).toBe('Scope Checkout');
+    });
+
+    it('unloadScope removes the scope catalog so global key is used again', async () => {
+      const baseCatalogs = createDefaultCatalogs();
+      await setup({
+        catalogs: baseCatalogs,
+        config: {
+          fetchCatalog: async (lang: string) => {
+            if (lang === 'checkout/en.json') {
+              return { checkout: { title: 'Scope Checkout' } };
+            }
+            // for en catalog
+            return requiredCatalog(baseCatalogs, 'en');
+          },
+        },
+      });
+
+      await service.loadScope('checkout');
+      expect(service.t('checkout.title')).toBe('Scope Checkout');
+
+      service.unloadScope('checkout');
+      // After unload, the key doesn't exist in global catalog so returns key
+      expect(service.t('checkout.title')).toBe('checkout.title');
+    });
+  });
+
+  describe('t$()', () => {
+    it('returns a Signal (function)', () => {
+      const sig = service.t$('hello.user', { name: 'Ashwin' });
+      expect(typeof sig).toBe('function');
+    });
+
+    it('resolves the translation synchronously via the Signal', () => {
+      const sig = service.t$('hello.user', { name: 'Ashwin' });
+      expect(sig()).toBe('Hello, Ashwin!');
+    });
+
+    it('recomputes when language switches', async () => {
+      const catalogs = TestBed.inject(RUNTIME_I18N_CATALOGS);
+      catalogs.set('de', { hello: { user: 'Hallo, {name}!' } });
+
+      const sig = service.t$('hello.user', { name: 'World' });
+      expect(sig()).toBe('Hello, World!');
+
+      await service.setLang('de');
+      expect(sig()).toBe('Hallo, World!');
+    });
+
+    it('accepts a Signal<params> for reactive params', () => {
+      const paramsSignal = signal<Record<string, unknown>>({ name: 'Ashwin' });
+      const sig = service.t$('hello.user', paramsSignal as unknown as Parameters<typeof service.t$>[1]);
+      expect(sig()).toBe('Hello, Ashwin!');
+    });
+  });
 });
 
 function requiredCatalog(map: Map<string, Catalog>, key: string): Catalog {
