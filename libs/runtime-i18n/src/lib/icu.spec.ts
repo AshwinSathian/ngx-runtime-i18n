@@ -1,3 +1,4 @@
+import type { PluralCategory, PluralResolver } from './types';
 import { formatIcu } from './icu';
 
 type Cat = Record<string, unknown>;
@@ -12,6 +13,9 @@ const cat: Cat = {
   pluralNested:
     '{count, plural, one {You have {count} item} other {You have {count} items}}',
   literalBraces: '{count, plural, other {Use braces {like this} literally}}',
+  gender: '{gender, select, male {He is a developer} female {She is a developer} other {They are a developer}}',
+  pronoun: '{gender, select, male {his} female {her} other {their}} profile',
+  arabicItems: '{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر قليلة} many {# عناصر كثيرة} other {# عنصر}}',
 };
 
 describe('formatIcu', () => {
@@ -60,5 +64,92 @@ describe('formatIcu', () => {
   it('returns key via onMissingKey when key not found', () => {
     const s = formatIcu('en', 'missing.key', cat, {}, (k) => `@@${k}@@`);
     expect(s).toBe('@@missing.key@@');
+  });
+
+  describe('select form', () => {
+    it('resolves male gender selector', () => {
+      const s = formatIcu('en', 'gender', cat, { gender: 'male' });
+      expect(s).toBe('He is a developer');
+    });
+
+    it('resolves female gender selector', () => {
+      const s = formatIcu('en', 'gender', cat, { gender: 'female' });
+      expect(s).toBe('She is a developer');
+    });
+
+    it('falls back to "other" for unknown selector value', () => {
+      const s = formatIcu('en', 'gender', cat, { gender: 'nonbinary' });
+      expect(s).toBe('They are a developer');
+    });
+
+    it('handles select at the start of a string with trailing text', () => {
+      const s = formatIcu('en', 'pronoun', cat, { gender: 'female' });
+      expect(s).toBe('her profile');
+    });
+
+    it('falls back to "other" when param is missing', () => {
+      const s = formatIcu('en', 'gender', cat, {});
+      expect(s).toBe('They are a developer');
+    });
+  });
+
+  describe('CLDR plural resolver', () => {
+    // Mock resolver for Arabic: implements 6-category CLDR plural for Arabic
+    const arabicResolver: PluralResolver = (n: number): PluralCategory => {
+      if (n === 0) return 'zero';
+      if (n === 1) return 'one';
+      if (n === 2) return 'two';
+      if (n % 100 >= 3 && n % 100 <= 10) return 'few';
+      if (n % 100 >= 11 && n % 100 <= 99) return 'many';
+      return 'other';
+    };
+
+    it('uses "zero" category for 0 in Arabic', () => {
+      const s = formatIcu('ar', 'arabicItems', cat, { count: 0 }, undefined, arabicResolver);
+      expect(s).toBe('لا عناصر');
+    });
+
+    it('uses "one" category for 1 in Arabic', () => {
+      const s = formatIcu('ar', 'arabicItems', cat, { count: 1 }, undefined, arabicResolver);
+      expect(s).toBe('عنصر واحد');
+    });
+
+    it('uses "two" category for 2 in Arabic', () => {
+      const s = formatIcu('ar', 'arabicItems', cat, { count: 2 }, undefined, arabicResolver);
+      expect(s).toBe('عنصران');
+    });
+
+    it('uses "few" category for 5 in Arabic (100-mod 3-10)', () => {
+      const s = formatIcu('ar', 'arabicItems', cat, { count: 5 }, undefined, arabicResolver);
+      expect(s).toBe('5 عناصر قليلة');
+    });
+
+    it('uses "many" category for 25 in Arabic (100-mod 11-99)', () => {
+      const s = formatIcu('ar', 'arabicItems', cat, { count: 25 }, undefined, arabicResolver);
+      expect(s).toBe('25 عناصر كثيرة');
+    });
+
+    it('uses "other" category for 100 in Arabic', () => {
+      const s = formatIcu('ar', 'arabicItems', cat, { count: 100 }, undefined, arabicResolver);
+      expect(s).toBe('100 عنصر');
+    });
+  });
+
+  describe('English one/other behavior without resolver', () => {
+    it('resolves "one" for count=1 without a resolver', () => {
+      const s = formatIcu('en', 'cart.items', cat, { count: 1 });
+      expect(s).toBe('1 item in your cart');
+    });
+
+    it('resolves "other" for count=5 without a resolver', () => {
+      const s = formatIcu('en', 'cart.items', cat, { count: 5 });
+      expect(s).toBe('5 items in your cart');
+    });
+
+    it('resolves "other" for count=0 without a resolver (no =0 fallback)', () => {
+      // cat.cart.items has =0 so this tests exact match precedence
+      const s = formatIcu('en', 'cart.items', cat, { count: 0 });
+      expect(s).toBe('No items in your cart');
+    });
   });
 });
