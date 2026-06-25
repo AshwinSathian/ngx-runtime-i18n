@@ -1,9 +1,9 @@
 /**
- * Very small ICU-like formatter with interpolation and plural basics.
- * Used by the Angular service and pipe. Replace with full ICU in a later minor.
+ * ICU-style formatter with interpolation, plural, select, and selectordinal support.
+ * Used by the Angular service and pipe.
  * @experimental
  */
-import type { Catalog } from './types';
+import type { Catalog, PluralCategory, PluralResolver } from './types';
 
 // Tokens may include dots or hyphens so nested object keys like "user.name" are practical.
 const INTERPOLATION_PATTERN = /\{([a-zA-Z_][a-zA-Z0-9_.-]*)\}/g;
@@ -13,29 +13,18 @@ export function formatIcu(
   key: string,
   cat: Catalog,
   params: Record<string, unknown> = {},
-  onMissingKey?: (k: string) => string
+  onMissingKey?: (k: string) => string,
+  pluralResolver?: PluralResolver
 ): string {
   const raw = lookup(key, cat);
   if (raw == null) return onMissingKey ? onMissingKey(key) : key;
 
   let out = String(raw);
 
-  // 1) Resolve {x, plural, ...} with a brace-balanced scanner.
-  out = replacePluralBlocks(out, (arg, body) => {
-    const n = Number(params[arg] ?? 0);
-    const options = parsePluralBody(body);
-    if (Number.isFinite(n)) {
-      const exact = options[`=${n}`];
-      if (exact) return exact;
-      const one = options['one'];
-      if (n === 1 && one) return one;
-      const other = options['other'] ?? '';
-      return other.replace(/#/g, String(n));
-    }
-    return options['other'] ?? '';
-  });
+  // 1) Resolve {x, plural, ...}, {x, select, ...}, {x, selectordinal, ...} with a brace-balanced scanner.
+  out = replaceMessageBlocks(out, _lang, params, pluralResolver);
 
-  // 2) Simple {name} interpolation AFTER plural branch selection.
+  // 2) Simple {name} interpolation AFTER message block selection.
   INTERPOLATION_PATTERN.lastIndex = 0;
   out = out.replace(INTERPOLATION_PATTERN, (_m: string, p1: string) =>
     params[p1] != null ? String(params[p1]) : `{${p1}}`
@@ -44,45 +33,49 @@ export function formatIcu(
   return out;
 }
 
-function lookup(path: string, obj: any): any {
+function lookup(path: string, obj: unknown): unknown {
   return path
     .split('.')
-    .reduce((o: any, k: string) => (o && k in o ? o[k] : undefined), obj);
+    .reduce((o: unknown, k: string) =>
+      o && typeof o === 'object' && k in (o as Record<string, unknown>)
+        ? (o as Record<string, unknown>)[k]
+        : undefined,
+      obj);
 }
 
 /**
- * Replace all `{arg, plural, ...}` blocks in `s` using a brace-balanced scan.
+ * Replace all `{arg, plural|select|selectordinal, ...}` blocks in `s` using a brace-balanced scan.
  */
-function replacePluralBlocks(
+function replaceMessageBlocks(
   s: string,
-  render: (arg: string, body: string) => string
+  lang: string,
+  params: Record<string, unknown>,
+  pluralResolver?: PluralResolver
 ): string {
   let i = 0;
   let out = '';
 
   while (i < s.length) {
     const start = s.indexOf('{', i);
-    if (start === -1) {
-      out += s.slice(i);
-      break;
-    }
+    if (start === -1) { out += s.slice(i); break; }
     out += s.slice(i, start);
 
-    // Try to match the prefix "{arg, plural,"
-    const prefixMatch = /\{(\w+),\s*plural,\s*/y;
+    // Try to match the prefix "{arg, plural|select|selectordinal,"
+    const prefixMatch = /\{(\w+),\s*(plural|select|selectordinal),\s*/y;
     prefixMatch.lastIndex = start;
     const m = prefixMatch.exec(s);
     if (!m) {
-      // Not a plural block; copy '{' and continue scanning after it.
+      // Not a message block; copy '{' and continue scanning after it.
       out += '{';
       i = start + 1;
       continue;
     }
 
     const arg = m[1];
+    const keyword = m[2] as 'plural' | 'select' | 'selectordinal';
     let j = prefixMatch.lastIndex; // position after the matched prefix
 
-    // Find the matching closing '}' for the whole plural block with nesting.
+    // Find the matching closing '}' for the whole block with nesting.
     let depth = 1;
     while (j < s.length && depth > 0) {
       const ch = s.charAt(j++);
@@ -99,17 +92,42 @@ function replacePluralBlocks(
 
     // Body is the contents between prefix end and the final '}'.
     const body = s.slice(prefixMatch.lastIndex, j - 1);
-    const rendered = render(arg, body);
-    out += rendered;
-    i = j; // continue after the closing brace
+    const options = parsePluralBody(body);
+
+    if (keyword === 'plural' || keyword === 'selectordinal') {
+      const n = Number(params[arg] ?? 0);
+      if (Number.isFinite(n)) {
+        const exact = options[`=${n}`];
+        if (exact != null) { out += replaceHash(exact, n); i = j; continue; }
+
+        const category: PluralCategory = pluralResolver
+          ? pluralResolver(n, lang)
+          : n === 1 ? 'one' : 'other';
+
+        const match = options[category] ?? options['other'] ?? '';
+        out += replaceHash(match, n);
+      } else {
+        out += replaceHash(options['other'] ?? '', Number(params[arg]));
+      }
+    } else {
+      // select: look up param value directly
+      const val = String(params[arg] ?? 'other');
+      out += options[val] ?? options['other'] ?? '';
+    }
+
+    i = j;
   }
 
   return out;
 }
 
+function replaceHash(s: string, n: number): string {
+  return s.replace(/#/g, String(n));
+}
+
 /**
- * Parse a simple ICU plural clause body: e.g. `one {A} other {B} =0 {C}`.
- * Only literal selectors and balanced brace bodies are supported; nested plural/select forms are intentionally skipped.
+ * Parse a simple ICU plural/select clause body: e.g. `one {A} other {B} =0 {C}`.
+ * Supports balanced brace bodies and nested forms.
  */
 function parsePluralBody(body: string): Record<string, string> {
   const map: Record<string, string> = {};
@@ -117,29 +135,17 @@ function parsePluralBody(body: string): Record<string, string> {
 
   while (i < body.length) {
     // Skip whitespace between selectors.
-    while (i < body.length && /\s/.test(body.charAt(i))) {
-      i++;
-    }
-    if (i >= body.length) {
-      break;
-    }
+    while (i < body.length && /\s/.test(body.charAt(i))) i++;
+    if (i >= body.length) break;
 
     const keyStart = i;
-    while (i < body.length && !/\s|\{/.test(body.charAt(i))) {
-      i++;
-    }
-    if (keyStart === i) {
-      break;
-    }
+    while (i < body.length && !/[\s{]/.test(body.charAt(i))) i++;
+    if (keyStart === i) break;
     const key = body.slice(keyStart, i);
 
     // Skip whitespace before the opening brace.
-    while (i < body.length && /\s/.test(body.charAt(i))) {
-      i++;
-    }
-    if (body.charAt(i) !== '{') {
-      break;
-    }
+    while (i < body.length && /\s/.test(body.charAt(i))) i++;
+    if (body.charAt(i) !== '{') break;
     i++; // Consume '{'
 
     const valueStart = i;
@@ -155,8 +161,7 @@ function parsePluralBody(body: string): Record<string, string> {
       break;
     }
 
-    const valueEnd = i - 1;
-    map[key] = body.slice(valueStart, valueEnd);
+    map[key] = body.slice(valueStart, i - 1);
   }
 
   return map;
