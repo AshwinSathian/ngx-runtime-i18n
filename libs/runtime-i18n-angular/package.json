@@ -28,6 +28,9 @@
   "exports": {
     ".": {
       "import": "./fesm2022/ngx-runtime-i18n-angular.mjs"
+    },
+    "./testing": {
+      "import": "./testing/ngx-runtime-i18n-angular-testing.mjs"
     }
   },
   "publishConfig": {
