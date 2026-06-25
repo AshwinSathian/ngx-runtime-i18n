@@ -9,7 +9,7 @@ import {
   signal,
   TransferState,
 } from '@angular/core';
-import { Catalog, formatIcu } from '@ngx-runtime-i18n/core';
+import { Catalog, formatIcu, TranslationKey, TranslationParams } from '@ngx-runtime-i18n/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
   RUNTIME_I18N_CATALOGS,
@@ -157,12 +157,12 @@ export class I18nService {
    * Translate a key using the active language. Supports ICU-lite + interpolation.
    * Falls back to {@link RuntimeI18nConfig.onMissingKey} or the raw key.
    */
-  t(key: string, params?: Record<string, unknown>): string {
+  t<K extends TranslationKey>(key: K, params?: TranslationParams<K>): string {
     const chain = this.getFallbackChain(this._lang());
     for (const candidate of chain) {
       const catalog = this.catalogs.get(candidate);
       if (!catalog || !hasKey(catalog, key)) continue;
-      return formatIcu(candidate, key, catalog, params, this.cfg.onMissingKey);
+      return formatIcu(candidate, key, catalog, params as Record<string, unknown>, this.cfg.onMissingKey);
     }
 
     if (DEV && !this._warnedMissing?.has(key)) {
