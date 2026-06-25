@@ -1,4 +1,5 @@
 import { Pipe, PipeTransform, inject } from '@angular/core';
+import type { TranslationKey, TranslationParams } from '@ngx-runtime-i18n/core';
 import { I18nService } from './i18n.service';
 
 /**
@@ -19,7 +20,7 @@ import { I18nService } from './i18n.service';
 export class I18nPipe implements PipeTransform {
   private i18n = inject(I18nService);
 
-  transform(key: string, params?: Record<string, unknown>): string {
+  transform<K extends TranslationKey>(key: K, params?: TranslationParams<K>): string {
     // establish dependency on the lang signal (read-only)
     this.i18n.lang();
     return this.i18n.t(key, params);
