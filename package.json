@@ -8,9 +8,9 @@
     "libs/*"
   ],
   "scripts": {
-    "build:libs": "nx run-many -t build -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-primeng --configuration=production --parallel",
-    "test": "nx run-many -t test -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-primeng",
-    "ci": "nx run-many -t build,test -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-primeng --configuration=production",
+    "build:libs": "nx run-many -t build -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-primeng,runtime-i18n-material --configuration=production --parallel",
+    "test": "nx run-many -t test -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-primeng,runtime-i18n-material",
+    "ci": "nx run-many -t build,test -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-primeng,runtime-i18n-material --configuration=production",
     "pack:core": "cd dist/libs/runtime-i18n && npm pack",
     "pack:angular": "cd dist/libs/runtime-i18n-angular && npm pack",
     "pack:primeng": "cd dist/libs/runtime-i18n-primeng && npm pack",

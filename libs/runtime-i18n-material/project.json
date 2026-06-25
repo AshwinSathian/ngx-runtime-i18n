@@ -1,0 +1,31 @@
+{
+  "name": "runtime-i18n-material",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/runtime-i18n-material/src",
+  "prefix": "lib",
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:package",
+      "options": {
+        "project": "libs/runtime-i18n-material/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/runtime-i18n-material/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/runtime-i18n-material/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/runtime-i18n-material"],
+      "options": {
+        "jestConfig": "libs/runtime-i18n-material/jest.config.ts"
+      }
+    }
+  }
+}
