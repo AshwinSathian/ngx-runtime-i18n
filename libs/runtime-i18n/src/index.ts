@@ -13,6 +13,8 @@ export type {
   DeepKeys,
   ExtractParams,
   ActiveCatalogType,
+  PluralCategory,
+  PluralResolver,
 } from './lib/types';
 
 /**

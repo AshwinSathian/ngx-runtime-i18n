@@ -136,3 +136,17 @@ export type TranslationParams<K extends TranslationKey> =
         : Record<string, unknown>
       : Record<string, unknown>
     : Record<string, unknown>;
+
+/**
+ * CLDR plural categories per Unicode TR35.
+ * @publicApi
+ */
+export type PluralCategory = 'zero' | 'one' | 'two' | 'few' | 'many' | 'other';
+
+/**
+ * Resolves the CLDR plural category for a count in a given locale.
+ * Provide via Angular's getLocalePluralCase() or a custom implementation.
+ * Falls back to English-biased one/other logic when not provided.
+ * @publicApi
+ */
+export type PluralResolver = (count: number, locale: string) => PluralCategory;
