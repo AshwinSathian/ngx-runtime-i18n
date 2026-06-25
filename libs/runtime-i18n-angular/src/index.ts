@@ -18,7 +18,9 @@ export {
   RUNTIME_I18N_LOCALE_LOADERS,
   RUNTIME_I18N_OPTIONS,
   RUNTIME_I18N_PLURAL_RESOLVER,
+  RUNTIME_I18N_SCOPES,
 } from './lib/tokens';
 export type { RuntimeI18nOptions } from './lib/tokens';
 
 export { I18nCompatService } from './lib/i18n-compat.service';
+export { withI18nScope } from './lib/with-i18n-scope';
