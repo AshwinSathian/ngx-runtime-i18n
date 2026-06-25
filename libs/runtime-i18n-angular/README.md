@@ -9,7 +9,7 @@ Lean, SSR‑safe Angular wrapper around `@ngx-runtime-i18n/core`.
 - Lazy Angular **locale data** per language to power pipes (`DatePipe`, `DecimalPipe`, ...)
 - Configurable fallback chains with in-memory or localStorage catalog caching
 
-Peer support: `@angular/* >=16 <21`
+Peer support: `@angular/* >=16 <22`
 
 ---
 
@@ -235,9 +235,44 @@ Use the same `provideRuntimeI18n(...)` on both server and client app bootstraps.
 
 ---
 
+## Type Safety
+
+`I18nService.t()`, `I18nPipe`, and `I18nCompatService.t()` are fully generic when you declare your catalog schema via module augmentation.
+
+**1. Create a declaration file in your app (e.g. `src/i18n.d.ts`):**
+
+```ts
+import type en from '../public/i18n/en.json';
+
+declare module '@ngx-runtime-i18n/core' {
+  interface I18nSchema {
+    translations: typeof en;
+  }
+}
+```
+
+**2. TypeScript will now enforce valid keys and narrow param types:**
+
+```ts
+// OK — valid key
+this.i18n.t('hello.user', { name: 'Ashwin' });
+
+// Error — 'does.not.exist' is not in the catalog
+this.i18n.t('does.not.exist');
+
+// Error — missing required param 'name'
+this.i18n.t('hello.user');
+```
+
+Key types are computed via `DeepKeys<T>` (dot-notation paths up to 4 levels). Interpolation params are extracted via `ExtractParams<S>` from the string literal value. Both types are exported from `@ngx-runtime-i18n/core` for advanced usage.
+
+When no schema is declared (the default), `t()` accepts `string` — full backward compatibility.
+
+---
+
 ## Versioning & Support
 
-- Angular: `>=16 <21`
+- Angular: `>=16 <22`
 - Node: LTS recommended
 - SemVer: breaking changes will bump major versions.
 
