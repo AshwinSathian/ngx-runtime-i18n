@@ -1,12 +1,12 @@
 {
   "name": "@ngx-runtime-i18n/primeng",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "PrimeNG adapter for @ngx-runtime-i18n/angular",
   "type": "module",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/core": ">=16 <21",
-    "@ngx-runtime-i18n/angular": "^2.0.0",
+    "@angular/core": ">=16 <22",
+    "@ngx-runtime-i18n/angular": "^2.0.1",
     "primeng": ">=17 <20.4.0"
   },
   "keywords": [
