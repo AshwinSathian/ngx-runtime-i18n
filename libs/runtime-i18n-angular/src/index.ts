@@ -16,6 +16,8 @@ export {
   RUNTIME_I18N_LOCALES,
   RUNTIME_I18N_STATE_KEY,
   RUNTIME_I18N_LOCALE_LOADERS,
+  RUNTIME_I18N_OPTIONS,
 } from './lib/tokens';
+export type { RuntimeI18nOptions } from './lib/tokens';
 
 export { I18nCompatService } from './lib/i18n-compat.service';
