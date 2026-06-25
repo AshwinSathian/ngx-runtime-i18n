@@ -39,5 +39,9 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "ng-add": {
+    "save": "dependencies"
+  },
+  "schematics": "./node_modules/@ngx-runtime-i18n/schematics/collection.json"
 }

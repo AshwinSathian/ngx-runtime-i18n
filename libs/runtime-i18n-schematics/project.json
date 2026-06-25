@@ -1,0 +1,36 @@
+{
+  "name": "runtime-i18n-schematics",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/runtime-i18n-schematics/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/runtime-i18n-schematics",
+        "main": "libs/runtime-i18n-schematics/src/index.ts",
+        "tsConfig": "libs/runtime-i18n-schematics/tsconfig.json",
+        "assets": [
+          {
+            "input": "libs/runtime-i18n-schematics",
+            "glob": "collection.json",
+            "output": "."
+          },
+          {
+            "input": "libs/runtime-i18n-schematics/src/ng-add",
+            "glob": "schema.json",
+            "output": "./src/ng-add"
+          }
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/runtime-i18n-schematics"],
+      "options": {
+        "jestConfig": "libs/runtime-i18n-schematics/jest.config.ts"
+      }
+    }
+  }
+}

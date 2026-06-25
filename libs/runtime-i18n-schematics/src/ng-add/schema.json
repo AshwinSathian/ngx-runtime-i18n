@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "NgxRuntimeI18nNgAdd",
+  "title": "Add @ngx-runtime-i18n/angular",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "The Angular project to configure.",
+      "$default": { "$source": "projectName" }
+    },
+    "defaultLang": {
+      "type": "string",
+      "description": "The default language tag (BCP-47).",
+      "default": "en"
+    },
+    "additionalLangs": {
+      "type": "array",
+      "description": "Additional language tags to scaffold.",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "ssr": {
+      "type": "boolean",
+      "description": "Include SSR provider setup.",
+      "default": false
+    }
+  },
+  "required": ["project"]
+}

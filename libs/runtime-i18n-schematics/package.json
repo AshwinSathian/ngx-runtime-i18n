@@ -1,0 +1,13 @@
+{
+  "name": "@ngx-runtime-i18n/schematics",
+  "version": "2.0.1",
+  "description": "Angular schematics for @ngx-runtime-i18n",
+  "main": "src/index.js",
+  "schematics": "./collection.json",
+  "keywords": ["angular", "schematics", "i18n"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AshwinSathian/ngx-runtime-i18n.git"
+  }
+}

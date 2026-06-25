@@ -1,0 +1,10 @@
+{
+  "$schema": "../node_modules/@angular-devkit/schematics/collection-schema.json",
+  "schematics": {
+    "ng-add": {
+      "description": "Add @ngx-runtime-i18n/angular to an Angular project.",
+      "factory": "./src/ng-add/index#ngAdd",
+      "schema": "./src/ng-add/schema.json"
+    }
+  }
+}
