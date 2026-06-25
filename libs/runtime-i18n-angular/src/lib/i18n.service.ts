@@ -1,8 +1,10 @@
 import {
   ApplicationRef,
+  computed,
   DestroyRef,
   inject,
   Injectable,
+  isSignal,
   makeStateKey,
   PLATFORM_ID,
   Signal,
@@ -65,6 +67,9 @@ export class I18nService {
     string,
     { controller?: AbortController; promise: Promise<void> }
   >();
+
+  /** Named scope catalogs: scope name → (lang → Catalog) */
+  private scopeCatalogs = new Map<string, Map<string, Catalog>>();
 
   /** Currently active language (signal). */
   readonly lang: Signal<string> = this._lang.asReadonly();
@@ -161,6 +166,17 @@ export class I18nService {
    */
   t<K extends TranslationKey>(key: K, params?: TranslationParams<K>): string {
     const chain = this.getFallbackChain(this._lang());
+
+    // Check scope catalogs first (most recently loaded scope wins)
+    for (const [, scopeMap] of [...this.scopeCatalogs.entries()].reverse()) {
+      for (const candidate of chain) {
+        const scopeCatalog = scopeMap.get(candidate);
+        if (scopeCatalog && hasKey(scopeCatalog, key)) {
+          return formatIcu(candidate, key, scopeCatalog, params as Record<string, unknown>, this.cfg.onMissingKey, this.pluralResolver ?? undefined);
+        }
+      }
+    }
+
     for (const candidate of chain) {
       const catalog = this.catalogs.get(candidate);
       if (!catalog || !hasKey(catalog, key)) continue;
@@ -177,6 +193,61 @@ export class I18nService {
     }
 
     return this.cfg.onMissingKey ? this.cfg.onMissingKey(key) : key;
+  }
+
+  /**
+   * Returns a computed Signal<string> that recomputes only when lang() or params change.
+   * Eliminates impure pipe overhead in signal-heavy templates.
+   *
+   * Accepts static params OR a Signal<params> for fully reactive chains.
+   *
+   * @example
+   * readonly greeting = this.i18n.t$('hello.user', { name: this.username });
+   * // In template: {{ greeting() }}
+   * @publicApi
+   */
+  t$<K extends TranslationKey>(
+    key: K,
+    params?: TranslationParams<K> | Signal<TranslationParams<K>>
+  ): Signal<string> {
+    return computed(() => {
+      this._lang(); // establish reactive dependency on lang signal
+      const resolvedParams = isSignal(params) ? params() : (params ?? {});
+      return this.t(key, resolvedParams as TranslationParams<K>);
+    });
+  }
+
+  /**
+   * Load a named scope catalog for the active lang (and fallback chain).
+   * Called automatically by withI18nScope() when a route activates.
+   * @internal
+   */
+  async loadScope(scope: string): Promise<void> {
+    const lang = this._lang();
+    const chain = this.getFallbackChain(lang);
+    for (const candidate of chain) {
+      if (!this.scopeCatalogs.has(scope)) {
+        this.scopeCatalogs.set(scope, new Map());
+      }
+      const scopeMap = this.scopeCatalogs.get(scope)!;
+      if (!scopeMap.has(candidate)) {
+        try {
+          const url = `${scope}/${candidate}.json`;
+          const fetched = await this.cfg.fetchCatalog(url);
+          scopeMap.set(candidate, fetched);
+        } catch {
+          // Scope catalog not found — silent fallthrough
+        }
+      }
+    }
+  }
+
+  /**
+   * Unload a named scope catalog. Called when the route that registered it is destroyed.
+   * @internal
+   */
+  unloadScope(scope: string): void {
+    this.scopeCatalogs.delete(scope);
   }
 
   /** Expose the current language without subscribing to the signal. */

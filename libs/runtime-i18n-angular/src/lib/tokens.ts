@@ -44,3 +44,5 @@ export const RUNTIME_I18N_OPTIONS = new InjectionToken<RuntimeI18nOptions>(
 
 export const RUNTIME_I18N_PLURAL_RESOLVER =
   new InjectionToken<PluralResolver>('RUNTIME_I18N_PLURAL_RESOLVER');
+
+export const RUNTIME_I18N_SCOPES = new InjectionToken<string[]>('RUNTIME_I18N_SCOPES');
