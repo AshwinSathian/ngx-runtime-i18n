@@ -235,6 +235,53 @@ Use the same `provideRuntimeI18n(...)` on both server and client app bootstraps.
 
 ---
 
+## Route-Scoped Catalogs
+
+Use `withI18nScope()` to load feature-specific translation catalogs only when a route activates, and unload them when it is destroyed.
+
+**URL convention:** scope `'checkout'` fetches `<your fetchCatalog base>/checkout/<lang>.json`.
+
+```ts
+// In your route definition:
+import { withI18nScope } from '@ngx-runtime-i18n/angular';
+
+export const routes: Routes = [
+  {
+    path: 'checkout',
+    loadComponent: () => import('./checkout/checkout.component'),
+    providers: [withI18nScope('checkout')],
+  },
+];
+```
+
+**Resolution order:** scope catalogs (most recently loaded scope wins) → global catalog → fallback chain → `onMissingKey`.
+
+Scope catalogs are automatically cleaned up via `DestroyRef` when the route's environment injector is destroyed.
+
+---
+
+## t$() Signal Helper
+
+`I18nService.t$()` returns a `Signal<string>` that recomputes only when the active language or params change. Useful in signal-heavy templates where impure pipe overhead adds up.
+
+```ts
+@Component({
+  template: `{{ greeting() }}`,
+})
+export class MyComponent {
+  private i18n = inject(I18nService);
+
+  // Static params — recomputes only on lang change
+  readonly greeting = this.i18n.t$('hello.user', { name: 'Ashwin' });
+
+  // Reactive params — recomputes when either lang or params signal changes
+  private username = signal('Ashwin');
+  readonly dynamicGreeting = this.i18n.t$('hello.user', this.username as unknown as Signal<Record<string, unknown>>);
+}
+```
+
+---
+
 ## Type Safety
 
 `I18nService.t()`, `I18nPipe`, and `I18nCompatService.t()` are fully generic when you declare your catalog schema via module augmentation.
