@@ -4,7 +4,16 @@
  * Keep this surface minimal and stable.
  */
 
-export type { Catalog, RuntimeI18nConfig } from './lib/types';
+export type {
+  Catalog,
+  RuntimeI18nConfig,
+  I18nSchema,
+  TranslationKey,
+  TranslationParams,
+  DeepKeys,
+  ExtractParams,
+  ActiveCatalogType,
+} from './lib/types';
 
 /**
  * Lightweight ICU-style formatter used internally by the Angular service.
