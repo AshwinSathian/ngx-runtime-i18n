@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
+import type { Catalog, PluralResolver, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
 
 export const RUNTIME_I18N_CONFIG = new InjectionToken<RuntimeI18nConfig>(
   'RUNTIME_I18N_CONFIG'
@@ -41,3 +41,6 @@ export interface RuntimeI18nOptions {
 export const RUNTIME_I18N_OPTIONS = new InjectionToken<RuntimeI18nOptions>(
   'RUNTIME_I18N_OPTIONS'
 );
+
+export const RUNTIME_I18N_PLURAL_RESOLVER =
+  new InjectionToken<PluralResolver>('RUNTIME_I18N_PLURAL_RESOLVER');
