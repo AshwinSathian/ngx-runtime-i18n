@@ -9,7 +9,7 @@ import {
   signal,
   TransferState,
 } from '@angular/core';
-import { Catalog, formatIcu, TranslationKey, TranslationParams } from '@ngx-runtime-i18n/core';
+import { Catalog, formatIcu, TranslationKey, TranslationParams, PluralResolver } from '@ngx-runtime-i18n/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
   RUNTIME_I18N_CATALOGS,
@@ -17,6 +17,7 @@ import {
   RUNTIME_I18N_LOCALE_LOADERS,
   RUNTIME_I18N_LOCALES,
   RUNTIME_I18N_OPTIONS,
+  RUNTIME_I18N_PLURAL_RESOLVER,
   RUNTIME_I18N_STATE_KEY,
   RuntimeI18nOptions,
 } from './tokens';
@@ -51,6 +52,7 @@ export class I18nService {
   private stateKeyPrefix = inject(RUNTIME_I18N_STATE_KEY);
   private localeLoaders = inject(RUNTIME_I18N_LOCALE_LOADERS);
   private options = inject<RuntimeI18nOptions>(RUNTIME_I18N_OPTIONS);
+  private pluralResolver = inject<PluralResolver>(RUNTIME_I18N_PLURAL_RESOLVER, { optional: true });
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowserPlatform =
     isBrowser && isPlatformBrowser(this.platformId);
@@ -162,7 +164,7 @@ export class I18nService {
     for (const candidate of chain) {
       const catalog = this.catalogs.get(candidate);
       if (!catalog || !hasKey(catalog, key)) continue;
-      return formatIcu(candidate, key, catalog, params as Record<string, unknown>, this.cfg.onMissingKey);
+      return formatIcu(candidate, key, catalog, params as Record<string, unknown>, this.cfg.onMissingKey, this.pluralResolver ?? undefined);
     }
 
     if (DEV && !this._warnedMissing?.has(key)) {

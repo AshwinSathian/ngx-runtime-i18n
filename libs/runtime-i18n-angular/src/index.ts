@@ -17,6 +17,7 @@ export {
   RUNTIME_I18N_STATE_KEY,
   RUNTIME_I18N_LOCALE_LOADERS,
   RUNTIME_I18N_OPTIONS,
+  RUNTIME_I18N_PLURAL_RESOLVER,
 } from './lib/tokens';
 export type { RuntimeI18nOptions } from './lib/tokens';
 
