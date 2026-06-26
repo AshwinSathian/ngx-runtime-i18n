@@ -65,9 +65,7 @@ export interface I18nSchema {}
 
 /** @internal */
 export type ActiveCatalogType =
-  'translations' extends keyof I18nSchema
-    ? I18nSchema['translations']
-    : Record<string, unknown>;
+  I18nSchema extends { translations: infer T } ? T : Record<string, unknown>;
 
 /** Depth guard for recursive type — prevents TypeScript slowdown on large catalogs. @internal */
 type Prev = [never, 0, 1, 2, 3, 4, ...0[]];
@@ -95,8 +93,10 @@ export type DeepKeys<T, Depth extends number = 4> =
  * @publicApi
  */
 export type TranslationKey =
-  'translations' extends keyof I18nSchema
-    ? DeepKeys<I18nSchema['translations']>
+  I18nSchema extends { translations: infer T }
+    ? T extends Record<string, unknown>
+      ? DeepKeys<T>
+      : string
     : string;
 
 /**
@@ -129,10 +129,12 @@ type ResolveValue<T, P extends string> =
  * @publicApi
  */
 export type TranslationParams<K extends TranslationKey> =
-  'translations' extends keyof I18nSchema
-    ? K extends string
-      ? ResolveValue<I18nSchema['translations'], K> extends string
-        ? ExtractParams<ResolveValue<I18nSchema['translations'], K>>
+  I18nSchema extends { translations: infer Cat }
+    ? Cat extends Record<string, unknown>
+      ? K extends string
+        ? ResolveValue<Cat, K> extends string
+          ? ExtractParams<ResolveValue<Cat, K>>
+          : Record<string, unknown>
         : Record<string, unknown>
       : Record<string, unknown>
     : Record<string, unknown>;

@@ -30,7 +30,7 @@
       "import": "./fesm2022/ngx-runtime-i18n-angular.mjs"
     },
     "./testing": {
-      "import": "./testing/ngx-runtime-i18n-angular-testing.mjs"
+      "import": "./fesm2022/ngx-runtime-i18n-angular-testing.mjs"
     }
   },
   "publishConfig": {
@@ -42,6 +42,5 @@
   },
   "ng-add": {
     "save": "dependencies"
-  },
-  "schematics": "./node_modules/@ngx-runtime-i18n/schematics/collection.json"
+  }
 }
