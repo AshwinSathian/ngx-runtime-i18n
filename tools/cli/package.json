@@ -1,0 +1,27 @@
+{
+  "name": "@ngx-runtime-i18n/cli",
+  "version": "2.0.1",
+  "description": "CLI extractor and validator for @ngx-runtime-i18n",
+  "type": "module",
+  "bin": {
+    "ngx-i18n": "./dist/cli.js"
+  },
+  "main": "./dist/cli.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --experimental-vm-modules ../../node_modules/.bin/jest --config jest.config.ts"
+  },
+  "dependencies": {
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2"
+  },
+  "keywords": ["angular", "i18n", "cli", "extractor", "validator"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AshwinSathian/ngx-runtime-i18n.git"
+  },
+  "engines": { "node": ">=18" }
+}
