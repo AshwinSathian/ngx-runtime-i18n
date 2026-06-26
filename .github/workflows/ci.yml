@@ -51,4 +51,7 @@ jobs:
         run: npx nx run-many -t build -p=runtime-i18n-schematics --skip-nx-cache=false
 
       - name: Test libs
-        run: npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-material --configuration=ci --runInBand --skip-nx-cache=false
+        run: npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-material,runtime-i18n-schematics --configuration=ci --runInBand --skip-nx-cache=false
+
+      - name: Test tooling
+        run: npx nx test cli --runInBand --skip-nx-cache=false
