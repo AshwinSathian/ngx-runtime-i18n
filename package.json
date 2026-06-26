@@ -39,9 +39,11 @@
     "@angular-devkit/core": "20.3.13",
     "@angular-devkit/schematics": "20.3.13",
     "@angular/build": "20.3.13",
+    "@angular/cdk": "^20.2.14",
     "@angular/cli": "20.3.13",
     "@angular/compiler-cli": "20.3.15",
     "@angular/language-service": "20.3.15",
+    "@angular/material": "^20.2.14",
     "@eslint/js": "^9.8.0",
     "@nx/angular": "22.0.1",
     "@nx/devkit": "22.0.1",
@@ -85,8 +87,7 @@
   },
   "nx": {
     "includedScripts": []
-  }
-,
+  },
   "overrides": {
     "@angular/common": "20.3.15"
   }
