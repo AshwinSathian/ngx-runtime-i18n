@@ -6,7 +6,7 @@
   "sideEffects": false,
   "peerDependencies": {
     "@angular/core": ">=16 <22",
-    "@angular/material": ">=16 <21",
+    "@angular/material": ">=16 <22",
     "@ngx-runtime-i18n/angular": "^2.0.0"
   },
   "keywords": ["angular", "material", "i18n", "translations", "runtime"],
@@ -23,3 +23,4 @@
   "publishConfig": { "access": "public", "provenance": false },
   "engines": { "node": ">=18" }
 }
+

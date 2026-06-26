@@ -37,7 +37,7 @@ jobs:
 
       - name: Install deps
         run: |
-          if [ -f package-lock.json ]; then npm ci --prefer-offline --no-audit --fund=false; else npm install --prefer-offline --no-audit --fund=false; fi
+          if [ -f package-lock.json ]; then npm ci --prefer-offline --no-audit --fund=false --legacy-peer-deps; else npm install --prefer-offline --no-audit --fund=false --legacy-peer-deps; fi
 
       # In case Nx still picks up nxCloudId from nx.json, strip it before running
       - name: Disable Nx Cloud via nx.json patch
