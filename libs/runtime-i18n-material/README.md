@@ -6,11 +6,13 @@ Keeps Angular Material's built-in IntL services (paginator, sort, stepper, datep
 
 ## Installation
 
-```bash
-npm install @ngx-runtime-i18n/material
-```
-
-> `@ngx-runtime-i18n/angular` and `@angular/material` must already be installed.
+> **Not yet published to npm.** This package currently ships as part of this workspace only; there is no npm registry entry to install from yet. Once published, installation will be:
+>
+> ```bash
+> npm install @ngx-runtime-i18n/material
+> ```
+>
+> `@ngx-runtime-i18n/angular` and `@angular/material` must already be installed. In the meantime, build it from source: see the [Contributing guide](../../CONTRIBUTING.md).
 
 ## Usage
 

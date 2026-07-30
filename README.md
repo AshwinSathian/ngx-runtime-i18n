@@ -1,9 +1,10 @@
 # @ngx-runtime-i18n
 
 [![npm version](https://img.shields.io/npm/v/@ngx-runtime-i18n/angular.svg)](https://www.npmjs.com/package/@ngx-runtime-i18n/angular)
+[![CI](https://github.com/AshwinSathian/ngx-runtime-i18n/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AshwinSathian/ngx-runtime-i18n/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Signals-first runtime i18n for Angular — SSR-safe, hydration-friendly, ICU-lite, and configurable fallback chains.
+Signals-first runtime i18n for Angular 16+ — SSR-safe, hydration-friendly, ICU-lite, and configurable fallback chains.
 
 ---
 
@@ -160,11 +161,14 @@ Catalog JSON lives under `apps/demo*/public/i18n/<lang>.json`.
 
 ## Packages
 
-| Package                                                            | Description                                                       |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| [`@ngx-runtime-i18n/core`](libs/runtime-i18n/README.md)            | Framework-agnostic primitives (ICU-lite formatter, shared types). |
-| [`@ngx-runtime-i18n/angular`](libs/runtime-i18n-angular/README.md) | Angular wrapper (signals, SSR-safe service, pipes).               |
-| [`@ngx-runtime-i18n/primeng`](libs/runtime-i18n-primeng/README.md) | Optional PrimeNG adapter that mirrors runtime language changes.   |
+| Package                                                                  | Description                                                                        | npm                                                                    |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| [`@ngx-runtime-i18n/core`](libs/runtime-i18n/README.md)                  | Framework-agnostic primitives (ICU-lite formatter, shared types).                  | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/core)      |
+| [`@ngx-runtime-i18n/angular`](libs/runtime-i18n-angular/README.md)       | Angular wrapper (signals, SSR-safe service, pipes).                                | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/angular)   |
+| [`@ngx-runtime-i18n/primeng`](libs/runtime-i18n-primeng/README.md)       | Optional PrimeNG adapter that mirrors runtime language changes.                    | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/primeng)   |
+| [`@ngx-runtime-i18n/material`](libs/runtime-i18n-material/README.md)     | Optional Angular Material adapter (paginator, sort, stepper, datepicker labels).   | Not yet published — build from source                                 |
+| [`@ngx-runtime-i18n/schematics`](libs/runtime-i18n-schematics/README.md) | `ng add` schematic that scaffolds `provideRuntimeI18n()` into an existing project. | Not yet published — build from source                                 |
+| [`@ngx-runtime-i18n/cli`](tools/cli/README.md)                           | CLI for extracting translation keys from source and validating catalogs.          | Not yet published — build from source                                 |
 
 ---
 
@@ -173,6 +177,9 @@ Catalog JSON lives under `apps/demo*/public/i18n/<lang>.json`.
 - [Angular package README](libs/runtime-i18n-angular/README.md)
 - [Core package README](libs/runtime-i18n/README.md)
 - [PrimeNG adapter README](libs/runtime-i18n-primeng/README.md)
+- [Material adapter README](libs/runtime-i18n-material/README.md)
+- [Schematics README](libs/runtime-i18n-schematics/README.md)
+- [CLI README](tools/cli/README.md)
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
 
