@@ -41,16 +41,16 @@ formatIcu('en', 'cart.items', catalog, { count: 2 }); // "2 items"
 
 ### `formatIcu(lang, key, catalog, params?, onMissingKey?)`
 
-- **`lang: string`** — current language (for plural rules and future features).
-- **`key: string`** — dotted path into the catalog.
-- **`catalog: Catalog`** — a nested object of strings/objects.
-- **`params?: Record<string, unknown>`** — interpolation values.
-- **`onMissingKey?: (key: string) => string`** — transform for missing keys (defaults to returning the key).
+- **`lang: string`**: current language (for plural rules and future features).
+- **`key: string`**: dotted path into the catalog.
+- **`catalog: Catalog`**: a nested object of strings/objects.
+- **`params?: Record<string, unknown>`**: interpolation values.
+- **`onMissingKey?: (key: string) => string`**: transform for missing keys (defaults to returning the key).
 
 ### Types
 
-- **`Catalog`** — `Record<string, unknown>` (nested object).
-- **`RuntimeI18nConfig`** — shape shared with the Angular wrapper for consistency.
+- **`Catalog`**: `Record<string, unknown>` (nested object).
+- **`RuntimeI18nConfig`**: shape shared with the Angular wrapper for consistency.
 
 ---
 
@@ -71,7 +71,7 @@ formatIcu('en', 'cart.items', catalog, { count: 2 }); // "2 items"
 
 - Not a full ICU implementation; aims to cover common 80% with a tiny footprint.
 - If you need Angular binding or SSR helpers, prefer `@ngx-runtime-i18n/angular`.
-- Keep your catalogs **flat-ish and predictable** to avoid fragile deep paths.
+- Keep your catalogs flat-ish and predictable to avoid fragile deep paths.
 
 ---
 

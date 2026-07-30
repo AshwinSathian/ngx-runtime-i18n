@@ -6,7 +6,7 @@ Lean, SSR‑safe Angular wrapper around `@ngx-runtime-i18n/core`.
 - Optional `I18nCompatService` (RxJS) for non‑signals apps
 - SSR‑aware: TransferState snapshot on the server, hydration‑safe on the client
 - Cancellation‑aware language switching (rapid toggles won’t corrupt state)
-- Lazy Angular **locale data** per language to power pipes (`DatePipe`, `DecimalPipe`, ...)
+- Lazy Angular locale data per language to power pipes (`DatePipe`, `DecimalPipe`, ...)
 - Configurable fallback chains with in-memory or localStorage catalog caching
 
 Peer support: `@angular/* >=16 <22`
@@ -117,9 +117,9 @@ export class SomeCmp {
 
 `I18nService` exposes synchronous helpers that pair nicely with Angular signals during development:
 
-- `getCurrentLang()` — snapshot the current language without subscribing to `lang()`.
-- `getLoadedLangs()` — inspect which catalogs are resident in memory.
-- `hasKey(key, lang = current)` — check catalog coverage without formatting.
+- `getCurrentLang()`: snapshot the current language without subscribing to `lang()`.
+- `getLoadedLangs()`: inspect which catalogs are resident in memory.
+- `hasKey(key, lang = current)`: check catalog coverage without formatting.
 
 ```ts
 const lang = i18n.getCurrentLang();
@@ -164,7 +164,7 @@ Use this to preload catalogs during login, before showing a heavy route, or whil
 
 ## Fallback chains
 
-- Configure `RuntimeI18nConfig.fallbacks?: string[]` to build an ordered lookup. Resolution always runs as **active language → each configured fallback → `defaultLang`**.
+- Configure `RuntimeI18nConfig.fallbacks?: string[]` to build an ordered lookup. Resolution always runs as active language → each configured fallback → `defaultLang`.
 - Values are deduped automatically and trimmed against `supported`, so accidental repeats or unsupported tags are ignored.
 - Missing keys emit a single dev-mode warning and then flow through `onMissingKey()`.
 
@@ -204,34 +204,34 @@ Use the same `provideRuntimeI18n(...)` on both server and client app bootstraps.
 
 ### `provideRuntimeI18n(config, { localeLoaders?, options?, stateKeyPrefix? })`
 
-- **`config.defaultLang: string`** — fallback language.
-- **`config.fallbacks?: string[]`** — ordered fallback catalog chain before the default.
-- **`config.supported: string[]`** — allowed languages (authoritative list).
-- **`config.fetchCatalog(lang, signal?)`** — async catalog loader (should be idempotent; honor `AbortSignal`).
-- **`config.onMissingKey?: (key) => string`** — transform missing keys (dev‑only suggestion: return the key).
+- **`config.defaultLang: string`**: fallback language.
+- **`config.fallbacks?: string[]`**: ordered fallback catalog chain before the default.
+- **`config.supported: string[]`**: allowed languages (authoritative list).
+- **`config.fetchCatalog(lang, signal?)`**: async catalog loader (should be idempotent; honor `AbortSignal`).
+- **`config.onMissingKey?: (key) => string`**: transform missing keys (dev‑only suggestion: return the key).
 
-**`localeLoaders`** — map of language to dynamic imports of Angular locale data (enables localized pipes).  
-**`options.autoDetect`** — on first boot: persisted → navigator → default.  
-**`options.storageKey`** — localStorage key for the chosen language (falsy to disable).  
-**`options.cacheMode`** — `'none' | 'memory' | 'storage'` for catalog caching strategy (default: `'memory'`).  
-**`options.cacheKeyPrefix`** — storage prefix when `cacheMode === 'storage'`.  
-**`options.preferNavigatorBase`** — map `en-GB` → `en` if `en` is in `supported`.  
-**`stateKeyPrefix`** — advanced: customize TransferState keys if you embed multiple i18n instances.
+**`localeLoaders`**: map of language to dynamic imports of Angular locale data (enables localized pipes).  
+**`options.autoDetect`**: on first boot, resolves as persisted → navigator → default.  
+**`options.storageKey`**: localStorage key for the chosen language (falsy to disable).  
+**`options.cacheMode`**: `'none' | 'memory' | 'storage'` for catalog caching strategy (default: `'memory'`).  
+**`options.cacheKeyPrefix`**: storage prefix when `cacheMode === 'storage'`.  
+**`options.preferNavigatorBase`**: map `en-GB` → `en` if `en` is in `supported`.  
+**`stateKeyPrefix`**: advanced, customize TransferState keys if you embed multiple i18n instances.
 
 ### Services & Pipe
 
-- **`I18nService`** — signals‑first: `lang()`, `ready()`, `t(key, params?)`, `setLang(lang)`
-- **`I18nCompatService`** — RxJS equivalent for non‑signals codebases
-- **`I18nPipe`** — `{{ 'path' | i18n:{...} }}` (pure=false; listens to `lang` only)
+- **`I18nService`**: signals‑first, `lang()`, `ready()`, `t(key, params?)`, `setLang(lang)`
+- **`I18nCompatService`**: RxJS equivalent for non‑signals codebases
+- **`I18nPipe`**: `{{ 'path' | i18n:{...} }}` (pure=false; listens to `lang` only)
 
 ---
 
 ## Pitfalls & Gotchas
 
-- **Angular pipes not localizing** — Ensure you defined `localeLoaders` for the language you’re testing.
-- **Hydration mismatch** — Always seed TransferState on SSR; the wrapper is hydration‑safe when the first paint uses server data.
-- **404 for catalogs** — Place files under `src/public/i18n` so they serve as `/i18n/*.json` in dev/prod.
-- **Rapid language toggles** — Supported; the wrapper cancels in‑flight fetches. Your `fetchCatalog` must respect `AbortSignal`.
+- **Angular pipes not localizing**: ensure you defined `localeLoaders` for the language you’re testing.
+- **Hydration mismatch**: always seed TransferState on SSR; the wrapper is hydration‑safe when the first paint uses server data.
+- **404 for catalogs**: place files under `src/public/i18n` so they serve as `/i18n/*.json` in dev/prod.
+- **Rapid language toggles**: supported. The wrapper cancels in‑flight fetches, and your `fetchCatalog` must respect `AbortSignal`.
 
 ---
 
@@ -313,7 +313,7 @@ this.i18n.t('hello.user');
 
 Key types are computed via `DeepKeys<T>` (dot-notation paths up to 4 levels). Interpolation params are extracted via `ExtractParams<S>` from the string literal value. Both types are exported from `@ngx-runtime-i18n/core` for advanced usage.
 
-When no schema is declared (the default), `t()` accepts `string` — full backward compatibility.
+When no schema is declared (the default), `t()` accepts `string`, preserving full backward compatibility.
 
 ---
 

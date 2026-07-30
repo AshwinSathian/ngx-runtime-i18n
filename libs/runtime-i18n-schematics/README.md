@@ -17,7 +17,7 @@ Running the schematic against an Angular project:
 
 | Option           | Type       | Default | Description                                    |
 | ---------------- | ---------- | ------- | ----------------------------------------------- |
-| `project`        | `string`   | —       | The Angular project to configure (required).    |
+| `project`        | `string`   | -       | The Angular project to configure (required).    |
 | `defaultLang`    | `string`   | `en`    | The default language tag (BCP-47).              |
 | `additionalLangs`| `string[]` | `[]`    | Additional language tags to scaffold catalogs for. |
 | `ssr`            | `boolean`  | `false` | Reserved for SSR provider setup.                |

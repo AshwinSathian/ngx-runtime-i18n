@@ -4,7 +4,7 @@
 [![CI](https://github.com/AshwinSathian/ngx-runtime-i18n/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AshwinSathian/ngx-runtime-i18n/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Signals-first runtime i18n for Angular 16+ — SSR-safe, hydration-friendly, ICU-lite, and configurable fallback chains.
+Signals-first runtime i18n for Angular 16+: SSR-safe, hydration-friendly, ICU-lite, and configurable fallback chains.
 
 ---
 
@@ -112,9 +112,9 @@ Need RxJS? Inject `I18nCompatService` for `lang$`, `ready$`, and `t()` without s
 
 `I18nService` exposes synchronous utilities for tooling and debugging:
 
-- `getCurrentLang()` — snapshot of the active language without reading the signal
-- `getLoadedLangs()` — list of catalogs currently cached in memory
-- `hasKey(key, lang = current)` — determine if a key exists before rendering
+- `getCurrentLang()`: snapshot of the active language without reading the signal
+- `getLoadedLangs()`: list of catalogs currently cached in memory
+- `hasKey(key, lang = current)`: determine if a key exists before rendering
 
 Pair these with Angular `effect()`/`computed()` to display diagnostics in dev tools:
 
@@ -128,11 +128,11 @@ const missingLegacy = !this.i18n.hasKey('legacy.title');
 
 ## Fallback chains & catalog caching
 
-- Configure `RuntimeI18nConfig.fallbacks?: string[]`. Lookup order is **active language → each fallback (in order) → `defaultLang`**. Missing keys then flow to `onMissingKey`.
+- Configure `RuntimeI18nConfig.fallbacks?: string[]`. Lookup order is active language, then each fallback in order, then `defaultLang`. Missing keys then flow to `onMissingKey`.
 - `RuntimeI18nOptions.cacheMode` controls persistence:
-  - `none` — keep only the active fallback chain in memory
-  - `memory` _(default)_ — cache every loaded language for the session
-  - `storage` — hydrate catalogs from `localStorage`, then refresh them in the background (`cacheKeyPrefix` controls storage keys)
+  - `none`: keep only the active fallback chain in memory
+  - `memory` _(default)_: cache every loaded language for the session
+  - `storage`: hydrate catalogs from `localStorage`, then refresh them in the background (`cacheKeyPrefix` controls storage keys)
 - Server environments never touch `localStorage`; hydration stays deterministic when you seed TransferState.
 
 ---
@@ -166,9 +166,9 @@ Catalog JSON lives under `apps/demo*/public/i18n/<lang>.json`.
 | [`@ngx-runtime-i18n/core`](libs/runtime-i18n/README.md)                  | Framework-agnostic primitives (ICU-lite formatter, shared types).                  | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/core)      |
 | [`@ngx-runtime-i18n/angular`](libs/runtime-i18n-angular/README.md)       | Angular wrapper (signals, SSR-safe service, pipes).                                | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/angular)   |
 | [`@ngx-runtime-i18n/primeng`](libs/runtime-i18n-primeng/README.md)       | Optional PrimeNG adapter that mirrors runtime language changes.                    | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/primeng)   |
-| [`@ngx-runtime-i18n/material`](libs/runtime-i18n-material/README.md)     | Optional Angular Material adapter (paginator, sort, stepper, datepicker labels).   | Not yet published — build from source                                 |
-| [`@ngx-runtime-i18n/schematics`](libs/runtime-i18n-schematics/README.md) | `ng add` schematic that scaffolds `provideRuntimeI18n()` into an existing project. | Not yet published — build from source                                 |
-| [`@ngx-runtime-i18n/cli`](tools/cli/README.md)                           | CLI for extracting translation keys from source and validating catalogs.          | Not yet published — build from source                                 |
+| [`@ngx-runtime-i18n/material`](libs/runtime-i18n-material/README.md)     | Optional Angular Material adapter (paginator, sort, stepper, datepicker labels).   | Not yet published, build from source                                 |
+| [`@ngx-runtime-i18n/schematics`](libs/runtime-i18n-schematics/README.md) | `ng add` schematic that scaffolds `provideRuntimeI18n()` into an existing project. | Not yet published, build from source                                 |
+| [`@ngx-runtime-i18n/cli`](tools/cli/README.md)                           | CLI for extracting translation keys from source and validating catalogs.          | Not yet published, build from source                                 |
 
 ---
 

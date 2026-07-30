@@ -4,7 +4,7 @@ Optional PrimeNG adapter that listens to `I18nService.lang()` and applies the ma
 
 ## Install
 
-This package is optional ⏤ install it alongside the runtime core, Angular binding, and PrimeNG itself:
+This package is optional. Install it alongside the runtime core, Angular binding, and PrimeNG itself:
 
 ```bash
 npm install @ngx-runtime-i18n/core @ngx-runtime-i18n/angular @ngx-runtime-i18n/primeng primeng

@@ -21,7 +21,7 @@ ngx-i18n extract --src src --output translation-manifest.json
 
 ### `ngx-i18n check`
 
-Validates one or more language catalogs against actual key usage — reporting missing keys (used in code but absent from a catalog) and unused keys (present in a catalog but never referenced).
+Validates one or more language catalogs against actual key usage: reports missing keys (used in code but absent from a catalog) and unused keys (present in a catalog but never referenced).
 
 ```bash
 ngx-i18n check --catalog public/i18n --langs en,hi,de --src src --fail-on-missing
@@ -31,8 +31,8 @@ ngx-i18n check --catalog public/i18n --langs en,hi,de --src src --fail-on-missin
 | -------------------- | -------------- | -------------------------------------------------------------- |
 | `--catalog`          | `public/i18n` | Catalog directory containing `<lang>.json` files.             |
 | `--langs`            | `en`          | Comma-separated language codes to validate.                    |
-| `--src`              | —             | Source directory to scan for key usage (skip if using `--manifest`). |
-| `--manifest`         | —             | Use a pre-computed manifest JSON (from `extract`) instead of re-scanning. |
+| `--src`              | -             | Source directory to scan for key usage (skip if using `--manifest`). |
+| `--manifest`         | -             | Use a pre-computed manifest JSON (from `extract`) instead of re-scanning. |
 | `--fail-on-missing`  | `false`       | Exit with code `1` if any catalog is missing keys.              |
 | `--fail-on-unused`   | `false`       | Exit with code `1` if any catalog has unused keys.              |
 

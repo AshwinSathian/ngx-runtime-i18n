@@ -2,7 +2,7 @@
 
 Angular Material adapter for [`@ngx-runtime-i18n/angular`](../runtime-i18n-angular).
 
-Keeps Angular Material's built-in IntL services (paginator, sort, stepper, datepicker) in sync with runtime language switches — no page reload required.
+Keeps Angular Material's built-in IntL services (paginator, sort, stepper, datepicker) in sync with runtime language switches. No page reload required.
 
 ## Installation
 
@@ -86,7 +86,7 @@ Returns Angular `Provider[]` to register in your application.
 
 ### `MaterialI18nLabels`
 
-All fields are optional — only provide what your app uses:
+Every field is optional. Provide only what your app uses:
 
 ```typescript
 interface MaterialI18nLabels {
@@ -120,8 +120,8 @@ interface MaterialI18nLabels {
 
 ## Notes
 
-- Material IntL services are injected **optionally** — if `@angular/material` is not installed or a specific component's module is not imported, the adapter simply skips that service without errors.
-- Labels are **cached per language** — switching back to a previously-used language does not trigger a network request.
+- Material IntL services are injected optionally: if `@angular/material` is not installed or a specific component's module is not imported, the adapter simply skips that service without errors.
+- Labels are cached per language: switching back to a previously-used language does not trigger a network request.
 - The adapter uses Angular's `effect()` API to reactively track language changes from `I18nService.lang`.
 
 ## License
