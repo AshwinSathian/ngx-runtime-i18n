@@ -12,11 +12,15 @@ Thank you for your interest in contributing to **@ngx-runtime-i18n**!
    npm ci
    ```
 
-2. Verify builds before committing:
+2. Verify builds and tests before committing:
 
    ```bash
-   nx run-many -t build -p=runtime-i18n,runtime-i18n-angular --configuration=production
+   nx run-many -t build -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-primeng,runtime-i18n-material,runtime-i18n-schematics --configuration=production
+   nx run-many -t test -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-primeng,runtime-i18n-material,runtime-i18n-schematics
+   nx test cli
    ```
+
+   This mirrors what CI (`.github/workflows/ci.yml`) runs on every push and pull request.
 
 3. Test the demos:
 

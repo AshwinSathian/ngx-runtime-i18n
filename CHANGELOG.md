@@ -33,7 +33,7 @@ This release marks a **major evolution** of `ngx-runtime-i18n`, with improved SS
 ### 🐞 Bug Fixes
 
 - Fixed `I18nCompatService.whenReady()` resolving prematurely by correcting RxJS readiness handling.
-- Eliminated SSR hydration mismatches caused by inconsistent TransferState key prefixes.=
+- Eliminated SSR hydration mismatches caused by inconsistent TransferState key prefixes.
 
 ### 🧩 ICU-lite Improvements
 
