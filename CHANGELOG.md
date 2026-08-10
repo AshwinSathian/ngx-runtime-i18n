@@ -2,56 +2,42 @@
 
 ## 2.0.0 (2026-01-05)
 
-### 🚀 Major Release Highlights
+SSR correctness fixes, a language-switching signal, preload APIs, and a new optional PrimeNG adapter package. No breaking changes to runtime behavior; the major version bump reflects the API surface growth.
 
-This release focuses on SSR correctness, developer experience, stronger ICU-lite guarantees, and a new optional UI-library adapter package.
-
-### ✨ New Features
-
-#### First-class SSR support
+### SSR
 
 - Added an official SSR provider API for Angular, removing the need for demo-only or copy-pasted server logic.
-- Fixed TransferState hydration by ensuring SSR seeding and client consumption share a single, consistent key strategy.
-- Updated SSR demo and documentation to use the exported SSR helper.
+- Fixed TransferState hydration so SSR seeding and client consumption share one consistent key strategy.
+- Updated the SSR demo and docs to use the exported SSR helper.
+- Eliminated SSR hydration mismatches caused by inconsistent TransferState key prefixes.
 
-#### Language switching UX improvements
+### Language switching
 
 - Introduced an explicit language switching/loading signal in the Angular service, so UIs can react during runtime language changes.
 - Added preload APIs to warm language and catalog data without mutating the active language, useful for route prefetching and profile/settings screens.
 
-#### New PrimeNG integration package
+### New PrimeNG adapter
 
-- Added `@ngx-runtime-i18n/primeng`, an optional adapter that:
+- Added `@ngx-runtime-i18n/primeng`, an optional adapter that reacts to runtime language changes, applies translations via `PrimeNGConfig`, supports sync or async translation resolution, and stays decoupled from the core and Angular packages. No PrimeNG dependency leaks into existing packages.
 
-  - Reacts to runtime language changes
-  - Applies translations via `PrimeNGConfig`
-  - Supports sync or async translation resolution
-  - Remains fully decoupled from core and Angular packages
-
-- No PrimeNG dependency leakage into existing packages.
-
-### 🐞 Bug Fixes
+### Bug fixes
 
 - Fixed `I18nCompatService.whenReady()` resolving prematurely by correcting RxJS readiness handling.
-- Eliminated SSR hydration mismatches caused by inconsistent TransferState key prefixes.
 
-### 🧩 ICU-lite Improvements
+### ICU-lite
 
 - Expanded interpolation token support to include common patterns such as dotted and hyphenated keys (e.g. `{user.name}`, `{user-name}`).
 - Hardened plural parsing to safely handle nested placeholders within plural option bodies.
-- Added clearer documentation and tests to define supported vs unsupported ICU features, preserving the intended "ICU-lite" scope.
+- Documented and tested the supported vs. unsupported ICU feature set, preserving the intended "ICU-lite" scope.
 
-### 📦 Package & Ecosystem Updates
+### Packages
 
 - Bumped all `@ngx-runtime-i18n/*` packages to v2.0.0.
 - Broadened Angular peer dependency support to `>=16 <22`.
-- Added tests across new APIs to prevent regressions.
-- Updated documentation across packages to reflect new capabilities and integration options.
+- Added tests across the new APIs.
+- Updated documentation across packages to reflect the new capabilities.
 
-### ⚠️ Notes
-
-- This is a non-breaking major release in terms of runtime behavior. The major version reflects API surface growth, SSR guarantees, and ecosystem expansion.
-- No full ICU runtime is introduced; advanced ICU features such as `select` remain out of scope.
+No full ICU runtime is introduced; advanced ICU features such as `select` remain out of scope.
 
 ## 1.2.0 (2025-11-14)
 
@@ -59,7 +45,7 @@ This release focuses on SSR correctness, developer experience, stronger ICU-lite
 - Extended translation lookup to walk the active lang, configured fallbacks, and `defaultLang`, logging a single warning per missing key.
 - Introduced optional catalog caching backed by `RuntimeI18nOptions.cacheMode` (`none`, `memory`, `storage`) and `cacheKeyPrefix` for persistent storage.
 - Added DX helper accessors on `I18nService`: `getCurrentLang()`, `getLoadedLangs()`, and `hasKey()` for tooling and diagnostics.
-- Refreshed documentation, changelog, and the demo/SSR app to showcase fallback chains plus storage caching.
+- Refreshed documentation, changelog, and the demo/SSR app to cover fallback chains plus storage caching.
 - Bumped `@ngx-runtime-i18n/*` packages to v1.2.0; no breaking changes.
 
 ## 1.1.0 (2025-11-14)
