@@ -13,73 +13,51 @@
 // four operations recorder.js actually calls (appendLeft, appendRight,
 // remove, toString) plus the .original property it reads for bounds
 // checking - not a no-op stub - so that entry point stays correct even if
-// that assumption ever changes.
-interface Chunk {
-  start: number;
-  end: number;
-  left: string;
-  right: string;
-  removed: boolean;
-}
-
+// that assumption ever changes. Modeled per-boundary-index rather than by
+// splitting chunks: every position 0..original.length is a boundary that
+// can carry accumulated left-inserted and right-inserted text, read back
+// in insertion order (left before right, matching magic-string's own
+// left/right-of-a-position semantics) as toString() walks the string once.
 class MagicString {
   readonly original: string;
-  private _chunks: Chunk[];
+  private _leftInserts = new Map<number, string>();
+  private _rightInserts = new Map<number, string>();
+  private _removed: Array<[number, number]> = [];
 
   constructor(text: string) {
     this.original = text;
-    this._chunks = [{ start: 0, end: text.length, left: '', right: '', removed: false }];
-  }
-
-  private _splitAt(index: number): void {
-    for (let i = 0; i < this._chunks.length; i++) {
-      const c = this._chunks[i];
-      if (index > c.start && index < c.end) {
-        const before: Chunk = { start: c.start, end: index, left: c.left, right: '', removed: c.removed };
-        const after: Chunk = { start: index, end: c.end, left: '', right: c.right, removed: c.removed };
-        this._chunks.splice(i, 1, before, after);
-        return;
-      }
-    }
-  }
-
-  private _chunkAt(index: number, side: 'start' | 'end'): Chunk | undefined {
-    this._splitAt(index);
-    return this._chunks.find((c) => (side === 'start' ? c.start === index : c.end === index));
   }
 
   appendLeft(index: number, content: string): this {
-    const chunk = this._chunks.find((c) => c.end === index) ?? this._chunkAt(index, 'end');
-    if (chunk) {
-      chunk.left += content;
-    }
+    this._leftInserts.set(index, (this._leftInserts.get(index) ?? '') + content);
     return this;
   }
 
   appendRight(index: number, content: string): this {
-    const chunk = this._chunks.find((c) => c.start === index) ?? this._chunkAt(index, 'start');
-    if (chunk) {
-      chunk.right = content + chunk.right;
-    }
+    this._rightInserts.set(index, content + (this._rightInserts.get(index) ?? ''));
     return this;
   }
 
   remove(start: number, end: number): this {
-    this._splitAt(start);
-    this._splitAt(end);
-    for (const c of this._chunks) {
-      if (c.start >= start && c.end <= end) {
-        c.removed = true;
-      }
-    }
+    this._removed.push([start, end]);
     return this;
   }
 
+  private _isRemoved(pos: number): boolean {
+    return this._removed.some(([start, end]) => pos >= start && pos < end);
+  }
+
   toString(): string {
-    return this._chunks
-      .map((c) => c.left + (c.removed ? '' : this.original.slice(c.start, c.end)) + c.right)
-      .join('');
+    let out = '';
+    for (let i = 0; i <= this.original.length; i++) {
+      out += this._leftInserts.get(i) ?? '';
+      out += this._rightInserts.get(i) ?? '';
+      if (i < this.original.length && !this._isRemoved(i)) {
+        out += this.original[i];
+      }
+    }
+    return out;
   }
 }
 
-export = { MagicString };
+export { MagicString };
