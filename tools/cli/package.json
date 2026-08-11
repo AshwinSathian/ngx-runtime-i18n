@@ -1,6 +1,6 @@
 {
   "name": "@ngx-runtime-i18n/cli",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "CLI extractor and validator for @ngx-runtime-i18n",
   "type": "module",
   "bin": {

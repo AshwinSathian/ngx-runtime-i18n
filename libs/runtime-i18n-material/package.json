@@ -1,6 +1,6 @@
 {
   "name": "@ngx-runtime-i18n/material",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Angular Material adapter for @ngx-runtime-i18n/angular",
   "type": "module",
   "sideEffects": false,

@@ -1,6 +1,6 @@
 {
   "name": "@ngx-runtime-i18n/schematics",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Angular schematics for @ngx-runtime-i18n",
   "main": "src/index.js",
   "schematics": "./collection.json",

@@ -1,6 +1,6 @@
 {
   "name": "@ngx-runtime-i18n/primeng",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "PrimeNG adapter for @ngx-runtime-i18n/angular",
   "type": "module",
   "sideEffects": false,
