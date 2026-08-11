@@ -4,7 +4,7 @@
     "rootDir": ".",
     "sourceMap": true,
     "declaration": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -19,7 +19,11 @@
       "@ngx-runtime-i18n/core": ["libs/runtime-i18n/src/index.ts"],
       "@ngx-runtime-i18n/angular": ["libs/runtime-i18n-angular/src/index.ts"],
       "@ngx-runtime-i18n/material": ["libs/runtime-i18n-material/src/index.ts"]
-    }
+    },
+    "noUncheckedSideEffectImports": false,
+    "types": ["*"],
+    "esModuleInterop": false,
+    "ignoreDeprecations": "6.0"
   },
   "exclude": ["node_modules", "tmp"]
 }

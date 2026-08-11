@@ -17,7 +17,14 @@ const browserDistFolder = resolve(serverDistFolder, '../browser');
 const i18nDir = join(browserDistFolder, 'i18n'); // catalogs live in dist/browser/i18n
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+// Angular 22's AngularNodeAppEngine validates the Host/X-Forwarded-Host
+// headers against an explicit allowlist by default (SSRF hardening); an
+// unconfigured engine rejects every request. This is a local dev/demo
+// server, so localhost is the only host that should ever reach it. See
+// https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+const angularApp = new AngularNodeAppEngine({
+  allowedHosts: ['localhost', '127.0.0.1'],
+});
 
 function pickLang(
   req: Request,

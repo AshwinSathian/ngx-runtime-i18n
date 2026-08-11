@@ -5,9 +5,9 @@
   "type": "module",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/common": ">=16 <22",
-    "@angular/core": ">=16 <22",
-    "@angular/platform-browser": ">=16 <22"
+    "@angular/common": ">=16 <23",
+    "@angular/core": ">=16 <23",
+    "@angular/platform-browser": ">=16 <23"
   },
   "dependencies": {
     "@ngx-runtime-i18n/core": "^2.0.1"

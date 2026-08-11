@@ -5,7 +5,7 @@
   "type": "module",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/core": ">=16 <22",
+    "@angular/core": ">=16 <23",
     "@ngx-runtime-i18n/angular": "^2.0.1",
     "primeng": ">=17 <20.4.0"
   },

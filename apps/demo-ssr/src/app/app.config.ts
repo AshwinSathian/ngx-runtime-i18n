@@ -2,6 +2,7 @@ import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import {
   provideClientHydration,
   withHttpTransferCacheOptions,
+  withNoIncrementalHydration
 } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { provideRuntimeI18n } from '@ngx-runtime-i18n/angular';
@@ -14,7 +15,7 @@ export const appConfig: ApplicationConfig = {
 
     // Recommended hydration transfer cache settings (no POST caching).
     provideClientHydration(
-      withHttpTransferCacheOptions({ includePostRequests: false })
+      withHttpTransferCacheOptions({ includePostRequests: false }), withNoIncrementalHydration()
     ),
 
     provideRuntimeI18n(
