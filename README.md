@@ -8,6 +8,12 @@ Signals-first runtime i18n for Angular 16+: SSR-safe, hydration-friendly, ICU-li
 
 ---
 
+## Website
+
+The marketing/docs site for this package family lives at [`apps/site`](apps/site) (an Nx Angular application with static prerendering). Once deployed, it will be live at [https://i18n.ashwinsathian.com](https://i18n.ashwinsathian.com).
+
+---
+
 ## Features
 
 - `provideRuntimeI18n()` installs `I18nService`, `I18nPipe`, and the optional `I18nCompatService` (RxJS bridge)
