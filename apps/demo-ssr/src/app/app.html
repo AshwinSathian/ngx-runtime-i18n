@@ -4,15 +4,16 @@
 
     <nav class="lang-switch">
       <span>Language:</span>
-      <button
-        *ngFor="let l of langs"
-        type="button"
-        class="chip"
-        [class.active]="isActive(l)()"
-        (click)="switchLang(l)"
-      >
-        {{ l }}
-      </button>
+      @for (l of langs; track l) {
+        <button
+          type="button"
+          class="chip"
+          [class.active]="isActive(l)()"
+          (click)="switchLang(l)"
+          >
+          {{ l }}
+        </button>
+      }
     </nav>
   </header>
 

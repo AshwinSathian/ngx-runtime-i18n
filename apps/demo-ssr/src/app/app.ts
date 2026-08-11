@@ -1,11 +1,11 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { I18nPipe, I18nService } from '@ngx-runtime-i18n/angular';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, I18nPipe],
+  imports: [I18nPipe],
   templateUrl: './app.html',
   styleUrls: ['./app.css'],
 })

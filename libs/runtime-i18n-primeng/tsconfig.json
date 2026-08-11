@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "es2022",
     "module": "preserve",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
