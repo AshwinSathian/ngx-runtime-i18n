@@ -13,7 +13,7 @@
     "test": "node --experimental-vm-modules ../../node_modules/.bin/jest --config jest.config.ts"
   },
   "dependencies": {
-    "commander": "^12.0.0"
+    "commander": "^15.0.0"
   },
   "devDependencies": {
     "typescript": "~6.0.3"
