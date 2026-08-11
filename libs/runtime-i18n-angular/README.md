@@ -186,12 +186,18 @@ On the server, use the exported helper to seed TransferState with the same keys 
 
 ```ts
 // i18n.server.providers.ts
-import { Provider } from '@angular/core';
+import { EnvironmentProviders } from '@angular/core';
 import { RuntimeI18nSsrSnapshot, provideRuntimeI18nSsr } from '@ngx-runtime-i18n/angular';
 
-export function i18nServerProviders(snapshot: RuntimeI18nSsrSnapshot): Provider[] {
+export function i18nServerProviders(snapshot: RuntimeI18nSsrSnapshot): EnvironmentProviders {
   return provideRuntimeI18nSsr(snapshot);
 }
+```
+
+Include the result directly in your `providers` array — don't spread it (`EnvironmentProviders` is an opaque value, not an array):
+
+```ts
+angularApp.handle(req, { providers: [i18nServerProviders(snapshot)] });
 ```
 
 `RuntimeI18nSsrSnapshot.bootstrap` holds the active language catalog and `catalogs` can optionally seed additional locales. Everything defaults to the same prefix as `provideRuntimeI18n()` (`@ngx-runtime-i18n/core`), but pass `stateKeyPrefix` to both helpers when you override it.

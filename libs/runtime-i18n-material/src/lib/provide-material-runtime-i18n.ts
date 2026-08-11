@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, inject, Provider, effect } from '@angular/core';
+import { EnvironmentProviders, inject, provideAppInitializer, effect } from '@angular/core';
 import { MatPaginatorIntl } from '@angular/material/paginator';
 import { MatSortHeaderIntl } from '@angular/material/sort';
 import { MatStepperIntl } from '@angular/material/stepper';
@@ -58,41 +58,33 @@ export function applyMaterialLabels(
  */
 export function provideMaterialRuntimeI18n(
   options: ProvideMaterialRuntimeI18nOptions,
-): Provider[] {
-  return [
-    {
-      provide: APP_INITIALIZER,
-      multi: true,
-      useFactory: () => {
-        const i18n = inject(I18nService);
-        const paginatorIntl = inject(MatPaginatorIntl, { optional: true });
-        const sortIntl = inject(MatSortHeaderIntl, { optional: true });
-        const stepperIntl = inject(MatStepperIntl, { optional: true });
-        const cache = new Map<string, MaterialI18nLabels>();
+): EnvironmentProviders {
+  return provideAppInitializer(() => {
+    const i18n = inject(I18nService);
+    const paginatorIntl = inject(MatPaginatorIntl, { optional: true });
+    const sortIntl = inject(MatSortHeaderIntl, { optional: true });
+    const stepperIntl = inject(MatStepperIntl, { optional: true });
+    const cache = new Map<string, MaterialI18nLabels>();
 
-        return () => {
-          effect(() => {
-            const lang = i18n.lang();
-            const cached = cache.get(lang);
+    effect(() => {
+      const lang = i18n.lang();
+      const cached = cache.get(lang);
 
-            if (cached) {
-              applyMaterialLabels(cached, lang, paginatorIntl, sortIntl, stepperIntl, options.onApplied);
-              return;
-            }
+      if (cached) {
+        applyMaterialLabels(cached, lang, paginatorIntl, sortIntl, stepperIntl, options.onApplied);
+        return;
+      }
 
-            Promise.resolve(options.resolveLabels(lang))
-              .then((labels) => {
-                if (!labels) return;
-                cache.set(lang, labels);
-                if (i18n.lang() !== lang) return;
-                applyMaterialLabels(labels, lang, paginatorIntl, sortIntl, stepperIntl, options.onApplied);
-              })
-              .catch((err) => {
-                console.error(`${LOG_TOPIC} failed to apply labels for "${lang}"`, err);
-              });
-          });
-        };
-      },
-    },
-  ];
+      Promise.resolve(options.resolveLabels(lang))
+        .then((labels) => {
+          if (!labels) return;
+          cache.set(lang, labels);
+          if (i18n.lang() !== lang) return;
+          applyMaterialLabels(labels, lang, paginatorIntl, sortIntl, stepperIntl, options.onApplied);
+        })
+        .catch((err) => {
+          console.error(`${LOG_TOPIC} failed to apply labels for "${lang}"`, err);
+        });
+    });
+  });
 }

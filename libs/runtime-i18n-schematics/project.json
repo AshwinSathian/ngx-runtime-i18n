@@ -18,6 +18,11 @@
             "output": "."
           },
           {
+            "input": "libs/runtime-i18n-schematics",
+            "glob": "README.md",
+            "output": "."
+          },
+          {
             "input": "libs/runtime-i18n-schematics/src/ng-add",
             "glob": "schema.json",
             "output": "./src/ng-add"

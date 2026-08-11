@@ -497,7 +497,13 @@ function hasKey(obj: unknown, path: string): boolean {
   if (!obj || typeof obj !== 'object') return false;
   let cur: unknown = obj;
   for (const p of path.split('.')) {
-    if (cur == null || typeof cur !== 'object' || !(p in cur)) return false;
+    if (
+      cur == null ||
+      typeof cur !== 'object' ||
+      !Object.prototype.hasOwnProperty.call(cur, p)
+    ) {
+      return false;
+    }
     cur = (cur as Record<string, unknown>)[p];
   }
   return true;

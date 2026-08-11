@@ -77,7 +77,7 @@ export const appConfig: ApplicationConfig = {
 
 ### `provideMaterialRuntimeI18n(options)`
 
-Returns Angular `Provider[]` to register in your application.
+Returns Angular `EnvironmentProviders` to register in your application.
 
 | Option | Type | Description |
 |--------|------|-------------|

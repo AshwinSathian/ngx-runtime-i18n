@@ -1,9 +1,9 @@
 import {
-  APP_INITIALIZER,
   DestroyRef,
   EnvironmentProviders,
   inject,
   makeEnvironmentProviders,
+  provideAppInitializer,
 } from '@angular/core';
 import { I18nService } from './i18n.service';
 import { RUNTIME_I18N_SCOPES } from './tokens';
@@ -31,17 +31,13 @@ export function withI18nScope(scope: string): EnvironmentProviders {
       useValue: scope,
       multi: true,
     },
-    {
-      provide: APP_INITIALIZER,
-      multi: true,
-      useFactory: () => {
-        const i18n = inject(I18nService);
-        const destroyRef = inject(DestroyRef);
+    provideAppInitializer(() => {
+      const i18n = inject(I18nService);
+      const destroyRef = inject(DestroyRef);
 
-        destroyRef.onDestroy(() => i18n.unloadScope(scope));
+      destroyRef.onDestroy(() => i18n.unloadScope(scope));
 
-        return () => i18n.loadScope(scope);
-      },
-    },
+      return i18n.loadScope(scope);
+    }),
   ]);
 }

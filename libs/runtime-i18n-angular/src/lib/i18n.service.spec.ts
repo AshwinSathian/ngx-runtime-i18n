@@ -108,6 +108,22 @@ describe('I18nService', () => {
     );
   });
 
+  it('treats keys that shadow Object.prototype members as missing, not present', () => {
+    // hasKey() must use hasOwnProperty, not `in` - `in` walks the prototype
+    // chain, so a key literally named "constructor"/"toString"/etc would be
+    // (incorrectly) reported as present on every catalog, bypassing the
+    // fallback-chain continuation and the dev-mode missing-key warning below.
+    const warnSpy = jest
+      .spyOn(console, 'warn')
+      .mockImplementation(() => undefined);
+    const result = service.t('constructor');
+    expect(result).toBe('constructor');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain(
+      '[ngx-runtime-i18n] Missing key "constructor"'
+    );
+  });
+
   it('switches language and uses newly available catalog', async () => {
     // Manually inject a Hindi catalog into the shared map to simulate it being loaded
     const catalogs = TestBed.inject(RUNTIME_I18N_CATALOGS);

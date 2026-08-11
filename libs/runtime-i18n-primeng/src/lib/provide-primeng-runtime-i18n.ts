@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, Provider, effect } from '@angular/core';
+import { EnvironmentProviders, inject, provideAppInitializer, effect } from '@angular/core';
 import { I18nService } from '@ngx-runtime-i18n/angular';
 import { PrimeNGConfig } from 'primeng/api';
 
@@ -24,7 +24,7 @@ export function createPrimeNgRuntimeI18nEffect(
   i18n: I18nService,
   primeng: PrimeNGConfig,
   options: ProvidePrimeNgRuntimeI18nOptions
-): () => void {
+): void {
   const cache = new Map<string, Record<string, unknown>>();
 
   effect(() => {
@@ -63,8 +63,6 @@ export function createPrimeNgRuntimeI18nEffect(
         );
       });
   });
-
-  return () => undefined;
 }
 
 /**
@@ -72,14 +70,10 @@ export function createPrimeNgRuntimeI18nEffect(
  */
 export function providePrimeNgRuntimeI18n(
   options: ProvidePrimeNgRuntimeI18nOptions
-): Provider[] {
-  return [
-    {
-      provide: APP_INITIALIZER,
-      multi: true,
-      useFactory: (i18n: I18nService, primeng: PrimeNGConfig) =>
-        createPrimeNgRuntimeI18nEffect(i18n, primeng, options),
-      deps: [I18nService, PrimeNGConfig],
-    },
-  ];
+): EnvironmentProviders {
+  return provideAppInitializer(() => {
+    const i18n = inject(I18nService);
+    const primeng = inject(PrimeNGConfig);
+    createPrimeNgRuntimeI18nEffect(i18n, primeng, options);
+  });
 }

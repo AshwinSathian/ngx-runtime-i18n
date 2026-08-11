@@ -109,7 +109,7 @@ app.use('/**', (req, res, next) => {
   // console.log('[i18n][SSR] lang=%s catalogs=%s', snapshot.lang, Object.keys(snapshot.catalogs));
 
   angularApp
-    .handle(req, { providers: [...i18nServerProviders(snapshot)] })
+    .handle(req, { providers: [i18nServerProviders(snapshot)] })
     .then((response) =>
       response ? writeResponseToNodeResponse(response, res) : next()
     )

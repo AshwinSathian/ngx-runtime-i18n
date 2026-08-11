@@ -1,4 +1,4 @@
-import { Provider } from '@angular/core';
+import { EnvironmentProviders } from '@angular/core';
 import {
   provideRuntimeI18nSsr,
   RuntimeI18nSsrSnapshot,
@@ -6,6 +6,8 @@ import {
 
 export type I18nSnapshot = RuntimeI18nSsrSnapshot;
 
-export function i18nServerProviders(snapshot: I18nSnapshot): Provider[] {
+export function i18nServerProviders(
+  snapshot: I18nSnapshot
+): EnvironmentProviders {
   return provideRuntimeI18nSsr(snapshot);
 }

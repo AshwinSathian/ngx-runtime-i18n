@@ -1,8 +1,9 @@
 import {
-  ENVIRONMENT_INITIALIZER,
+  EnvironmentProviders,
   inject,
   makeStateKey,
   Provider,
+  provideEnvironmentInitializer,
   TransferState,
 } from '@angular/core';
 import { getLocalePluralCase, Plural } from '@angular/common';
@@ -46,7 +47,7 @@ export function provideRuntimeI18n(
     /** See {@link RuntimeI18nOptions} */
     options?: RuntimeI18nOptions;
   }
-): Provider[] {
+): (Provider | EnvironmentProviders)[] {
   const catalogs = new Map<string, Catalog>();
   const locales = new Set<string>();
   const stateKeyPrefix =
@@ -113,26 +114,22 @@ export function provideRuntimeI18n(
     },
 
     // Client boot: populate catalogs from TransferState if present (SSR→CSR).
-    {
-      provide: ENVIRONMENT_INITIALIZER,
-      multi: true,
-      useValue: () => {
-        const ts = inject(TransferState, { optional: true });
-        if (!ts) return;
-        const key = makeStateKey<{
-          lang: string;
-          catalogs: Record<string, Catalog>;
-        }>(getRuntimeI18nBootstrapStateKey(stateKeyPrefix));
-        if (ts.hasKey(key)) {
-          const snap = ts.get(key, {
-            lang: normalizedCfg.defaultLang,
-            catalogs: {} as Record<string, Catalog>,
-          });
-          for (const [l, c] of Object.entries(snap.catalogs)) {
-            catalogs.set(l, c);
-          }
+    provideEnvironmentInitializer(() => {
+      const ts = inject(TransferState, { optional: true });
+      if (!ts) return;
+      const key = makeStateKey<{
+        lang: string;
+        catalogs: Record<string, Catalog>;
+      }>(getRuntimeI18nBootstrapStateKey(stateKeyPrefix));
+      if (ts.hasKey(key)) {
+        const snap = ts.get(key, {
+          lang: normalizedCfg.defaultLang,
+          catalogs: {} as Record<string, Catalog>,
+        });
+        for (const [l, c] of Object.entries(snap.catalogs)) {
+          catalogs.set(l, c);
         }
-      },
-    },
+      }
+    }),
   ];
 }

@@ -1,9 +1,9 @@
 import {
-  ENVIRONMENT_INITIALIZER,
-  Provider,
+  EnvironmentProviders,
   TransferState,
   inject,
   makeStateKey,
+  provideEnvironmentInitializer,
 } from '@angular/core';
 import type { Catalog } from '@ngx-runtime-i18n/core';
 import {
@@ -25,7 +25,7 @@ export interface ProvideRuntimeI18nSsrOptions {
 export function provideRuntimeI18nSsr(
   snapshot: RuntimeI18nSsrSnapshot,
   opts?: ProvideRuntimeI18nSsrOptions
-): Provider[] {
+): EnvironmentProviders {
   const stateKeyPrefix =
     opts?.stateKeyPrefix ?? DEFAULT_RUNTIME_I18N_STATE_KEY_PREFIX;
   const catalogs: Record<string, Catalog> = {
@@ -33,28 +33,22 @@ export function provideRuntimeI18nSsr(
     [snapshot.lang]: snapshot.bootstrap,
   };
 
-  return [
-    {
-      provide: ENVIRONMENT_INITIALIZER,
-      multi: true,
-      useFactory: () => () => {
-        const ts = inject(TransferState, { optional: true });
-        if (!ts) return;
+  return provideEnvironmentInitializer(() => {
+    const ts = inject(TransferState, { optional: true });
+    if (!ts) return;
 
-        const bootstrapKey = makeStateKey<{
-          lang: string;
-          catalogs: Record<string, Catalog>;
-        }>(getRuntimeI18nBootstrapStateKey(stateKeyPrefix));
+    const bootstrapKey = makeStateKey<{
+      lang: string;
+      catalogs: Record<string, Catalog>;
+    }>(getRuntimeI18nBootstrapStateKey(stateKeyPrefix));
 
-        ts.set(bootstrapKey, { lang: snapshot.lang, catalogs });
+    ts.set(bootstrapKey, { lang: snapshot.lang, catalogs });
 
-        for (const [lang, catalog] of Object.entries(catalogs)) {
-          const catalogKey = makeStateKey<Catalog>(
-            getRuntimeI18nCatalogStateKey(stateKeyPrefix, lang)
-          );
-          ts.set(catalogKey, catalog);
-        }
-      },
-    },
-  ];
+    for (const [lang, catalog] of Object.entries(catalogs)) {
+      const catalogKey = makeStateKey<Catalog>(
+        getRuntimeI18nCatalogStateKey(stateKeyPrefix, lang)
+      );
+      ts.set(catalogKey, catalog);
+    }
+  });
 }

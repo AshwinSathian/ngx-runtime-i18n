@@ -29,7 +29,7 @@ describe('provideRuntimeI18nSsr', () => {
 
   it('writes TransferState keys using the shared prefix', async () => {
     await TestBed.configureTestingModule({
-      providers: [TransferState, ...provideRuntimeI18nSsr(snapshot)],
+      providers: [TransferState, provideRuntimeI18nSsr(snapshot)],
     }).compileComponents();
 
     const ts = TestBed.inject(TransferState);
@@ -47,7 +47,7 @@ describe('provideRuntimeI18nSsr', () => {
 
   it('also seeds per-catalog keys for hydration', async () => {
     await TestBed.configureTestingModule({
-      providers: [TransferState, ...provideRuntimeI18nSsr(snapshot)],
+      providers: [TransferState, provideRuntimeI18nSsr(snapshot)],
     }).compileComponents();
 
     const ts = TestBed.inject(TransferState);
