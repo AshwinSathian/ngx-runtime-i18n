@@ -4,7 +4,7 @@
   "description": "CLI extractor and validator for @ngx-runtime-i18n",
   "type": "module",
   "bin": {
-    "ngx-i18n": "./dist/cli.js"
+    "ngx-i18n": "dist/cli.js"
   },
   "main": "./dist/cli.js",
   "files": ["dist", "README.md"],
