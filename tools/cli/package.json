@@ -16,7 +16,7 @@
     "commander": "^12.0.0"
   },
   "devDependencies": {
-    "typescript": "~6.0.3"
+    "typescript": "~7.0.2"
   },
   "keywords": ["angular", "i18n", "cli", "extractor", "validator"],
   "license": "MIT",
