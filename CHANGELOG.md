@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Tooling upgrade
+
+- Upgraded Angular from 20.3.27 to 22.1.1 (via an intermediate 21.2.19 stage), Nx from 22.7.8 to 23.1.1, TypeScript from 5.9.2 to 6.0.3, and the Jest toolchain from Jest 29/jest-preset-angular 14 to Jest 30/jest-preset-angular 17.
+- Widened `@ngx-runtime-i18n/angular`, `@ngx-runtime-i18n/material`, and `@ngx-runtime-i18n/primeng` peer dependency ranges to admit Angular 22 (`<23`, up from `<22`).
+- No intentional runtime behavior changes: Angular's own v21/v22 migrations preserved existing change-detection and hydration defaults where its new defaults would otherwise have altered them (`ChangeDetectionStrategy.Eager` on the two demo components that had no explicit strategy; `withNoIncrementalHydration()` on the SSR demo's hydration config).
+- The SSR demo's Node server now configures `allowedHosts` explicitly for `AngularNodeAppEngine`, required by Angular 22's new built-in Host-header validation (SSRF hardening).
+
 ## 2.0.0 (2026-01-05)
 
 SSR correctness fixes, a language-switching signal, preload APIs, and a new optional PrimeNG adapter package. No breaking changes to runtime behavior; the major version bump reflects the API surface growth.
