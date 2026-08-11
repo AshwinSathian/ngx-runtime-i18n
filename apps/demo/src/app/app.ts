@@ -1,10 +1,11 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { I18nPipe, I18nService } from '@ngx-runtime-i18n/angular';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [I18nPipe],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './app.html',
 })
 export class App {

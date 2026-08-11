@@ -1,10 +1,11 @@
 // component.ts
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { I18nCompatService } from '@ngx-runtime-i18n/angular';
 
 @Component({
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <h1>{{ t('hello.user', { name: 'Ashwin' }) }}</h1>
     <small>lang={{ lang() }} | ready={{ ready() }}</small>

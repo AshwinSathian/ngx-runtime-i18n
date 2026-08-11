@@ -4,5 +4,13 @@
     "paths": {
       "@ngx-runtime-i18n/core": ["dist/libs/runtime-i18n/index.d.ts"]
     }
+  },
+  "angularCompilerOptions": {
+    "extendedDiagnostics": {
+      "checks": {
+        "nullishCoalescingNotNullable": "suppress",
+        "optionalChainNotNullable": "suppress"
+      }
+    }
   }
 }

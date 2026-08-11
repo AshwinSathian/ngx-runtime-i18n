@@ -3,7 +3,7 @@
 // spinner UI. Nothing in this workspace's schematics tests exercises that
 // package-manager task, so this stub avoids Jest having to parse ESM it
 // never needs to run.
-module.exports = function ora() {
+function ora() {
   return {
     start() {
       return this;
@@ -18,4 +18,6 @@ module.exports = function ora() {
       return this;
     },
   };
-};
+}
+
+export = ora;

@@ -1,5 +1,5 @@
 
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { I18nPipe, I18nService } from '@ngx-runtime-i18n/angular';
 
 @Component({
@@ -7,6 +7,7 @@ import { I18nPipe, I18nService } from '@ngx-runtime-i18n/angular';
   standalone: true,
   imports: [I18nPipe],
   templateUrl: './app.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./app.css'],
 })
 export class App {

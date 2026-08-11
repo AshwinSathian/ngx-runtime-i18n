@@ -24,6 +24,11 @@ export default [
           style: 'kebab-case',
         },
       ],
+      // Newly enabled by angular-eslint's v22 recommended set. The Angular
+      // v22 migration explicitly set ChangeDetectionStrategy.Eager on these
+      // components to preserve their pre-v22 default (non-OnPush) behavior;
+      // adopting OnPush is a real behavior change, out of scope here.
+      '@angular-eslint/prefer-on-push-component-change-detection': 'off',
     },
   },
   {
