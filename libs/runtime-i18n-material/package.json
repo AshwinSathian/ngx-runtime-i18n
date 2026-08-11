@@ -20,7 +20,7 @@
       "import": "./fesm2022/ngx-runtime-i18n-material.mjs"
     }
   },
-  "publishConfig": { "access": "public", "provenance": false },
+  "publishConfig": { "access": "public", "provenance": true },
   "engines": { "node": ">=18" }
 }
 

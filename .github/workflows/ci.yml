@@ -17,6 +17,7 @@ jobs:
   libs:
     name: Build & Test (libs)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       CI: true
       NX_DAEMON: false
@@ -27,12 +28,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Use Node.js 20.x with npm cache
-        uses: actions/setup-node@v4
+      - name: Use Node.js 22.x with npm cache
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install deps
@@ -44,14 +45,17 @@ jobs:
         run: |
           node -e "const fs=require('fs');const p='./nx.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));if(j.nxCloudId){delete j.nxCloudId;fs.writeFileSync(p,JSON.stringify(j,null,2));console.log('Removed nxCloudId from nx.json');}else{console.log('nxCloudId not present');}"
 
+      - name: Lint all projects
+        run: npx nx run-many -t lint --all --skip-nx-cache=false
+
       - name: Build Angular libs (prod)
-        run: npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-material --configuration=production --skip-nx-cache=false
+        run: npx nx run-many -t build -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-material,runtime-i18n-primeng --configuration=production --skip-nx-cache=false
 
       - name: Build tooling libs
-        run: npx nx run-many -t build -p=runtime-i18n-schematics --skip-nx-cache=false
+        run: npx nx run-many -t build -p=runtime-i18n-schematics,cli --skip-nx-cache=false
 
       - name: Test libs
-        run: npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-material,runtime-i18n-schematics --configuration=ci --runInBand --skip-nx-cache=false
+        run: npx nx run-many -t test -p=runtime-i18n,runtime-i18n-angular,runtime-i18n-material,runtime-i18n-primeng,runtime-i18n-schematics --configuration=ci --runInBand --skip-nx-cache=false
 
       - name: Test tooling
         run: npx nx test cli --runInBand --skip-nx-cache=false

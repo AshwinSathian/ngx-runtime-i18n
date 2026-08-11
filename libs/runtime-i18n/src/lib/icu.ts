@@ -37,7 +37,7 @@ function lookup(path: string, obj: unknown): unknown {
   return path
     .split('.')
     .reduce((o: unknown, k: string) =>
-      o && typeof o === 'object' && k in (o as Record<string, unknown>)
+      o && typeof o === 'object' && Object.prototype.hasOwnProperty.call(o, k)
         ? (o as Record<string, unknown>)[k]
         : undefined,
       obj);
@@ -98,21 +98,25 @@ function replaceMessageBlocks(
       const n = Number(params[arg] ?? 0);
       if (Number.isFinite(n)) {
         const exact = options[`=${n}`];
-        if (exact != null) { out += replaceHash(exact, n); i = j; continue; }
+        if (exact != null) {
+          out += replaceHash(replaceMessageBlocks(exact, lang, params, pluralResolver), n);
+          i = j;
+          continue;
+        }
 
         const category: PluralCategory = pluralResolver
           ? pluralResolver(n, lang)
           : n === 1 ? 'one' : 'other';
 
         const match = options[category] ?? options['other'] ?? '';
-        out += replaceHash(match, n);
+        out += replaceHash(replaceMessageBlocks(match, lang, params, pluralResolver), n);
       } else {
-        out += replaceHash(options['other'] ?? '', Number(params[arg]));
+        out += replaceHash(replaceMessageBlocks(options['other'] ?? '', lang, params, pluralResolver), Number(params[arg]));
       }
     } else {
-      // select: look up param value directly
+      // select: look up param value directly, then resolve any nested keyword blocks
       const val = String(params[arg] ?? 'other');
-      out += options[val] ?? options['other'] ?? '';
+      out += replaceMessageBlocks(options[val] ?? options['other'] ?? '', lang, params, pluralResolver);
     }
 
     i = j;

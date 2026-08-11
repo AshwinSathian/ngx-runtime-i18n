@@ -19,11 +19,6 @@
       "description": "Additional language tags to scaffold.",
       "items": { "type": "string" },
       "default": []
-    },
-    "ssr": {
-      "type": "boolean",
-      "description": "Include SSR provider setup.",
-      "default": false
     }
   },
   "required": ["project"]

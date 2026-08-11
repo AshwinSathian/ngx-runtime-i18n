@@ -38,8 +38,11 @@ export interface RuntimeI18nConfig {
    * Fetch a catalog at runtime. Must be idempotent and cancellable via AbortSignal.
    * - Runs on the client only (the server should seed catalogs via TransferState).
    * - Return a plain object (parsed JSON).
+   * - `scope` is set when loading a route-scoped catalog registered via `withI18nScope()`
+   *   (see `@ngx-runtime-i18n/angular`); build the scoped URL yourself, e.g.
+   *   `scope ? `/i18n/${scope}/${lang}.json` : `/i18n/${lang}.json``.
    */
-  fetchCatalog: (lang: string, signal?: AbortSignal) => Promise<Catalog>;
+  fetchCatalog: (lang: string, signal?: AbortSignal, scope?: string) => Promise<Catalog>;
 
   /**
    * Missing key handler. When omitted, the key itself is returned (useful in dev).
@@ -60,7 +63,7 @@ export interface RuntimeI18nConfig {
  * }
  * @publicApi
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/no-empty-object-type
 export interface I18nSchema {}
 
 /** @internal */

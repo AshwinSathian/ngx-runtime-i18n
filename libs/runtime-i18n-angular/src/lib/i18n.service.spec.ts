@@ -11,7 +11,7 @@ import {
 
 describe('I18nService', () => {
   let service: I18nService;
-  let fetchCatalogMock: jest.Mock<Promise<Catalog>, [string, AbortSignal?]>;
+  let fetchCatalogMock: jest.Mock<Promise<Catalog>, [string, AbortSignal?, string?]>;
   const defaultLocales = new Set<string>(['en', 'hi', 'de']);
   type I18nServiceInternals = {
     options: RuntimeI18nOptions;
@@ -30,13 +30,14 @@ describe('I18nService', () => {
     const seededCatalogs = opts.catalogs ?? createDefaultCatalogs();
     const fetchImpl =
       opts.config?.fetchCatalog ??
-      (async (_lang?: string, _signal?: AbortSignal) => {
+      (async (_lang?: string, _signal?: AbortSignal, _scope?: string) => {
         void _lang;
         void _signal;
+        void _scope;
         return opts.fetchResult ?? {};
       });
-    fetchCatalogMock = jest.fn<Promise<Catalog>, [string, AbortSignal?]>(
-      (lang, signal) => fetchImpl(lang, signal)
+    fetchCatalogMock = jest.fn<Promise<Catalog>, [string, AbortSignal?, string?]>(
+      (lang, signal, scope) => fetchImpl(lang, signal, scope)
     );
     const cfg: RuntimeI18nConfig = {
       defaultLang: opts.config?.defaultLang ?? 'en',
@@ -281,12 +282,15 @@ describe('I18nService', () => {
   );
 
   describe('scope catalogs', () => {
-    it('loadScope fetches and stores scope-specific catalog entries', async () => {
-      // Seed scope catalog via fetchCatalog
+    it('loadScope calls fetchCatalog with the bare lang plus the scope name (not a pre-built URL)', async () => {
+      // fetchCatalog's contract is (lang, signal?, scope?) — the same shape used for
+      // global catalogs, just with `scope` set — so a single fetchCatalog implementation
+      // (e.g. `fetch(scope ? `/i18n/${scope}/${lang}.json` : `/i18n/${lang}.json`)`) works
+      // for both global and scoped loads.
       await setup({
         config: {
-          fetchCatalog: async (lang: string) => {
-            if (lang === 'checkout/en.json') {
+          fetchCatalog: async (lang: string, _signal?: AbortSignal, scope?: string) => {
+            if (lang === 'en' && scope === 'checkout') {
               return { checkout: { title: 'Checkout' } };
             }
             return {};
@@ -304,8 +308,8 @@ describe('I18nService', () => {
 
       await setup({
         config: {
-          fetchCatalog: async (lang: string) => {
-            if (lang === 'checkout/en.json') {
+          fetchCatalog: async (lang: string, _signal?: AbortSignal, scope?: string) => {
+            if (lang === 'en' && scope === 'checkout') {
               return { checkout: { title: 'Scope Checkout' } };
             }
             return {};
@@ -322,8 +326,8 @@ describe('I18nService', () => {
       await setup({
         catalogs: baseCatalogs,
         config: {
-          fetchCatalog: async (lang: string) => {
-            if (lang === 'checkout/en.json') {
+          fetchCatalog: async (lang: string, _signal?: AbortSignal, scope?: string) => {
+            if (lang === 'en' && scope === 'checkout') {
               return { checkout: { title: 'Scope Checkout' } };
             }
             // for en catalog

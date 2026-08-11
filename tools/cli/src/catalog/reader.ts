@@ -18,5 +18,12 @@ export function readCatalog(catalogDir: string, lang: string): string[] {
   const filePath = path.join(catalogDir, `${lang}.json`);
   if (!fs.existsSync(filePath)) return [];
   const content = fs.readFileSync(filePath, 'utf-8');
-  return flattenCatalog(JSON.parse(content) as Record<string, unknown>);
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(content) as Record<string, unknown>;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Invalid JSON in catalog file "${filePath}": ${reason}`);
+  }
+  return flattenCatalog(parsed);
 }

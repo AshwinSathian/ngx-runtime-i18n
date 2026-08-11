@@ -29,5 +29,14 @@ describe('catalog reader', () => {
     it('returns empty array when file does not exist', () => {
       expect(readCatalog(tmpDir, 'missing')).toHaveLength(0);
     });
+
+    it('throws a clear, actionable error for malformed catalog JSON instead of crashing raw', () => {
+      const filePath = path.join(tmpDir, 'broken.json');
+      fs.writeFileSync(filePath, '{ "app": { "title": "Oops" ');
+      expect(() => readCatalog(tmpDir, 'broken')).toThrow(
+        /Invalid JSON in catalog file/
+      );
+      expect(() => readCatalog(tmpDir, 'broken')).toThrow(filePath);
+    });
   });
 });

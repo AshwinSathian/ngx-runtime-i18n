@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { TransferState } from '@angular/core';
-import { I18nService } from '../lib/i18n.service';
+import { I18nService } from '@ngx-runtime-i18n/angular';
 import { provideRuntimeI18nTesting } from './provide-runtime-i18n-testing';
 
 describe('provideRuntimeI18nTesting', () => {
@@ -87,5 +87,15 @@ describe('provideRuntimeI18nTesting', () => {
     const i18n = TestBed.inject(I18nService);
     // Both languages should be recognized (setLang should not throw)
     expect(() => i18n.setLang('de')).not.toThrow();
+  });
+
+  it('defaults catalogs to an empty catalog for defaultLang when none are provided', () => {
+    TestBed.configureTestingModule({
+      providers: [TransferState, provideRuntimeI18nTesting()],
+    });
+
+    const i18n = TestBed.inject(I18nService);
+    expect(i18n.lang()).toBe('en');
+    expect(i18n.t('anything')).toBe('anything');
   });
 });

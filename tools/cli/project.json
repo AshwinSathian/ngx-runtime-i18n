@@ -4,6 +4,13 @@
   "projectType": "library",
   "sourceRoot": "tools/cli/src",
   "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "tsc -p tools/cli/tsconfig.json"
+      }
+    },
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/tools/cli"],

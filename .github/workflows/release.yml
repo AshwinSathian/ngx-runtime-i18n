@@ -5,87 +5,122 @@ on:
     tags:
       - '@ngx-runtime-i18n/core@*'
       - '@ngx-runtime-i18n/angular@*'
+      - '@ngx-runtime-i18n/material@*'
+      - '@ngx-runtime-i18n/primeng@*'
+      - '@ngx-runtime-i18n/schematics@*'
+      - '@ngx-runtime-i18n/cli@*'
 
+# id-token: write is what lets npm's OIDC trusted-publishing flow mint a short-lived
+# publish credential for this run — no NPM_TOKEN secret needed. See "Trusted Publisher"
+# setup required on npmjs.com for each package (documented in CONTRIBUTING.md).
 permissions:
   contents: read
   id-token: write
 
+# Never let two publishes of the same tag race each other; a differently-tagged
+# release for another package should still run in parallel, so scope by ref.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       CI: true
       NX_DAEMON: false
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      NPM_CONFIG_PROVENANCE: 'false'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - name: Use Node.js 20.x (with npm cache)
-        uses: actions/setup-node@v4
+      - name: Use Node.js (npm trusted publishing needs npm >=11.5.1 / Node >=22.14)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
-          cache: npm
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false # never cache in release builds
+
+      - name: Ensure npm supports OIDC trusted publishing
+        run: npm install -g npm@^11.6.0
 
       - name: Install deps
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --prefer-offline --no-audit --fund=false
-          else
-            npm install --prefer-offline --no-audit --fund=false
-          fi
+        run: npm ci --prefer-offline --no-audit --fund=false --legacy-peer-deps
 
-      - name: Parse tag → lib + version
+      - name: Parse tag → package + build metadata
         id: meta
         shell: bash
         run: |
           set -euo pipefail
-          TAG="${GITHUB_REF_NAME}"          # e.g. @ngx-runtime-i18n/angular@1.0.0
-          LIB_FROM_TAG="${TAG%@*}"          # → "@ngx-runtime-i18n/angular"
-          VER_FROM_TAG="${TAG##*@}"         # → "1.0.0"
+          TAG="${GITHUB_REF_NAME}"            # e.g. @ngx-runtime-i18n/angular@2.1.0
+          LIB_FROM_TAG="${TAG%@*}"            # → "@ngx-runtime-i18n/angular"
+          VER_FROM_TAG="${TAG##*@}"           # → "2.1.0"
 
+          # PROJECT   = Nx project name to build
+          # DIST      = directory containing the publish-ready package.json after build
+          # PROD_CFG  = whether to pass --configuration=production to the build
           case "$LIB_FROM_TAG" in
-            @ngx-runtime-i18n/core)    PROJECT="runtime-i18n" ;;
-            @ngx-runtime-i18n/angular) PROJECT="runtime-i18n-angular" ;;
-            *) echo "Unknown library from tag: $LIB_FROM_TAG (tag: $TAG)" >&2; exit 1 ;;
+            @ngx-runtime-i18n/core)
+              PROJECT="runtime-i18n"; DIST="dist/libs/runtime-i18n"; PROD_CFG="true" ;;
+            @ngx-runtime-i18n/angular)
+              PROJECT="runtime-i18n-angular"; DIST="dist/libs/runtime-i18n-angular"; PROD_CFG="true" ;;
+            @ngx-runtime-i18n/material)
+              PROJECT="runtime-i18n-material"; DIST="dist/libs/runtime-i18n-material"; PROD_CFG="true" ;;
+            @ngx-runtime-i18n/primeng)
+              PROJECT="runtime-i18n-primeng"; DIST="dist/libs/runtime-i18n-primeng"; PROD_CFG="true" ;;
+            @ngx-runtime-i18n/schematics)
+              PROJECT="runtime-i18n-schematics"; DIST="dist/libs/runtime-i18n-schematics"; PROD_CFG="false" ;;
+            @ngx-runtime-i18n/cli)
+              PROJECT="cli"; DIST="tools/cli"; PROD_CFG="false" ;;
+            *)
+              echo "Unknown package from tag: $LIB_FROM_TAG (tag: $TAG)" >&2
+              exit 1 ;;
           esac
 
-          echo "lib_scope=$LIB_FROM_TAG"   >> $GITHUB_OUTPUT
-          echo "lib_project=$PROJECT"      >> $GITHUB_OUTPUT
-          echo "lib_version=$VER_FROM_TAG" >> $GITHUB_OUTPUT
-          echo "Parsed → $LIB_FROM_TAG | project=$PROJECT | version=$VER_FROM_TAG"
+          echo "lib_scope=$LIB_FROM_TAG"    >> "$GITHUB_OUTPUT"
+          echo "project=$PROJECT"           >> "$GITHUB_OUTPUT"
+          echo "dist_dir=$DIST"             >> "$GITHUB_OUTPUT"
+          echo "prod_config=$PROD_CFG"      >> "$GITHUB_OUTPUT"
+          echo "version=$VER_FROM_TAG"      >> "$GITHUB_OUTPUT"
+          echo "Parsed → $LIB_FROM_TAG | project=$PROJECT | dist=$DIST | version=$VER_FROM_TAG"
 
-      - name: Build from source (prod)
-        run: npx nx build ${{ steps.meta.outputs.lib_project }} --configuration=production
+      - name: Build from source
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.meta.outputs.prod_config }}" = "true" ]; then
+            npx nx build "${{ steps.meta.outputs.project }}" --configuration=production
+          else
+            npx nx build "${{ steps.meta.outputs.project }}"
+          fi
 
-      - name: Sanitize dist package.json, enforce version & publishConfig
+      - name: Sanitize package.json, enforce version & publishConfig
         shell: bash
         run: |
           set -euo pipefail
-          DIST_PKG="dist/libs/${{ steps.meta.outputs.lib_project }}/package.json"
+          DIST_PKG="${{ steps.meta.outputs.dist_dir }}/package.json"
           echo "Sanitizing $DIST_PKG ..."
           test -f "$DIST_PKG"
 
-          TAG_VER="${{ steps.meta.outputs.lib_version }}"
-          tmp="$(mktemp)"
+          TAG_VER="${{ steps.meta.outputs.version }}"
+
           # 1) Enforce version from tag
+          tmp="$(mktemp)"
           jq --arg v "$TAG_VER" '.version = $v' "$DIST_PKG" > "$tmp" && mv "$tmp" "$DIST_PKG"
 
           # 2) Remove fields npm registry rejects on publish
           tmp="$(mktemp)"
           jq 'del(.deprecations, .deprecated, .publishConfig.deprecations)' "$DIST_PKG" > "$tmp" && mv "$tmp" "$DIST_PKG"
 
-          # 3) Ensure public access + provenance disabled (explicit)
+          # 3) Ensure public access; provenance is auto-generated under trusted
+          #    publishing, but set the field explicitly for clarity/consistency.
           tmp="$(mktemp)"
           jq '
             .publishConfig = (.publishConfig // {}) |
             .publishConfig.access = "public" |
-            .publishConfig.provenance = false
+            .publishConfig.provenance = true
           ' "$DIST_PKG" > "$tmp" && mv "$tmp" "$DIST_PKG"
 
           echo "Final manifest:"
@@ -98,9 +133,6 @@ jobs:
             exit 1
           fi
 
-      - name: Publish to npm (org-scoped, public, provenance off)
-        working-directory: dist/libs/${{ steps.meta.outputs.lib_project }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: 'false'
+      - name: Publish to npm (OIDC trusted publishing — no token needed)
+        working-directory: ${{ steps.meta.outputs.dist_dir }}
         run: npm publish --access public

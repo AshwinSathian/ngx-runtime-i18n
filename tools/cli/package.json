@@ -7,6 +7,7 @@
     "ngx-i18n": "./dist/cli.js"
   },
   "main": "./dist/cli.js",
+  "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "node --experimental-vm-modules ../../node_modules/.bin/jest --config jest.config.ts"
@@ -22,6 +23,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AshwinSathian/ngx-runtime-i18n.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "engines": { "node": ">=18" }
 }

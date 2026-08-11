@@ -56,8 +56,8 @@ export const appConfig: ApplicationConfig = {
         defaultLang: 'en',
         supported: ['en', 'hi', 'de'],
         fallbacks: ['de'],
-        fetchCatalog: (lang, signal) =>
-          fetch(`/i18n/${lang}.json`, { signal }).then((r) => {
+        fetchCatalog: (lang, signal, scope) =>
+          fetch(scope ? `/i18n/${scope}/${lang}.json` : `/i18n/${lang}.json`, { signal }).then((r) => {
             if (!r.ok) throw new Error(`Failed to load catalog: ${lang}`);
             return r.json();
           }),
@@ -207,7 +207,7 @@ Use the same `provideRuntimeI18n(...)` on both server and client app bootstraps.
 - **`config.defaultLang: string`**: fallback language.
 - **`config.fallbacks?: string[]`**: ordered fallback catalog chain before the default.
 - **`config.supported: string[]`**: allowed languages (authoritative list).
-- **`config.fetchCatalog(lang, signal?)`**: async catalog loader (should be idempotent; honor `AbortSignal`).
+- **`config.fetchCatalog(lang, signal?, scope?)`**: async catalog loader (should be idempotent; honor `AbortSignal`). `scope` is set when loading a route-scoped catalog registered via `withI18nScope()` — branch on it to build the scoped URL (see [Route-Scoped Catalogs](#route-scoped-catalogs)).
 - **`config.onMissingKey?: (key) => string`**: transform missing keys (dev‑only suggestion: return the key).
 
 **`localeLoaders`**: map of language to dynamic imports of Angular locale data (enables localized pipes).  
@@ -239,7 +239,7 @@ Use the same `provideRuntimeI18n(...)` on both server and client app bootstraps.
 
 Use `withI18nScope()` to load feature-specific translation catalogs only when a route activates, and unload them when it is destroyed.
 
-**URL convention:** scope `'checkout'` fetches `<your fetchCatalog base>/checkout/<lang>.json`.
+**Contract:** loading scope `'checkout'` for the active language calls `fetchCatalog(lang, signal, 'checkout')` — the same `fetchCatalog` used for global catalogs, just with the third argument set. Your implementation decides the URL shape, e.g. `scope ? `/i18n/${scope}/${lang}.json` : `/i18n/${lang}.json``.
 
 ```ts
 // In your route definition:

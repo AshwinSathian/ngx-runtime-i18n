@@ -11,8 +11,8 @@ interface ScanResult {
   occurrences: KeyOccurrence[];
 }
 
-// Matches: .t('key') or .t("key")
-const TS_T_CALL_REGEX = /\.t\(\s*['"]([^'"]+)['"]/g;
+// Matches: .t('key') or .t("key"), and the reactive signal helper .t$('key') or .t$("key")
+const TS_T_CALL_REGEX = /\.t\$?\(\s*['"]([^'"]+)['"]/g;
 
 export function scanTypeScriptFile(filePath: string): ScanResult[] {
   const content = fs.readFileSync(filePath, 'utf-8');

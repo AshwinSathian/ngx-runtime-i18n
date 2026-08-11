@@ -26,12 +26,12 @@ const createMockStepperIntl = () => ({
 describe('applyMaterialLabels', () => {
   const enLabels: MaterialI18nLabels = {
     paginator: { itemsPerPageLabel: 'Items per page:', nextPageLabel: 'Next' },
-    sort: { sortButtonLabel: (_id: string) => 'Sort' },
+    sort: { sortButtonLabel: () => 'Sort' },
     stepper: { optionalLabel: 'Optional' },
   };
   const deLabels: MaterialI18nLabels = {
     paginator: { itemsPerPageLabel: 'Einträge pro Seite:', nextPageLabel: 'Weiter' },
-    sort: { sortButtonLabel: (_id: string) => 'Sortieren' },
+    sort: { sortButtonLabel: () => 'Sortieren' },
     stepper: { optionalLabel: 'Optional (DE)' },
   };
 

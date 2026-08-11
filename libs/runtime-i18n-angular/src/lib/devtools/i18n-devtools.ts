@@ -59,7 +59,11 @@ export class I18nDevtools {
 
   private emit(event: I18nDevToolsEvent): void {
     try {
-      window.postMessage({ source: 'ngx-runtime-i18n-devtools', ...event }, '*');
+      // Same-origin target only: DevTools/extensions read this via a same-page
+      // content script, and a wildcard '*' origin would also leak translation
+      // payloads (which may carry interpolated user data) to any cross-origin
+      // iframe embedding this page.
+      window.postMessage({ source: 'ngx-runtime-i18n-devtools', ...event }, window.location.origin);
     } catch {
       // Ignore serialization errors
     }

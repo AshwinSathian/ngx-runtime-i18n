@@ -34,6 +34,27 @@ describe('ts-scanner', () => {
       fs.writeFileSync(file, `export const x = 1;`);
       expect(scanTypeScriptFile(file)).toHaveLength(0);
     });
+
+    it('extracts keys from the reactive t$() signal helper', () => {
+      const file = path.join(tmpDir, 'greeting.component.ts');
+      fs.writeFileSync(
+        file,
+        `readonly greeting = this.i18n.t$('hello.user', { name: this.username });`
+      );
+      const results = scanTypeScriptFile(file);
+      expect(results.map(r => r.key)).toContain('hello.user');
+    });
+
+    it('extracts keys from t() and t$() calls in the same file without cross-matching', () => {
+      const file = path.join(tmpDir, 'mixed.component.ts');
+      fs.writeFileSync(
+        file,
+        `this.i18n.t('plain.key');\nthis.i18n.t$('reactive.key');`
+      );
+      const keys = scanTypeScriptFile(file).map(r => r.key);
+      expect(keys).toContain('plain.key');
+      expect(keys).toContain('reactive.key');
+    });
   });
 
   describe('scanTypeScriptDirectory()', () => {

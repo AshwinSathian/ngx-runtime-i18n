@@ -239,8 +239,7 @@ export class I18nService {
       const scopeMap = this.scopeCatalogs.get(scope)!;
       if (!scopeMap.has(candidate)) {
         try {
-          const url = `${scope}/${candidate}.json`;
-          const fetched = await this.cfg.fetchCatalog(url);
+          const fetched = await this.cfg.fetchCatalog(candidate, undefined, scope);
           scopeMap.set(candidate, fetched);
         } catch {
           // Scope catalog not found — silent fallthrough

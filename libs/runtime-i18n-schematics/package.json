@@ -9,5 +9,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AshwinSathian/ngx-runtime-i18n.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

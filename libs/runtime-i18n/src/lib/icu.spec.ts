@@ -16,6 +16,10 @@ const cat: Cat = {
   gender: '{gender, select, male {He is a developer} female {She is a developer} other {They are a developer}}',
   pronoun: '{gender, select, male {his} female {her} other {their}} profile',
   arabicItems: '{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر قليلة} many {# عناصر كثيرة} other {# عنصر}}',
+  nestedPluralInSelect:
+    '{gender, select, male {He has {count, plural, one {# item} other {# items}}} other {They have {count, plural, one {# item} other {# items}}}}',
+  nestedSelectInPlural:
+    '{count, plural, one {{gender, select, male {He has # item} other {They have # item}}} other {{gender, select, male {He has # items} other {They have # items}}}}',
 };
 
 describe('formatIcu', () => {
@@ -132,6 +136,47 @@ describe('formatIcu', () => {
     it('uses "other" category for 100 in Arabic', () => {
       const s = formatIcu('ar', 'arabicItems', cat, { count: 100 }, undefined, arabicResolver);
       expect(s).toBe('100 عنصر');
+    });
+  });
+
+  describe('nested keyword blocks', () => {
+    it('resolves a plural nested inside a select branch', () => {
+      expect(
+        formatIcu('en', 'nestedPluralInSelect', cat, { gender: 'male', count: 1 })
+      ).toBe('He has 1 item');
+      expect(
+        formatIcu('en', 'nestedPluralInSelect', cat, { gender: 'male', count: 3 })
+      ).toBe('He has 3 items');
+      expect(
+        formatIcu('en', 'nestedPluralInSelect', cat, { gender: 'other', count: 3 })
+      ).toBe('They have 3 items');
+    });
+
+    it('resolves a select nested inside a plural branch, keeping # bound to the enclosing plural', () => {
+      expect(
+        formatIcu('en', 'nestedSelectInPlural', cat, { gender: 'male', count: 1 })
+      ).toBe('He has 1 item');
+      expect(
+        formatIcu('en', 'nestedSelectInPlural', cat, { gender: 'female', count: 5 })
+      ).toBe('They have 5 items');
+    });
+  });
+
+  describe('prototype-chain key safety', () => {
+    it('does not resolve inherited Object.prototype members as translations', () => {
+      const emptyCat: Cat = {};
+      expect(formatIcu('en', 'constructor', emptyCat, {}, (k) => `@@${k}@@`)).toBe(
+        '@@constructor@@'
+      );
+      expect(formatIcu('en', 'toString', emptyCat, {}, (k) => `@@${k}@@`)).toBe(
+        '@@toString@@'
+      );
+      expect(formatIcu('en', 'hasOwnProperty', emptyCat, {}, (k) => `@@${k}@@`)).toBe(
+        '@@hasOwnProperty@@'
+      );
+      expect(formatIcu('en', '__proto__', emptyCat, {}, (k) => `@@${k}@@`)).toBe(
+        '@@__proto__@@'
+      );
     });
   });
 

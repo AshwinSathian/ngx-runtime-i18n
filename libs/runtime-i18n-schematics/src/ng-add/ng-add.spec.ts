@@ -85,4 +85,62 @@ export const appConfig = { providers: [provideRuntimeI18n({ defaultLang: 'en', s
     // The schematic must not inject provideRuntimeI18n again
     expect(matches.length).toBe(originalCount);
   });
+
+  it('uses its own published version (not a hardcoded stale string) for the added dependencies', async () => {
+    const tree = await runner.runSchematic('ng-add', { project: 'my-app' }, createMinimalTree());
+    const pkg = JSON.parse(tree.readContent('/package.json'));
+    const ownVersion = require('../../package.json').version as string;
+    expect(pkg.dependencies['@ngx-runtime-i18n/angular']).toBe(`^${ownVersion}`);
+    expect(pkg.dependencies['@ngx-runtime-i18n/core']).toBe(`^${ownVersion}`);
+  });
+
+  it('rejects a defaultLang that is not a safe BCP-47-style tag', async () => {
+    await expect(
+      runner.runSchematic(
+        'ng-add',
+        { project: 'my-app', defaultLang: "en'); alert(1); ('" },
+        createMinimalTree()
+      )
+    ).rejects.toThrow(/Invalid language tag/);
+  });
+
+  it('rejects an additionalLangs entry containing path-traversal characters', async () => {
+    await expect(
+      runner.runSchematic(
+        'ng-add',
+        { project: 'my-app', defaultLang: 'en', additionalLangs: ['../../evil'] },
+        createMinimalTree()
+      )
+    ).rejects.toThrow(/Invalid language tag/);
+  });
+
+  it('rejects a project name that is not a plain identifier', async () => {
+    await expect(
+      runner.runSchematic('ng-add', { project: '../evil' }, createMinimalTree())
+    ).rejects.toThrow(/Invalid --project/);
+  });
+
+  it('safely escapes a defaultLang containing a single quote into the generated source', async () => {
+    const tree = await runner.runSchematic(
+      'ng-add',
+      { project: 'my-app', defaultLang: 'en-US' },
+      createMinimalTree()
+    );
+    const config = tree.readContent('/src/app/app.config.ts');
+    expect(config).toContain(`defaultLang: "en-US"`);
+  });
+
+  it('throws instead of silently no-op-ing when app.config.ts has no providers array to patch', async () => {
+    const baseTree = Tree.empty();
+    baseTree.create('/package.json', JSON.stringify({ name: 'test-app', dependencies: {} }, null, 2));
+    baseTree.create(
+      '/src/app/app.config.ts',
+      `export const appConfig = mergeApplicationConfig(base, server);\n`
+    );
+    const initialTree = new UnitTestTree(baseTree);
+
+    await expect(
+      runner.runSchematic('ng-add', { project: 'my-app' }, initialTree)
+    ).rejects.toThrow(/Could not find a "providers: \[" array/);
+  });
 });
