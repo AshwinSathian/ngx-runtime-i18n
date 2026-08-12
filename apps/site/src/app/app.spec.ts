@@ -1,18 +1,23 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
-import { NxWelcome } from './nx-welcome';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [App, NxWelcome],
+      imports: [App],
+      providers: [provideRouter([])],
     }).compileComponents();
   });
 
-  it('should render title', async () => {
+  it('renders the skip link, header, main landmark, and footer', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Welcome site');
+
+    expect(compiled.querySelector('a[href="#main-content"]')).toBeTruthy();
+    expect(compiled.querySelector('header')).toBeTruthy();
+    expect(compiled.querySelector('main#main-content')).toBeTruthy();
+    expect(compiled.querySelector('footer')).toBeTruthy();
   });
 });
