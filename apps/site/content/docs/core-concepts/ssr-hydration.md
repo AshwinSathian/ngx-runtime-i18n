@@ -20,7 +20,7 @@ export function i18nServerProviders(snapshot: RuntimeI18nSsrSnapshot): Environme
 }
 ```
 
-`provideRuntimeI18nSsr()` returns `EnvironmentProviders`, an opaque value rather than a `Provider[]`. Include the result directly in your `providers` array — don't spread it:
+`provideRuntimeI18nSsr()` returns `EnvironmentProviders`, an opaque value, not an array. Include the result directly in your `providers` array — don't spread it:
 
 ```ts
 angularApp.handle(req, { providers: [i18nServerProviders(snapshot)] });

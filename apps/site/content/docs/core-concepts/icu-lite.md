@@ -24,7 +24,7 @@ formatIcu('en', 'cart.items', catalog, { count: 2 }); // "2 items"
 
 <content-callout data-type="warning">
 
-ICU-lite is not a full ICU implementation. It aims to cover the common 80% of message-formatting needs with a tiny footprint, not to be a drop-in replacement for `Intl.MessageFormat` or a full ICU MessageFormat library.
+ICU-lite is not a full ICU implementation. It aims to cover the common 80% of message-formatting needs with a tiny footprint.
 
 </content-callout>
 
@@ -41,7 +41,7 @@ ICU-lite is not a full ICU implementation. It aims to cover the common 80% of me
 - Plural blocks inside other plural blocks (depth beyond one level is skipped).
 - Escaping braces beyond the cases above; unmatched braces must not resemble valid tokens.
 
-If your catalogs need `select`, gender-based forms, or nested plural/select grammar, ICU-lite doesn't cover it. Reach for a full ICU MessageFormat library on top of `@ngx-runtime-i18n/core`'s plain string catalogs.
+If your catalogs need `select`, gender-based forms, or nested plural/select grammar, ICU-lite doesn't cover it.
 
 ## Keeping catalogs predictable
 

@@ -31,8 +31,8 @@ With this config, a key missing from `hi.json` is looked up in `de.json` next, t
 
 ## Deduping and trimming
 
-`fallbacks` values are deduped automatically and trimmed against `supported`, so accidental repeats or unsupported language tags are ignored rather than causing lookup errors. You don't need to guard against a caller passing `fallbacks: ['de', 'de']` or a tag that isn't in `supported`.
+`fallbacks` values are deduped automatically and trimmed against `supported`. Accidental repeats or unsupported language tags are ignored. You don't need to guard against a caller passing `fallbacks: ['de', 'de']` or a tag that isn't in `supported`.
 
 ## Missing keys and dev warnings
 
-Missing keys emit a single dev-mode warning, then flow through `onMissingKey()`. This keeps the console readable during development without silencing the signal that a key is absent from every catalog in the chain — you get one warning per miss, not one per render.
+Missing keys emit a single dev-mode warning, then flow through `onMissingKey()`.
