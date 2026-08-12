@@ -5,7 +5,10 @@ export class ContentTabsElement extends HTMLElement {
 
     const tablist = document.createElement('div');
     tablist.setAttribute('role', 'tablist');
-    tablist.setAttribute('aria-label', 'Code example');
+    tablist.setAttribute(
+      'aria-label',
+      this.getAttribute('data-tablist-label') ?? 'Code example',
+    );
     tablist.className = 'flex border-b border-rule';
 
     panels.forEach((panel, i) => {
@@ -14,6 +17,7 @@ export class ContentTabsElement extends HTMLElement {
       panel.id = `${tabId}-panel`;
       panel.setAttribute('role', 'tabpanel');
       panel.setAttribute('aria-labelledby', tabId);
+      panel.tabIndex = 0;
       panel.hidden = i !== 0;
 
       const btn = document.createElement('button');
@@ -27,10 +31,22 @@ export class ContentTabsElement extends HTMLElement {
       btn.className = 'px-4 py-2 text-sm font-mono';
       btn.addEventListener('click', () => this.activate(i, panels, tablist));
       btn.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowRight')
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
           this.activate((i + 1) % panels.length, panels, tablist);
-        if (e.key === 'ArrowLeft')
+        }
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
           this.activate((i - 1 + panels.length) % panels.length, panels, tablist);
+        }
+        if (e.key === 'Home') {
+          e.preventDefault();
+          this.activate(0, panels, tablist);
+        }
+        if (e.key === 'End') {
+          e.preventDefault();
+          this.activate(panels.length - 1, panels, tablist);
+        }
       });
 
       tablist.appendChild(btn);
