@@ -1,5 +1,8 @@
 <app-skip-link />
 <app-site-header />
-<main id="main-content"><router-outlet /></main>
+<main id="main-content">
+  <p class="sr-only">Runtime i18n, live: <app-hero-lang-cycle /></p>
+  <router-outlet />
+</main>
 <app-site-footer />
 <app-search-palette />
