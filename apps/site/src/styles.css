@@ -3,6 +3,16 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
+/* This site's dark mode is driven by ThemeService setting `data-theme="dark"` on
+   <html> (manual toggle, independent of OS preference after first load), not by
+   `prefers-color-scheme`. Every other themed value here already keys off
+   `:root[data-theme='dark']` directly, so it needed no help — but Tailwind's own
+   `dark:` variant (used by `@tailwindcss/typography`'s `dark:prose-invert`) defaults
+   to watching `prefers-color-scheme` unless rebound. This rebinds it to the same
+   data-attribute strategy, per Tailwind v4's documented data-attribute dark mode
+   pattern: https://tailwindcss.com/docs/dark-mode#using-a-data-attribute */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 /* Fonts (self-hosted via @fontsource) */
 @import '@fontsource/bricolage-grotesque/600.css';
 @import '@fontsource/bricolage-grotesque/700.css';
