@@ -1,1 +1,66 @@
 /* You can add global styles to this file, and also import other style files */
+
+@import 'tailwindcss';
+
+/* Fonts (self-hosted via @fontsource) */
+@import '@fontsource/bricolage-grotesque/600.css';
+@import '@fontsource/bricolage-grotesque/700.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-sans/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-sans-devanagari/400.css';
+@import '@fontsource/ibm-plex-sans-devanagari/500.css';
+@import '@fontsource/ibm-plex-sans-devanagari/600.css';
+@import '@fontsource/ibm-plex-sans-devanagari/700.css';
+
+:root {
+  /* Font stacks. Family names below are the exact font-family values each
+     Fontsource package registers in its generated font-face rules
+     (verified directly in the installed package CSS), not assumed. */
+  --font-sans: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', sans-serif;
+  --font-display: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+@theme {
+  --color-paper: #faf9f6;
+  --color-ink: #14181f;
+  --color-rule: #dedad1;
+  --color-accent-en: #2c5ce6;
+  --color-accent-hi: #c2410c;
+  --color-accent-de: #0f766e;
+}
+
+:root[data-theme='dark'] {
+  --color-paper: #0b0d12;
+  --color-ink: #f5f3ee;
+  --color-rule: #242a35;
+  --color-accent-en: #5b82ff;
+  --color-accent-hi: #f0803a;
+  --color-accent-de: #14b8a6;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-en);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
