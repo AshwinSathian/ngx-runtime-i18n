@@ -6,6 +6,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "isolatedModules": true,
+    "resolveJsonModule": true,
     "target": "es2022",
     "emitDecoratorMetadata": false,
     "module": "preserve"
