@@ -5,6 +5,10 @@ dist
 tmp
 out-tsc
 
+# generated site content (built by apps/site/scripts/build-content.mjs)
+apps/site/generated
+apps/site/public/search-index.json
+
 # dependencies
 node_modules
 

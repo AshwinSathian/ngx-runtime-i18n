@@ -6,10 +6,15 @@
   "sourceRoot": "apps/site/src",
   "tags": [],
   "targets": {
+    "build-content": {
+      "executor": "nx:run-commands",
+      "options": { "command": "node scripts/build-content.mjs", "cwd": "apps/site" }
+    },
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
+      "dependsOn": ["build-content"],
       "options": {
         "outputPath": "dist/apps/site",
         "browser": "apps/site/src/main.ts",
@@ -54,6 +59,7 @@
       "continuous": true,
       "executor": "@angular/build:dev-server",
       "defaultConfiguration": "development",
+      "dependsOn": ["build-content"],
       "configurations": {
         "production": {
           "buildTarget": "site:build:production"
