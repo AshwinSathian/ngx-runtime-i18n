@@ -84,6 +84,7 @@
     "@swc/core": "^1.15.8",
     "@swc/helpers": "~0.5.11",
     "@tailwindcss/postcss": "^4.1.12",
+    "@tailwindcss/typography": "^0.5.20",
     "@testing-library/angular": "^19.4.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^7.0.1",
