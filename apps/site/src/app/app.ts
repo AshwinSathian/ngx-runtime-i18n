@@ -3,9 +3,10 @@ import { RouterModule } from '@angular/router';
 import { SkipLinkComponent } from './shared/skip-link/skip-link.component';
 import { SiteHeaderComponent } from './shared/site-header/site-header.component';
 import { SiteFooterComponent } from './shared/site-footer/site-footer.component';
+import { SearchPaletteComponent } from './shared/search-palette/search-palette.component';
 
 @Component({
-  imports: [RouterModule, SkipLinkComponent, SiteHeaderComponent, SiteFooterComponent],
+  imports: [RouterModule, SkipLinkComponent, SiteHeaderComponent, SiteFooterComponent, SearchPaletteComponent],
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.css',

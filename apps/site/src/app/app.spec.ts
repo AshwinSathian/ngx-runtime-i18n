@@ -4,6 +4,7 @@ import { App } from './app';
 
 describe('App', () => {
   beforeEach(async () => {
+    global.fetch = jest.fn().mockResolvedValue({ json: () => Promise.resolve([]) }) as unknown as typeof fetch;
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [provideRouter([])],
