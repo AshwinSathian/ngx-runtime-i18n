@@ -1,0 +1,100 @@
+<section class="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+  <app-key-eyebrow text="hero.tagline" />
+  <h1
+    class="max-w-3xl font-display text-4xl font-semibold leading-tight sm:text-5xl"
+  >
+    Runtime i18n for Angular, built for <app-hero-lang-cycle />.
+  </h1>
+  <p class="mt-6 max-w-2xl text-lg text-ink/80">
+    Signals-first and SSR-safe: per-key fallback chains, a tiny ICU-lite
+    formatter, and hydration that never mutates the DOM before Angular is
+    stable.
+  </p>
+  <div class="mt-8 flex flex-wrap items-center gap-4">
+    <a
+      routerLink="/docs/getting-started"
+      class="inline-flex items-center rounded-md bg-accent-en px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent-en/90"
+      >Get started</a
+    >
+    <a
+      href="https://github.com/AshwinSathian/ngx-runtime-i18n"
+      class="inline-flex items-center rounded-md border border-rule px-5 py-2.5 text-sm font-semibold hover:bg-ink/5"
+      >View on GitHub</a
+    >
+  </div>
+</section>
+
+<section class="border-t border-rule bg-paper">
+  <div class="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+    <app-key-eyebrow text="features.grid" />
+    <h2 class="font-display text-2xl font-semibold sm:text-3xl">
+      What you get out of the box
+    </h2>
+    <div class="mt-8">
+      <app-feature-grid />
+    </div>
+  </div>
+</section>
+
+<section class="border-t border-rule">
+  <div class="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+    <app-key-eyebrow text="hero.code-showcase" />
+    <h2 class="font-display text-2xl font-semibold sm:text-3xl">
+      Set it up once, translate anywhere
+    </h2>
+    <p class="mt-4 max-w-2xl text-ink/80">
+      provideRuntimeI18n() wires the service, pipe, and locale data into your
+      app config. Templates then read translations through the i18n pipe.
+    </p>
+    <div class="mt-8 overflow-hidden rounded-lg border border-rule">
+      <content-tabs data-tablist-label="Setup example">
+        <div data-tab-label="app.config.ts">
+          <content-code-block>
+            <pre
+              class="overflow-x-auto bg-paper p-4 font-mono text-xs leading-relaxed"
+            ><code>{{ appConfigSnippet }}</code></pre>
+          </content-code-block>
+        </div>
+        <div data-tab-label="template.html">
+          <content-code-block>
+            <pre
+              class="overflow-x-auto bg-paper p-4 font-mono text-xs leading-relaxed"
+            ><code>{{ templateSnippet }}</code></pre>
+          </content-code-block>
+        </div>
+      </content-tabs>
+    </div>
+  </div>
+</section>
+
+<section class="border-t border-rule bg-paper">
+  <div class="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+    <app-key-eyebrow text="packages.matrix" />
+    <h2 class="font-display text-2xl font-semibold sm:text-3xl">
+      Six packages, one release train
+    </h2>
+    <p class="mt-4 max-w-2xl text-ink/80">
+      Core and Angular ship the runtime. PrimeNG, Material, the CLI, and the ng
+      add schematic are optional and versioned together.
+    </p>
+    <div class="mt-8">
+      <app-package-matrix />
+    </div>
+  </div>
+</section>
+
+<section class="border-t border-rule">
+  <div class="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+    <app-key-eyebrow text="compare.teaser" />
+    <h2 class="font-display text-2xl font-semibold sm:text-3xl">
+      How this compares
+    </h2>
+    <p class="mt-4 max-w-2xl text-ink/80">
+      See how fallback chains, caching, and SSR support compare against
+      ngx-translate, transloco, and Angular's built-in i18n on the
+      <a routerLink="/compare" class="underline hover:text-accent-en"
+        >compare page</a
+      >.
+    </p>
+  </div>
+</section>
