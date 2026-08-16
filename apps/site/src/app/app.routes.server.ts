@@ -27,6 +27,17 @@ export const serverRoutes: ServerRoute[] = [
     },
   },
   {
+    // Recipes use single-segment slugs and the client route declares a real named
+    // `:slug` param (see app.routes.ts), unlike docs' `**` wildcard — so this can
+    // match it directly instead of needing the `docs/**` workaround above.
+    path: 'recipes/:slug',
+    renderMode: RenderMode.Prerender,
+    async getPrerenderParams() {
+      const content = inject(ContentService);
+      return content.getAllRecipes().map((r) => ({ slug: r.slug }));
+    },
+  },
+  {
     path: '**',
     renderMode: RenderMode.Prerender,
   },

@@ -29,4 +29,27 @@ export const appRoutes: Route[] = [
       },
     ],
   },
+  {
+    path: 'recipes',
+    loadComponent: () =>
+      import('./pages/recipes/recipes-layout.component').then(
+        (m) => m.RecipesLayoutComponent,
+      ),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/recipes/recipes-index.component').then(
+            (m) => m.RecipesIndexComponent,
+          ),
+      },
+      {
+        path: ':slug',
+        loadComponent: () =>
+          import('./pages/recipes/recipe-page.component').then(
+            (m) => m.RecipePageComponent,
+          ),
+      },
+    ],
+  },
 ];
