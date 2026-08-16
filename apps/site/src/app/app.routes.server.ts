@@ -38,7 +38,30 @@ export const serverRoutes: ServerRoute[] = [
     },
   },
   {
+    // The client router's own top-level `**` wildcard (see app.routes.ts) renders
+    // NotFoundComponent for any path that doesn't match a route above — but a bare
+    // `RenderMode.Prerender` entry with no `getPrerenderParams` has no concrete URL to
+    // write output for and is silently skipped (verified empirically: a build with no
+    // `getPrerenderParams` here produced exactly the routes enumerated by the other
+    // entries and zero output for this one, no error or warning either way).
+    // `getPrerenderParams` below gives it one concrete path, `/404`, so the build emits
+    // a real prerendered `NotFoundComponent` document (at `404/index.html`, matching
+    // this app's directory-per-route output convention — see `compare/index.html`,
+    // `changelog/index.html`, etc.) that also happens to be reachable by visiting `/404`
+    // directly. Static hosts that auto-detect a not-found page from a root-level
+    // `404.html` file (e.g. Cloudflare Pages) need that exact document copied to the
+    // output root as a flat file, which isn't something a route-based prerenderer can
+    // produce directly (every other prerendered route is deliberately a directory +
+    // `index.html` so it serves at a clean, slash-terminated URL) — see
+    // `apps/site/scripts/copy-404.mjs` and the `copy-404` Nx target, wired into the
+    // deploy step in Task 26 rather than the default `build` target, since routine
+    // `nx serve`/`nx build` runs (dev iteration, unit/E2E tests) don't need it and this
+    // avoids touching the `serve`/`serve-static` targets' existing `buildTarget`
+    // wiring.
     path: '**',
     renderMode: RenderMode.Prerender,
+    async getPrerenderParams() {
+      return [{ '**': '404' }];
+    },
   },
 ];

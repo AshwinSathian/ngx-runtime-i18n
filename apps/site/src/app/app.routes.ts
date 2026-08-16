@@ -66,4 +66,16 @@ export const appRoutes: Route[] = [
         (m) => m.ChangelogComponent,
       ),
   },
+  {
+    path: 'faq',
+    loadComponent: () =>
+      import('./pages/faq/faq.component').then((m) => m.FaqComponent),
+  },
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./pages/not-found/not-found.component').then(
+        (m) => m.NotFoundComponent,
+      ),
+  },
 ];

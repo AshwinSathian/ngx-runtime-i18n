@@ -69,6 +69,11 @@
         }
       }
     },
+    "copy-404": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": { "command": "node scripts/copy-404.mjs", "cwd": "apps/site" }
+    },
     "lint": {
       "executor": "@nx/eslint:lint"
     },
