@@ -52,4 +52,11 @@ export const appRoutes: Route[] = [
       },
     ],
   },
+  {
+    path: 'compare',
+    loadComponent: () =>
+      import('./pages/compare/compare.component').then(
+        (m) => m.CompareComponent,
+      ),
+  },
 ];
