@@ -41,16 +41,35 @@ await i18n.preloadFallbackChain('fr');
 
 Call these during login, before showing a heavy route, or alongside other async work — the active language and UI stay stable while the catalog downloads in the background.
 
-## Choosing a cache mode
+## Making a preload stick across reloads
 
-`RuntimeI18nOptions.cacheMode` controls how long a preloaded or loaded catalog stays resident:
+By default (`cacheMode: 'memory'`), a preloaded catalog only lives for the current session — reload the page and `preloadLangs()` fetches it again. Pair `cacheMode: 'storage'` with the preload calls above to persist warmed catalogs in `localStorage`, so a returning user's likely languages are already on disk before `preloadLangs()` even runs:
 
-- `none` keeps only the active fallback chain in memory, for memory-constrained apps.
-- `memory` (the default) caches every catalog loaded during the current session.
-- `storage` hydrates catalogs from `localStorage`, serves them instantly on the next visit, and refreshes them in the background. Set `cacheKeyPrefix` to isolate multiple apps sharing the same origin.
+```ts
+provideRuntimeI18n(
+  {
+    defaultLang: 'en',
+    supported: ['en', 'de', 'hi'],
+    fetchCatalog: (lang, signal) => fetch(`/i18n/${lang}.json`, { signal }).then((r) => r.json()),
+  },
+  {
+    options: {
+      cacheMode: 'storage',
+      cacheKeyPrefix: '@my-app:catalog:',
+    },
+  },
+);
+```
+
+```ts
+// After the user picks a preferred secondary language in settings:
+await i18n.preloadLangs(['de', 'hi']);
+```
+
+With `storage` mode, that preload writes both catalogs to `localStorage` under `cacheKeyPrefix`. Next time either language becomes active — even after a full reload — `setLang()` serves the cached copy immediately and refreshes it in the background, instead of blocking on a network request.
 
 <content-callout data-type="tip">
 
-`localStorage` I/O never runs on the server, so combining `storage` mode with SSR stays deterministic as long as you seed TransferState — see the [SSR with Express recipe](/recipes/ssr-with-express).
+`localStorage` I/O never runs on the server, so `storage` mode stays deterministic under SSR as long as you seed TransferState — see the [SSR with Express recipe](/recipes/ssr-with-express). For the full `cacheMode` reference, see [Catalog caching](/docs/core-concepts/caching).
 
 </content-callout>
