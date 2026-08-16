@@ -175,6 +175,10 @@ async function main() {
     JSON.stringify({ docs, recipes }, null, 2),
   );
 
+  const changelogRaw = fs.readFileSync(path.join(process.cwd(), '..', '..', 'CHANGELOG.md'), 'utf8');
+  const changelogHtml = await compile(changelogRaw);
+  fs.writeFileSync(path.join(process.cwd(), 'generated', 'changelog.json'), JSON.stringify({ html: changelogHtml }));
+
   const searchIndex = [
     ...docs.map((d) => ({
       title: d.frontmatter.title,
@@ -210,7 +214,7 @@ async function main() {
     JSON.stringify(routes, null, 2),
   );
 
-  console.log(`Compiled ${docs.length} docs, ${recipes.length} recipes.`);
+  console.log(`Compiled ${docs.length} docs, ${recipes.length} recipes, changelog.`);
 }
 
 main().catch((err) => {

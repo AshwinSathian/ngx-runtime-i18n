@@ -59,4 +59,11 @@ export const appRoutes: Route[] = [
         (m) => m.CompareComponent,
       ),
   },
+  {
+    path: 'changelog',
+    loadComponent: () =>
+      import('./pages/changelog/changelog.component').then(
+        (m) => m.ChangelogComponent,
+      ),
+  },
 ];
