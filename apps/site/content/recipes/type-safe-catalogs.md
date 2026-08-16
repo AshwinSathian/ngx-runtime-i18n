@@ -43,20 +43,16 @@ these calls now type-check against it:
 // OK — valid key, correct param
 this.i18n.t('hello.user', { name: 'Ashwin' });
 
-// OK — plural param inferred as number
-this.i18n.t('cart.items', { count: 3 });
-
 // Error — 'does.not.exist' is not in the catalog
 this.i18n.t('does.not.exist');
-
-// Error — missing required param 'name'
-this.i18n.t('hello.user');
-
-// Error — 'count' must be a number, not a string
-this.i18n.t('cart.items', { count: '3' });
 ```
 
 The same checking applies to `I18nPipe` in templates (`{{ 'hello.user' | i18n:{ name: username } }}`) and to `I18nCompatService.t()`, since both call through the same generic key and param types.
+
+Two things worth knowing before you rely on this for more than key-checking:
+
+- `params` stays optional in the generated signature (`t<K>(key: K, params?: TranslationParams<K>)`) even when the resolved schema expects one — so `this.i18n.t('hello.user')`, with no second argument at all, compiles today. Compile-time checking here reliably catches an invalid *key*; it doesn't yet enforce that a required param was actually passed.
+- Compile-time param checking is most reliable for plain `{token}` interpolation, like `hello.user` above. `cart.items`'s ICU `plural` block still formats correctly at runtime through `formatIcu` — see [ICU-lite formatting](/docs/core-concepts/icu-lite) — but `ExtractParams` doesn't yet derive a clean params type from the nested braces inside a `plural` block (more on this in the next section), so don't lean on `t('cart.items', {...})` to catch a wrong param type at compile time.
 
 ## 3. What `DeepKeys` and `ExtractParams` compute
 
@@ -86,11 +82,17 @@ import type { ExtractParams } from '@ngx-runtime-i18n/core';
 type P1 = ExtractParams<'Hello, {name}!'>;
 // { name: string | number }
 
-type P2 = ExtractParams<'{count, plural, one {1 item} other {# items}}'>;
-// { count: number }
+type P2 = ExtractParams<'{first} {last}'>;
+// { first: string | number } & { last: string | number }
 ```
 
-Plain `{token}` interpolation produces `string | number` params. ICU keyword blocks (`plural`, `select`, `selectordinal`) narrow the argument to `number` specifically, since plural category selection needs a numeric count. `TranslationParams<K>` composes `DeepKeys` and `ExtractParams` to resolve the params type for a given key — it's what `t()` actually uses to type its second argument.
+Plain `{token}` interpolation — one token or several — produces `string | number` params per token. This is the case `ExtractParams` handles reliably, and it's what `TranslationParams<K>` (which composes `DeepKeys` and `ExtractParams` to resolve the params type for a given key) relies on to type `t()`'s second argument for ordinary interpolation keys.
+
+<content-callout data-type="warning">
+
+`ExtractParams` doesn't yet parse ICU `plural` blocks correctly: the nested braces inside `{count, plural, one {1 item} other {# items}}` confuse its brace-matching, so instead of `{ count: number }` it derives a garbled type keyed on fragments of the ICU syntax itself. In practice this means a key with a `plural` block resolves to a params type that rejects the params you'd actually want to pass. This doesn't affect runtime formatting — `formatIcu` handles `plural` blocks correctly (see [ICU-lite formatting](/docs/core-concepts/icu-lite)) — only this compile-time type is affected. Stick to plain `{token}` interpolation for the keys you want covered by compile-time param checking until this is fixed.
+
+</content-callout>
 
 ## 4. The 4-level depth cap
 
