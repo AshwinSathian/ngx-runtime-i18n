@@ -85,6 +85,14 @@
       "dependsOn": ["build"],
       "options": { "command": "node scripts/copy-404.mjs", "cwd": "apps/site" }
     },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["copy-404"],
+      "options": {
+        "command": "npx wrangler pages deploy dist/apps/site/browser --project-name=ngx-runtime-i18n-site --branch=main",
+        "cwd": "{workspaceRoot}"
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint"
     },

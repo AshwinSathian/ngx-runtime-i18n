@@ -2,7 +2,7 @@
 
 The marketing and documentation site for the `@ngx-runtime-i18n` package family — an Nx-managed Angular application with SSR + static prerendering (SSG). It covers the landing page, package pages (core, angular, primeng, material, schematics, cli), a live comparison table, docs, recipes, changelog, and FAQ, and dogfoods `@ngx-runtime-i18n/angular`/`@ngx-runtime-i18n/core` for its own language switching.
 
-Once deployed (see the root [README](../../README.md#website)), it will be live at [https://i18n.ashwinsathian.com](https://i18n.ashwinsathian.com).
+Deployed to Cloudflare Pages (project `ngx-runtime-i18n-site`), live at [https://i18n.ashwinsathian.com](https://i18n.ashwinsathian.com).
 
 ## Local development
 
@@ -26,6 +26,14 @@ nx e2e site-e2e      # end-to-end tests (Playwright), including accessibility ch
 ```
 
 `nx lint site` and `nx lint site-e2e` run ESLint for the app and its e2e project respectively.
+
+## Redeploy
+
+```bash
+nx run site:deploy
+```
+
+Builds, generates the root `404.html` fallback, and deploys to Cloudflare Pages tagged to the `main`/production branch explicitly (`--branch=main`) — without this flag, `wrangler` auto-detects the local git branch, which produces a Preview deployment invisible on the production URL/custom domain if run from a worktree or feature branch. Requires `npx wrangler login` once per machine.
 
 ## Design reference
 
