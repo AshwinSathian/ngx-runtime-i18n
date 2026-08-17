@@ -10,7 +10,7 @@ Signals-first runtime i18n for Angular 16+: SSR-safe, hydration-friendly, ICU-li
 
 ## Website
 
-The marketing/docs site for this package family lives at [`apps/site`](apps/site) (an Nx Angular application with static prerendering). Once deployed, it will be live at [https://i18n.ashwinsathian.com](https://i18n.ashwinsathian.com).
+The marketing/docs site for this package family lives at [`apps/site`](apps/site) (an Nx Angular application with static prerendering). Once deployed, it will be live at [https://i18n.ashwinsathian.com](https://i18n.ashwinsathian.com). See [`apps/site/README.md`](apps/site/README.md) for local dev, build, and test commands.
 
 ---
 
