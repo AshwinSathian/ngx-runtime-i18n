@@ -9,6 +9,7 @@ import { RouterLink } from '@angular/router';
 import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
 import { FaqItemComponent } from '../../shared/faq-item/faq-item.component';
 import { StructuredDataService } from '../../core/structured-data.service';
+import { SeoService } from '../../core/seo.service';
 import { SITE_URL, faqPageJsonLd } from '../../core/json-ld';
 
 export interface Faq {
@@ -143,6 +144,7 @@ export const FAQS: readonly Faq[] = [
 export class FaqComponent implements OnInit {
   private readonly structuredData = inject(StructuredDataService);
   private readonly meta = inject(Meta);
+  private readonly seo = inject(SeoService);
   protected readonly faqs = FAQS;
 
   ngOnInit(): void {
@@ -153,6 +155,11 @@ export class FaqComponent implements OnInit {
     this.meta.updateTag({
       property: 'og:image',
       content: `${SITE_URL}/og/faq.png`,
+    });
+    this.seo.setPageMeta({
+      title: 'Frequently asked questions',
+      description:
+        'Answers on SSR support, ICU-lite plural rules, Angular version compatibility, and npm publish status for all six ngx-runtime-i18n packages.',
     });
   }
 }

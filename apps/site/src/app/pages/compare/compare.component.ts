@@ -7,6 +7,7 @@ import {
 import { Meta } from '@angular/platform-browser';
 import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
 import { SITE_URL } from '../../core/json-ld';
+import { SeoService } from '../../core/seo.service';
 import {
   CompareRow,
   CompareTableComponent,
@@ -169,6 +170,7 @@ const ROWS: readonly CompareRow[] = [
 })
 export class CompareComponent implements OnInit {
   private readonly meta = inject(Meta);
+  private readonly seo = inject(SeoService);
   protected readonly rows = ROWS;
 
   ngOnInit(): void {
@@ -178,6 +180,11 @@ export class CompareComponent implements OnInit {
     this.meta.updateTag({
       property: 'og:image',
       content: `${SITE_URL}/og/compare.png`,
+    });
+    this.seo.setPageMeta({
+      title: 'How ngx-runtime-i18n compares',
+      description:
+        "A feature-by-feature comparison of ngx-runtime-i18n against ngx-translate, transloco, and Angular's built-in i18n, covering signals support, SSR, fallback chains, and type-safe keys.",
     });
   }
 }

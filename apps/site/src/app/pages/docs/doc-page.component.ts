@@ -10,6 +10,7 @@ import { DomSanitizer, Meta, type SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { ContentService } from '../../core/content.service';
 import { StructuredDataService } from '../../core/structured-data.service';
+import { SeoService } from '../../core/seo.service';
 import {
   SITE_URL,
   breadcrumbJsonLd,
@@ -52,6 +53,7 @@ export class DocPageComponent implements OnInit {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly structuredData = inject(StructuredDataService);
   private readonly meta = inject(Meta);
+  private readonly seo = inject(SeoService);
   protected readonly doc = signal<DocEntry | null>(null);
   // Angular's default `[innerHTML]` sanitizer strips unknown custom-element tags
   // (`<content-callout>`, `<content-code-block>`, `<content-tabs>`) down to their
@@ -74,6 +76,14 @@ export class DocPageComponent implements OnInit {
     const doc = this.content.getDocBySlug(slug);
     this.doc.set(doc);
     if (doc == null) return;
+
+    // Reuses the doc's own frontmatter rather than writing separate SEO copy — the same
+    // single-source-of-truth pattern the page body above already follows for its own
+    // `<h1>`/description paragraph, so the two can't drift apart.
+    this.seo.setPageMeta({
+      title: doc.frontmatter.title,
+      description: doc.frontmatter.description,
+    });
 
     const pageUrl = `${SITE_URL}/docs/${slug.join('/')}`;
 

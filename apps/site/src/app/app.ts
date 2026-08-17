@@ -23,7 +23,6 @@ import { SITE_URL, personJsonLd, websiteJsonLd } from './core/json-ld';
 export class App implements OnInit {
   private readonly structuredData = inject(StructuredDataService);
   private readonly meta = inject(Meta);
-  protected title = 'site';
 
   ngOnInit(): void {
     // Each prerendered route bootstraps this root component fresh (static

@@ -1,7 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import changelog from '../../../../generated/changelog.json';
 import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
+import { SeoService } from '../../core/seo.service';
 
 @Component({
   selector: 'app-changelog',
@@ -16,11 +22,20 @@ import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.compon
     </div>
   `,
 })
-export class ChangelogComponent {
+export class ChangelogComponent implements OnInit {
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly seo = inject(SeoService);
   // Compiled at build time from our own trusted root CHANGELOG.md, never user
   // input, so bypassing sanitization is safe here — see DocPageComponent for
   // the same pattern and full rationale (Angular's default innerHTML sanitizer
   // strips custom-element wrapper tags and syntax-highlighting `style` attrs).
   protected readonly html: SafeHtml = this.sanitizer.bypassSecurityTrustHtml(changelog.html);
+
+  ngOnInit(): void {
+    this.seo.setPageMeta({
+      title: 'Changelog',
+      description:
+        "Release history for ngx-runtime-i18n's six packages, generated from the repository's own CHANGELOG.md.",
+    });
+  }
 }

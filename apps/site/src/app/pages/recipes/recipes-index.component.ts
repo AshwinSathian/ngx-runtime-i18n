@@ -1,6 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ContentService } from '../../core/content.service';
+import { SeoService } from '../../core/seo.service';
 import type { RecipeEntry } from '../../core/content.types';
 
 @Component({
@@ -34,7 +40,16 @@ import type { RecipeEntry } from '../../core/content.types';
     </div>
   `,
 })
-export class RecipesIndexComponent {
+export class RecipesIndexComponent implements OnInit {
   private readonly content = inject(ContentService);
+  private readonly seo = inject(SeoService);
   protected readonly recipes: RecipeEntry[] = this.content.getAllRecipes();
+
+  ngOnInit(): void {
+    this.seo.setPageMeta({
+      title: 'Recipes',
+      description:
+        'Worked examples for wiring ngx-runtime-i18n into a real application, covering SSR, route-scoped catalogs, and CI catalog validation.',
+    });
+  }
 }

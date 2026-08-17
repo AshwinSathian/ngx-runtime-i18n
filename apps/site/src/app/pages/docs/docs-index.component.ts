@@ -1,6 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ContentService } from '../../core/content.service';
+import { SeoService } from '../../core/seo.service';
 import type { NavSection } from '../../core/content.types';
 
 @Component({
@@ -35,7 +41,16 @@ import type { NavSection } from '../../core/content.types';
     </div>
   `,
 })
-export class DocsIndexComponent {
+export class DocsIndexComponent implements OnInit {
   private readonly content = inject(ContentService);
+  private readonly seo = inject(SeoService);
   protected readonly tree: NavSection[] = this.content.getDocsNavTree();
+
+  ngOnInit(): void {
+    this.seo.setPageMeta({
+      title: 'Documentation',
+      description:
+        "Guides for installing and configuring ngx-runtime-i18n's six packages: core, angular, primeng, material, schematics, and cli.",
+    });
+  }
 }

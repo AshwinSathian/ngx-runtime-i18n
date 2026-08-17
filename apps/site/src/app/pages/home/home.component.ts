@@ -2,12 +2,15 @@ import {
   ChangeDetectionStrategy,
   Component,
   CUSTOM_ELEMENTS_SCHEMA,
+  OnInit,
+  inject,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
 import { HeroLangCycleComponent } from '../../features/hero-lang-cycle/hero-lang-cycle.component';
 import { FeatureGridComponent } from '../../features/feature-grid/feature-grid.component';
 import { PackageMatrixComponent } from '../../features/package-matrix/package-matrix.component';
+import { SeoService } from '../../core/seo.service';
 
 // Snippets sourced verbatim from root README.md's "Usage" section.
 const APP_CONFIG_SNIPPET = `// app.config.ts
@@ -68,7 +71,20 @@ const TEMPLATE_SNIPPET = `<!-- Template -->
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './home.component.html',
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
+  private readonly seo = inject(SeoService);
   protected readonly appConfigSnippet = APP_CONFIG_SNIPPET;
   protected readonly templateSnippet = TEMPLATE_SNIPPET;
+
+  ngOnInit(): void {
+    // Home is the root brand page, so its title skips the "— ngx-runtime-i18n" suffix
+    // every other page gets (see `SeoService`) — appending it here would repeat the name
+    // twice in one string.
+    this.seo.setPageMeta({
+      title: 'ngx-runtime-i18n — Signals-first runtime i18n for Angular',
+      description:
+        'Signals-first runtime i18n for Angular 16 through 22, with SSR-safe catalog loading, ICU-lite plural formatting, and ordered fallback chains.',
+      suffix: false,
+    });
+  }
 }

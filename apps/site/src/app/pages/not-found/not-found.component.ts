@@ -1,5 +1,11 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { SeoService } from '../../core/seo.service';
 
 @Component({
   selector: 'app-not-found',
@@ -19,4 +25,18 @@ import { RouterLink } from '@angular/router';
     </div>
   `,
 })
-export class NotFoundComponent {}
+export class NotFoundComponent implements OnInit {
+  private readonly seo = inject(SeoService);
+
+  ngOnInit(): void {
+    this.seo.setPageMeta({
+      title: 'Page not found',
+      description: "The page you're looking for doesn't exist. Try the docs, or search with Cmd+K.",
+    });
+    // Standard practice for a 404 page: it should never show up in search results, so it
+    // gets a `robots: noindex` tag in addition to (not instead of) a real title and
+    // description — some crawlers and share-preview bots still read those even when they
+    // won't index the page.
+    this.seo.setNoIndex();
+  }
+}

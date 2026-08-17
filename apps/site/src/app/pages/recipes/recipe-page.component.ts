@@ -10,6 +10,7 @@ import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { ContentService } from '../../core/content.service';
 import { StructuredDataService } from '../../core/structured-data.service';
+import { SeoService } from '../../core/seo.service';
 import {
   SITE_URL,
   articleJsonLd,
@@ -60,6 +61,7 @@ export class RecipePageComponent implements OnInit {
   private readonly content = inject(ContentService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly structuredData = inject(StructuredDataService);
+  private readonly seo = inject(SeoService);
   protected readonly recipe = signal<RecipeEntry | null>(null);
   // See DocPageComponent for the empirically-verified reason this bypasses Angular's
   // default `[innerHTML]` sanitizer: it strips `<content-callout>`/`<content-tabs>`/
@@ -79,6 +81,13 @@ export class RecipePageComponent implements OnInit {
     const recipe = this.content.getRecipeBySlug(slug);
     this.recipe.set(recipe);
     if (recipe == null) return;
+
+    // Reuses the recipe's own frontmatter rather than writing separate SEO copy — same
+    // single-source-of-truth reasoning as `DocPageComponent`.
+    this.seo.setPageMeta({
+      title: recipe.frontmatter.title,
+      description: recipe.frontmatter.description,
+    });
 
     const pageUrl = `${SITE_URL}/recipes/${slug}`;
     const crumbs: BreadcrumbItem[] = [
