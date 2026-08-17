@@ -1,0 +1,70 @@
+# ngx-runtime-i18n — full digest
+
+> Signals-first runtime internationalization for Angular 16 through 22. Catalogs load at runtime instead of compiling into the bundle, missing keys resolve through a configurable fallback chain, and SSR seeds Angular's TransferState so the first client render matches the server-rendered markup.
+
+This file expands on [llms.txt](https://i18n.ashwinsathian.com/llms.txt) with the full feature list, the six-package table, one-paragraph summaries of each core concept, and the full recipe list.
+
+## Feature list
+
+- `provideRuntimeI18n()` installs `I18nService`, `I18nPipe`, and the optional RxJS-compatible `I18nCompatService`.
+- Deterministic SSR to CSR handoff via Angular TransferState, seeded on the server by `provideRuntimeI18nSsr()`.
+- Fallback chains: a key lookup walks the active language, then each language in `RuntimeI18nConfig.fallbacks[]` in order, then `defaultLang`, then `onMissingKey()`. `fallbacks` values are deduped and trimmed against `supported` automatically.
+- Catalog caching modes via `RuntimeI18nOptions.cacheMode`: `none` (keep only the active fallback chain in memory), `memory` (default, cache every loaded catalog for the session), `storage` (hydrate from `localStorage`, refresh in the background). Server environments never touch `localStorage`.
+- Route-scoped catalogs via `withI18nScope()`: load a feature's catalog when its route activates and unload it via `DestroyRef` when the route is destroyed. Resolution order is scope catalogs (most recently loaded wins) → global catalog → fallback chain → `onMissingKey`.
+- Signals-first API: `lang()`, `ready()`, `switching()`, `activeSwitchLang()` signals; `t()` for direct formatting; `t$()` returns a `Signal<string>` that recomputes only when language or params change.
+- DX helpers: `getCurrentLang()`, `getLoadedLangs()`, `hasKey(key, lang?)`, `preloadLang(lang)`, `preloadLangs(langs)`, `preloadFallbackChain(lang?)`.
+- Type-safe catalogs via module augmentation of `I18nSchema` — `t()`, `I18nPipe`, and `I18nCompatService.t()` get compile-time checked keys and interpolation params once a schema is declared. Key types come from `DeepKeys<T>` (dot-notation paths up to 4 levels); param types come from `ExtractParams<S>`.
+- ICU-lite formatter (`@ngx-runtime-i18n/core`, dependency-free): interpolation plus `plural`, `select`, and `selectordinal` blocks, nestable inside each other — including the same keyword nested inside itself — to arbitrary depth.
+- Optional PrimeNG adapter (`providePrimeNgRuntimeI18n()`): keeps `PrimeNGConfig`'s translation object in sync with `I18nService.lang()`.
+- Optional Angular Material adapter (`provideMaterialRuntimeI18n()`): keeps `MatPaginatorIntl`, `MatSortHeaderIntl`, and `MatStepperIntl` in sync with language changes; the datepicker's Intl service is a partial exception, documented separately.
+- `ng add @ngx-runtime-i18n/schematics`: adds the core and Angular packages as dependencies, scaffolds sample catalogs under `public/i18n/<lang>.json`, and patches `app.config.ts` to register `provideRuntimeI18n()`.
+- `ngx-i18n` CLI (`@ngx-runtime-i18n/cli`): `extract` scans source for translation key usage and writes a manifest; `check` validates one or more language catalogs against that usage, reporting missing and unused keys, with `--fail-on-missing`/`--fail-on-unused` flags for CI gates.
+
+## Packages
+
+| Package | Description | npm status |
+| --- | --- | --- |
+| `@ngx-runtime-i18n/core` | Framework-agnostic ICU-lite formatter (`formatIcu`) and shared types (`Catalog`, `RuntimeI18nConfig`). No dependencies, no Angular requirement. | Published, 2.1.0 |
+| `@ngx-runtime-i18n/angular` | Angular wrapper: `provideRuntimeI18n()`, `I18nService`, `I18nPipe`, `I18nCompatService`, `withI18nScope()`, `provideRuntimeI18nSsr()`. Peer: `@angular/common`, `@angular/core`, `@angular/platform-browser` at `>=16 <23`. | Published, 2.1.0 |
+| `@ngx-runtime-i18n/primeng` | Optional adapter: `providePrimeNgRuntimeI18n()` syncs PrimeNG's built-in translations with `I18nService.lang()`. Peer: PrimeNG. | Published, 2.1.0 |
+| `@ngx-runtime-i18n/material` | Optional adapter: `provideMaterialRuntimeI18n()` syncs Angular Material's paginator, sort, and stepper Intl services (datepicker partial). Peer: `@angular/material`. | Published, 2.1.0 |
+| `@ngx-runtime-i18n/schematics` | `ng add` schematic that wires `provideRuntimeI18n()` and scaffolds sample catalogs into an existing Angular workspace. | Published, 2.1.0 |
+| `@ngx-runtime-i18n/cli` | `ngx-i18n` binary: `extract` and `check` commands for source-to-catalog key validation, built for CI. | Published, 2.1.0 |
+
+## Core concepts
+
+**Fallback chains** — A key lookup walks the active language, then each language in `RuntimeI18nConfig.fallbacks[]` in the order listed, then `defaultLang`. If the key is still missing after all three steps, it flows through `onMissingKey()`. `fallbacks` values are deduped and trimmed against `supported` automatically, so repeated or unsupported entries are ignored without extra guard code.
+
+**Catalog caching** — `RuntimeI18nOptions.cacheMode` selects one of three strategies: `none` keeps only the active fallback chain in memory; `memory` (the default) caches every catalog loaded during the session; `storage` hydrates catalogs from `localStorage` on load and refreshes them in the background, using `cacheKeyPrefix` to namespace keys when multiple apps or i18n instances share an origin. `localStorage` I/O never runs on the server, so SSR output stays deterministic regardless of what a returning client has cached.
+
+**ICU-lite formatting** — `@ngx-runtime-i18n/core` ships a small, dependency-free formatter modeled loosely on ICU MessageFormat. Supported: `{param}` interpolation (dotted/hyphenated tokens); `plural` blocks with `one`/`other`, exact-match selectors like `=0`, and `#` for the count; `select` blocks with arbitrary named options and an `other` fallback; `selectordinal` blocks using the same `=n`/`#` mechanics as `plural` (a custom `pluralResolver` is required for true ordinal categories such as `two`/`few` — without one, both `plural` and `selectordinal` fall back to a plain one-if-equal-to-1/other rule); nesting of `plural`, `select`, and `selectordinal` inside each other to arbitrary depth, including the same keyword nested inside itself, with `#` binding to its nearest enclosing `plural`/`selectordinal` block. Not supported: ICU-style quoting/escaping (`''`, `'{'`) and argument types beyond `plural`/`select`/`selectordinal` (ICU's `number`, `date`, `time`).
+
+**Type safety** — `I18nService.t()`, `I18nPipe`, and `I18nCompatService.t()` accept plain `string` keys by default. Declaring a catalog shape via module augmentation of the `I18nSchema` interface in `@ngx-runtime-i18n/core` turns on compile-time key and param checking without changing any existing call sites. Key types come from `DeepKeys<T>` (dot-notation paths up to 4 levels deep); interpolation param types come from `ExtractParams<S>`, both exported for building typed wrappers around `t()`.
+
+**SSR and hydration** — `provideRuntimeI18nSsr()` seeds Angular's TransferState on the server with the same keys `provideRuntimeI18n()` reads on the client, using the same `provideRuntimeI18n(...)` config on both bootstraps. It returns `EnvironmentProviders`, an opaque value — put it directly into the `providers` array; spreading it breaks. The client reads TransferState first and only fetches catalogs that weren't already seeded, keeping first paint and first client render aligned. The repo's `apps/demo-ssr` is a full Express + Angular SSR example covering this end to end.
+
+## Recipes
+
+1. **SSR with Express** — Wire `provideRuntimeI18nSsr()` into an Express + Angular SSR server so the first response already carries the right catalog.
+2. **Route-scoped catalogs** — Load a feature's translation catalog only when its route activates, using `withI18nScope()`.
+3. **Preloading and caching** — Warm catalogs ahead of time with the preload helpers, and pick a `cacheMode` for how long they stay in memory.
+4. **Type-safe catalogs** — Walk through module augmentation end to end: declaring a schema, seeing `t()` get checked, and reading what `DeepKeys` and `ExtractParams` compute.
+5. **Angular Material adapter** — Wire `provideMaterialRuntimeI18n()` into an app so the paginator, sort, and stepper Intl services switch language with everything else, plus what it takes to cover the datepicker too.
+6. **PrimeNG adapter** — Keep `PrimeNGConfig`'s translation object in sync with `I18nService.lang()`, choosing between a static map and a lazy resolver.
+7. **CI catalog validation** — Wire the `ngx-i18n` CLI's `extract` and `check` commands into a pull request gate that fails the build when code and catalogs drift.
+8. **ng add schematic** — See exactly what the `ng-add` schematic generates and patches in an existing Angular workspace.
+9. **Migrating from ngx-translate** — A concept-mapping table and one worked component conversion for teams moving off `@ngx-translate/core`.
+
+## Source and packages
+
+- [GitHub repository](https://github.com/AshwinSathian/ngx-runtime-i18n)
+- [@ngx-runtime-i18n/core on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/core)
+- [@ngx-runtime-i18n/angular on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/angular)
+- [@ngx-runtime-i18n/primeng on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/primeng)
+- [@ngx-runtime-i18n/material on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/material)
+- [@ngx-runtime-i18n/schematics on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/schematics)
+- [@ngx-runtime-i18n/cli on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/cli)
+- [Documentation](https://i18n.ashwinsathian.com/docs)
+- [Recipes](https://i18n.ashwinsathian.com/recipes)
+- [Framework comparison](https://i18n.ashwinsathian.com/compare)
+- [Changelog](https://i18n.ashwinsathian.com/changelog)

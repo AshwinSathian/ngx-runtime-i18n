@@ -4,7 +4,8 @@
 // consumed at build time by the Angular app:
 //   - apps/site/generated/content-manifest.json  (imported directly by ContentService)
 //   - apps/site/public/search-index.json          (served as a static asset)
-//   - apps/site/generated/routes.json              (consumed by the sitemap generator)
+//   - apps/site/generated/routes.json              (route list, also consumed at build time)
+//   - apps/site/public/sitemap.xml                 (generated from the same route list)
 //
 // Run via: node scripts/build-content.mjs   (cwd: apps/site)
 
@@ -213,6 +214,10 @@ async function main() {
     path.join(process.cwd(), 'generated', 'routes.json'),
     JSON.stringify(routes, null, 2),
   );
+
+  const BASE_URL = 'https://i18n.ashwinsathian.com';
+  const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((r) => `  <url><loc>${BASE_URL}${r}</loc></url>`).join('\n')}\n</urlset>\n`;
+  fs.writeFileSync(path.join(process.cwd(), 'public', 'sitemap.xml'), sitemapXml);
 
   console.log(`Compiled ${docs.length} docs, ${recipes.length} recipes, changelog.`);
 }

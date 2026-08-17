@@ -1,0 +1,41 @@
+# ngx-runtime-i18n
+
+> Signals-first runtime internationalization for Angular 16 through 22. Catalogs load at runtime instead of compiling into the bundle, missing keys resolve through a configurable fallback chain, and SSR seeds Angular's TransferState so the first client render matches the server-rendered markup.
+
+`ngx-runtime-i18n` is a family of six npm packages, all published at version 2.1.0: a framework-agnostic formatter (`@ngx-runtime-i18n/core`), an Angular wrapper (`@ngx-runtime-i18n/angular`), optional PrimeNG and Angular Material adapters, an `ng add` schematic, and a CLI for extracting and validating translation keys. The Angular wrapper exposes a signals-first API (`I18nService.lang()`, `ready()`, `t()`, `t$()`) plus an RxJS-compatible `I18nCompatService` for codebases not yet on signals.
+
+## Install
+
+Core and Angular integration (required for any Angular app):
+
+```bash
+npm i @ngx-runtime-i18n/angular @ngx-runtime-i18n/core
+```
+
+Optional adapters and tooling:
+
+```bash
+npm i @ngx-runtime-i18n/primeng      # keeps PrimeNGConfig's translations in sync with I18nService.lang()
+npm i @ngx-runtime-i18n/material     # keeps Material's paginator/sort/stepper Intl services in sync
+ng add @ngx-runtime-i18n/schematics  # scaffolds provideRuntimeI18n() and sample catalogs into a workspace
+npm i -D @ngx-runtime-i18n/cli       # ngx-i18n extract/check for catalog validation in CI
+```
+
+## Docs
+
+- [Documentation](https://i18n.ashwinsathian.com/docs) — getting started, core concepts (fallback chains, catalog caching, ICU-lite formatting, type safety, SSR and hydration), and per-package reference.
+- [Recipes](https://i18n.ashwinsathian.com/recipes) — worked examples: SSR with Express, route-scoped catalogs, preloading and caching, type-safe catalogs, the Material and PrimeNG adapters, the `ng-add` schematic, migrating from `ngx-translate`, and CI catalog validation.
+- [Framework comparison](https://i18n.ashwinsathian.com/compare)
+- [Changelog](https://i18n.ashwinsathian.com/changelog)
+
+## Source and packages
+
+- [GitHub repository](https://github.com/AshwinSathian/ngx-runtime-i18n)
+- [@ngx-runtime-i18n/core on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/core)
+- [@ngx-runtime-i18n/angular on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/angular)
+- [@ngx-runtime-i18n/primeng on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/primeng)
+- [@ngx-runtime-i18n/material on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/material)
+- [@ngx-runtime-i18n/schematics on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/schematics)
+- [@ngx-runtime-i18n/cli on npm](https://www.npmjs.com/package/@ngx-runtime-i18n/cli)
+
+For an expanded digest — full feature list, per-package status table, core-concept summaries, and the full recipe list — see [llms-full.txt](https://i18n.ashwinsathian.com/llms-full.txt).
