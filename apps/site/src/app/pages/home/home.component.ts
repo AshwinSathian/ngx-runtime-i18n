@@ -84,6 +84,7 @@ export class HomeComponent implements OnInit {
       title: 'ngx-runtime-i18n — Signals-first runtime i18n for Angular',
       description:
         'Signals-first runtime i18n for Angular 16 through 22, with SSR-safe catalog loading, ICU-lite plural formatting, and ordered fallback chains.',
+      path: '/',
       suffix: false,
     });
   }

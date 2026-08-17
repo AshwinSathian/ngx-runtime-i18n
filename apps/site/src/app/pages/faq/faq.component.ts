@@ -4,7 +4,6 @@ import {
   OnInit,
   inject,
 } from '@angular/core';
-import { Meta } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
 import { FaqItemComponent } from '../../shared/faq-item/faq-item.component';
@@ -143,23 +142,27 @@ export const FAQS: readonly Faq[] = [
 })
 export class FaqComponent implements OnInit {
   private readonly structuredData = inject(StructuredDataService);
-  private readonly meta = inject(Meta);
   private readonly seo = inject(SeoService);
   protected readonly faqs = FAQS;
 
   ngOnInit(): void {
-    // Built directly from the same `FAQS` array the template above renders (`@for (faq
-    // of faqs; ...`) — never a hand-duplicated copy, so the JSON-LD can't drift from
-    // what's actually on the page.
-    this.structuredData.set('ld-faq', faqPageJsonLd(this.faqs));
-    this.meta.updateTag({
-      property: 'og:image',
-      content: `${SITE_URL}/og/faq.png`,
-    });
+    // `setPageMeta()` clears every page-scoped JSON-LD tag as its first action (see
+    // `StructuredDataService.clearPageScoped()`), so it has to run BEFORE this
+    // component sets its own `ld-faq` below — calling it after would wipe out the tag
+    // this same `ngOnInit` just set.
     this.seo.setPageMeta({
       title: 'Frequently asked questions',
       description:
         'Answers on SSR support, ICU-lite plural rules, Angular version compatibility, and npm publish status for all six ngx-runtime-i18n packages.',
+      path: '/faq',
+      // build-og-images.mjs generates a dedicated faq.png for this route — without
+      // this override the page would fall back to `SeoService`'s site-wide default
+      // (home.png).
+      image: `${SITE_URL}/og/faq.png`,
     });
+    // Built directly from the same `FAQS` array the template above renders (`@for (faq
+    // of faqs; ...`) — never a hand-duplicated copy, so the JSON-LD can't drift from
+    // what's actually on the page.
+    this.structuredData.set('ld-faq', faqPageJsonLd(this.faqs));
   }
 }

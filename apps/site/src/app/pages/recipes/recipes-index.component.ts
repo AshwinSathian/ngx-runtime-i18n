@@ -50,6 +50,7 @@ export class RecipesIndexComponent implements OnInit {
       title: 'Recipes',
       description:
         'Worked examples for wiring ngx-runtime-i18n into a real application, covering SSR, route-scoped catalogs, and CI catalog validation.',
+      path: '/recipes',
     });
   }
 }

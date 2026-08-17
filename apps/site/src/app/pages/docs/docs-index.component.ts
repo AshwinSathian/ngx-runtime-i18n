@@ -51,6 +51,7 @@ export class DocsIndexComponent implements OnInit {
       title: 'Documentation',
       description:
         "Guides for installing and configuring ngx-runtime-i18n's six packages: core, angular, primeng, material, schematics, and cli.",
+      path: '/docs',
     });
   }
 }

@@ -1,13 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   computed,
+  effect,
   inject,
-  signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+import { map } from 'rxjs';
 import { ContentService } from '../../core/content.service';
 import { StructuredDataService } from '../../core/structured-data.service';
 import { SeoService } from '../../core/seo.service';
@@ -56,13 +57,31 @@ import type { RecipeEntry } from '../../core/content.types';
     }
   `,
 })
-export class RecipePageComponent implements OnInit {
+export class RecipePageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly content = inject(ContentService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly structuredData = inject(StructuredDataService);
   private readonly seo = inject(SeoService);
-  protected readonly recipe = signal<RecipeEntry | null>(null);
+
+  // Unlike DocPageComponent, which is matched via a `**` wildcard under `/docs`,
+  // recipes use a real named `:slug` route param (single-segment slugs only), so it's
+  // read from `paramMap` rather than reconstructed from URL segments. Read from the
+  // Observable `route.paramMap`, not just `route.snapshot.paramMap` — every recipe page
+  // matches the same `recipes/:slug` route config, so Angular's default
+  // `RouteReuseStrategy` reuses this component instance across recipe-to-recipe
+  // navigations instead of destroying and recreating it, and a one-time snapshot read
+  // (the previous implementation, via `ngOnInit`) would only ever see the FIRST
+  // recipe's slug on later navigations.
+  private readonly slug = toSignal(
+    this.route.paramMap.pipe(map((params) => params.get('slug') ?? '')),
+    { initialValue: this.route.snapshot.paramMap.get('slug') ?? '' },
+  );
+
+  protected readonly recipe = computed<RecipeEntry | null>(() =>
+    this.content.getRecipeBySlug(this.slug()),
+  );
+
   // See DocPageComponent for the empirically-verified reason this bypasses Angular's
   // default `[innerHTML]` sanitizer: it strips `<content-callout>`/`<content-tabs>`/
   // `<content-code-block>` tags down to their children, and strips the `style`
@@ -73,39 +92,53 @@ export class RecipePageComponent implements OnInit {
     this.sanitizer.bypassSecurityTrustHtml(this.recipe()?.html ?? ''),
   );
 
-  ngOnInit(): void {
-    // Unlike DocPageComponent, which is matched via a `**` wildcard under `/docs`,
-    // recipes use a real named `:slug` route param (single-segment slugs only), so
-    // it's read from `paramMap` rather than reconstructed from URL segments.
-    const slug = this.route.snapshot.paramMap.get('slug') ?? '';
-    const recipe = this.content.getRecipeBySlug(slug);
-    this.recipe.set(recipe);
-    if (recipe == null) return;
+  constructor() {
+    // An `effect()` keyed off the reactive `recipe()`/`slug()` signals, not a one-time
+    // `ngOnInit` side effect — see DocPageComponent for the full rationale (this is the
+    // same route-config-reuse fix, applied to recipes' named `:slug` param instead of
+    // docs' wildcard URL segments).
+    effect(() => {
+      const recipe = this.recipe();
+      const slug = this.slug();
+      if (recipe == null) return;
 
-    // Reuses the recipe's own frontmatter rather than writing separate SEO copy — same
-    // single-source-of-truth reasoning as `DocPageComponent`.
-    this.seo.setPageMeta({
-      title: recipe.frontmatter.title,
-      description: recipe.frontmatter.description,
-    });
+      const pageUrl = `/recipes/${slug}`;
 
-    const pageUrl = `${SITE_URL}/recipes/${slug}`;
-    const crumbs: BreadcrumbItem[] = [
-      { name: 'Home', url: `${SITE_URL}/` },
-      { name: 'Recipes', url: `${SITE_URL}/recipes` },
-      { name: recipe.frontmatter.title, url: pageUrl },
-    ];
-    this.structuredData.set('ld-breadcrumb', breadcrumbJsonLd(crumbs));
-    // Recipes are how-to walkthroughs (a title, description, and prose body under a
-    // single author), which is a reasonable fit for schema.org `Article` — unlike doc
-    // pages, which describe a package/API rather than an authored piece of writing.
-    this.structuredData.set(
-      'ld-article',
-      articleJsonLd({
+      // Reuses the recipe's own frontmatter rather than writing separate SEO copy —
+      // same single-source-of-truth reasoning as `DocPageComponent`. Called FIRST
+      // (before this effect sets its own `ld-breadcrumb`/`ld-article` below) because
+      // `SeoService.setPageMeta()` clears every page-scoped JSON-LD tag as its first
+      // action — calling it after would wipe out the tags this same effect run just
+      // set.
+      this.seo.setPageMeta({
         title: recipe.frontmatter.title,
         description: recipe.frontmatter.description,
-        url: pageUrl,
-      }),
-    );
+        path: pageUrl,
+        // Recipes are how-to walkthroughs (a title, description, and prose body under
+        // a single author), which is a reasonable fit for OG `article` — unlike most
+        // of the site's other pages, which describe a product/comparison rather than
+        // an authored piece of writing.
+        type: 'article',
+      });
+
+      const absoluteUrl = `${SITE_URL}${pageUrl}`;
+      const crumbs: BreadcrumbItem[] = [
+        { name: 'Home', url: `${SITE_URL}/` },
+        { name: 'Recipes', url: `${SITE_URL}/recipes` },
+        { name: recipe.frontmatter.title, url: absoluteUrl },
+      ];
+      this.structuredData.set('ld-breadcrumb', breadcrumbJsonLd(crumbs));
+      // Recipes are how-to walkthroughs (a title, description, and prose body under a
+      // single author), which is a reasonable fit for schema.org `Article` — unlike doc
+      // pages, which describe a package/API rather than an authored piece of writing.
+      this.structuredData.set(
+        'ld-article',
+        articleJsonLd({
+          title: recipe.frontmatter.title,
+          description: recipe.frontmatter.description,
+          url: absoluteUrl,
+        }),
+      );
+    });
   }
 }

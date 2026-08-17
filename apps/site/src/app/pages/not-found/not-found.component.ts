@@ -32,6 +32,11 @@ export class NotFoundComponent implements OnInit {
     this.seo.setPageMeta({
       title: 'Page not found',
       description: "The page you're looking for doesn't exist. Try the docs, or search with Cmd+K.",
+      // `/404` is the concrete path this route is actually prerendered at (see
+      // `app.routes.server.ts`'s `getPrerenderParams` for the wildcard route) — there's
+      // no single real path for every possible 404 URL, so this is a stable,
+      // self-referencing canonical rather than one derived from `Router.url`.
+      path: '/404',
     });
     // Standard practice for a 404 page: it should never show up in search results, so it
     // gets a `robots: noindex` tag in addition to (not instead of) a real title and

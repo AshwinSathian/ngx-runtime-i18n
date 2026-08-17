@@ -1,13 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   computed,
+  effect,
   inject,
-  signal,
 } from '@angular/core';
-import { DomSanitizer, Meta, type SafeHtml } from '@angular/platform-browser';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+import { map } from 'rxjs';
 import { ContentService } from '../../core/content.service';
 import { StructuredDataService } from '../../core/structured-data.service';
 import { SeoService } from '../../core/seo.service';
@@ -47,14 +48,33 @@ import type { DocEntry } from '../../core/content.types';
     }
   `,
 })
-export class DocPageComponent implements OnInit {
+export class DocPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly content = inject(ContentService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly structuredData = inject(StructuredDataService);
-  private readonly meta = inject(Meta);
   private readonly seo = inject(SeoService);
-  protected readonly doc = signal<DocEntry | null>(null);
+
+  // This component is matched via a `**` wildcard route under `/docs`, so there is no
+  // named `:slug` route param to read from `paramMap` — the router doesn't parse params
+  // out of a wildcard segment. The matched URL segments (one for `getting-started`, two
+  // for `core-concepts/*`/`packages/*` docs) come from `route.url` — an Observable, not
+  // just `route.snapshot.url` — because every doc page matches this same `docs/**`
+  // route config, so Angular's default `RouteReuseStrategy` reuses this component
+  // instance across doc-to-doc navigations rather than destroying and recreating it. A
+  // one-time snapshot read (the previous implementation, via `ngOnInit`) only ever sees
+  // the FIRST doc's URL segments; `route.url` re-emits on every subsequent navigation
+  // that reuses this instance, which is what `toSignal` below turns back into a signal
+  // this component's `doc`/`html`/SEO effect can react to.
+  private readonly slug = toSignal(
+    this.route.url.pipe(map((segments) => segments.map((s) => s.path))),
+    { initialValue: this.route.snapshot.url.map((s) => s.path) },
+  );
+
+  protected readonly doc = computed<DocEntry | null>(() =>
+    this.content.getDocBySlug(this.slug()),
+  );
+
   // Angular's default `[innerHTML]` sanitizer strips unknown custom-element tags
   // (`<content-callout>`, `<content-code-block>`, `<content-tabs>`) down to their
   // children, and strips the `style` attributes rehype-pretty-code/Shiki use for
@@ -66,56 +86,61 @@ export class DocPageComponent implements OnInit {
     this.sanitizer.bypassSecurityTrustHtml(this.doc()?.html ?? ''),
   );
 
-  ngOnInit(): void {
-    // This component is matched via a `**` wildcard route under `/docs`, so there is
-    // no named `:slug` route param to read from `paramMap` — the router doesn't parse
-    // params out of a wildcard segment. The matched URL segments (one for
-    // `getting-started`, two once `core-concepts/*`/`packages/*` docs exist) are
-    // available on the route snapshot's `url` (a `UrlSegment[]`) instead.
-    const slug = this.route.snapshot.url.map((segment) => segment.path);
-    const doc = this.content.getDocBySlug(slug);
-    this.doc.set(doc);
-    if (doc == null) return;
+  constructor() {
+    // An `effect()` keyed off the reactive `doc()`/`slug()` signals, not a one-time
+    // `ngOnInit` side effect — this is what makes the SEO/JSON-LD side effects below
+    // re-run on every doc-to-doc client-side navigation, not just this component's
+    // first mount (see `slug` above for why a plain `ngOnInit` read goes stale).
+    effect(() => {
+      const doc = this.doc();
+      const slug = this.slug();
+      if (doc == null) return;
 
-    // Reuses the doc's own frontmatter rather than writing separate SEO copy — the same
-    // single-source-of-truth pattern the page body above already follows for its own
-    // `<h1>`/description paragraph, so the two can't drift apart.
-    this.seo.setPageMeta({
-      title: doc.frontmatter.title,
-      description: doc.frontmatter.description,
-    });
+      const pageUrl = `/docs/${slug.join('/')}`;
+      const isPackagePage = slug[0] === 'packages';
 
-    const pageUrl = `${SITE_URL}/docs/${slug.join('/')}`;
-
-    // Package pages (`/docs/packages/<pkg>`) describe a published npm package, so they
-    // additionally emit `SoftwareApplication` JSON-LD alongside the breadcrumb every
-    // doc page gets below.
-    if (slug[0] === 'packages') {
-      this.structuredData.set(
-        'ld-software',
-        softwareApplicationJsonLd({
-          name: '@ngx-runtime-i18n/' + slug[1],
-          description: doc.frontmatter.description,
-          url: pageUrl,
-        }),
-      );
-      this.meta.updateTag({
-        property: 'og:image',
-        content: `${SITE_URL}/og/packages-${slug[1]}.png`,
+      // Reuses the doc's own frontmatter rather than writing separate SEO copy — the
+      // same single-source-of-truth pattern the page body above already follows for its
+      // own `<h1>`/description paragraph, so the two can't drift apart. Called FIRST
+      // (before this effect sets its own `ld-software`/`ld-breadcrumb` below) because
+      // `SeoService.setPageMeta()` clears every page-scoped JSON-LD tag as its first
+      // action (see `StructuredDataService.clearPageScoped()`) — calling it after would
+      // wipe out the very tags this same effect run just set.
+      this.seo.setPageMeta({
+        title: doc.frontmatter.title,
+        description: doc.frontmatter.description,
+        path: pageUrl,
+        image: isPackagePage
+          ? `${SITE_URL}/og/packages-${slug[1]}.png`
+          : undefined,
       });
-    }
 
-    const crumbs: BreadcrumbItem[] = [
-      { name: 'Home', url: `${SITE_URL}/` },
-      { name: 'Docs', url: `${SITE_URL}/docs` },
-    ];
-    // Two-segment slugs (`core-concepts/*`, `packages/*`) get an extra crumb for their
-    // section, matching the sidebar's own grouping (`frontmatter.section`) — there's no
-    // dedicated section index route, so it links back to the docs index.
-    if (slug.length > 1) {
-      crumbs.push({ name: doc.frontmatter.section, url: `${SITE_URL}/docs` });
-    }
-    crumbs.push({ name: doc.frontmatter.title, url: pageUrl });
-    this.structuredData.set('ld-breadcrumb', breadcrumbJsonLd(crumbs));
+      // Package pages (`/docs/packages/<pkg>`) describe a published npm package, so
+      // they additionally emit `SoftwareApplication` JSON-LD alongside the breadcrumb
+      // every doc page gets below.
+      if (isPackagePage) {
+        this.structuredData.set(
+          'ld-software',
+          softwareApplicationJsonLd({
+            name: '@ngx-runtime-i18n/' + slug[1],
+            description: doc.frontmatter.description,
+            url: `${SITE_URL}${pageUrl}`,
+          }),
+        );
+      }
+
+      const crumbs: BreadcrumbItem[] = [
+        { name: 'Home', url: `${SITE_URL}/` },
+        { name: 'Docs', url: `${SITE_URL}/docs` },
+      ];
+      // Two-segment slugs (`core-concepts/*`, `packages/*`) get an extra crumb for
+      // their section, matching the sidebar's own grouping (`frontmatter.section`) —
+      // there's no dedicated section index route, so it links back to the docs index.
+      if (slug.length > 1) {
+        crumbs.push({ name: doc.frontmatter.section, url: `${SITE_URL}/docs` });
+      }
+      crumbs.push({ name: doc.frontmatter.title, url: `${SITE_URL}${pageUrl}` });
+      this.structuredData.set('ld-breadcrumb', breadcrumbJsonLd(crumbs));
+    });
   }
 }

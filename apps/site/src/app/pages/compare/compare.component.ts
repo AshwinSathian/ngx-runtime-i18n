@@ -4,7 +4,6 @@ import {
   OnInit,
   inject,
 } from '@angular/core';
-import { Meta } from '@angular/platform-browser';
 import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
 import { SITE_URL } from '../../core/json-ld';
 import { SeoService } from '../../core/seo.service';
@@ -169,22 +168,19 @@ const ROWS: readonly CompareRow[] = [
   `,
 })
 export class CompareComponent implements OnInit {
-  private readonly meta = inject(Meta);
   private readonly seo = inject(SeoService);
   protected readonly rows = ROWS;
 
   ngOnInit(): void {
-    // build-og-images.mjs generates a dedicated compare.png for this route (Task 21) —
-    // without this override the page falls back to the root App component's site-wide
-    // default (home.png, set in app.ts's own ngOnInit), same pattern as FaqComponent.
-    this.meta.updateTag({
-      property: 'og:image',
-      content: `${SITE_URL}/og/compare.png`,
-    });
     this.seo.setPageMeta({
       title: 'How ngx-runtime-i18n compares',
       description:
         "A feature-by-feature comparison of ngx-runtime-i18n against ngx-translate, transloco, and Angular's built-in i18n, covering signals support, SSR, fallback chains, and type-safe keys.",
+      path: '/compare',
+      // build-og-images.mjs generates a dedicated compare.png for this route (Task
+      // 21) — without this override the page would fall back to `SeoService`'s
+      // site-wide default (home.png).
+      image: `${SITE_URL}/og/compare.png`,
     });
   }
 }

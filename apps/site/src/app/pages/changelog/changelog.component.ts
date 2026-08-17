@@ -36,6 +36,7 @@ export class ChangelogComponent implements OnInit {
       title: 'Changelog',
       description:
         "Release history for ngx-runtime-i18n's six packages, generated from the repository's own CHANGELOG.md.",
+      path: '/changelog',
     });
   }
 }
