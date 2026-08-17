@@ -172,9 +172,9 @@ Catalog JSON lives under `apps/demo*/public/i18n/<lang>.json`.
 | [`@ngx-runtime-i18n/core`](libs/runtime-i18n/README.md)                  | Framework-agnostic primitives (ICU-lite formatter, shared types).                  | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/core)      |
 | [`@ngx-runtime-i18n/angular`](libs/runtime-i18n-angular/README.md)       | Angular wrapper (signals, SSR-safe service, pipes).                                | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/angular)   |
 | [`@ngx-runtime-i18n/primeng`](libs/runtime-i18n-primeng/README.md)       | Optional PrimeNG adapter that mirrors runtime language changes.                    | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/primeng)   |
-| [`@ngx-runtime-i18n/material`](libs/runtime-i18n-material/README.md)     | Optional Angular Material adapter (paginator, sort, stepper, datepicker labels).   | Not yet published, build from source                                 |
-| [`@ngx-runtime-i18n/schematics`](libs/runtime-i18n-schematics/README.md) | `ng add` schematic that scaffolds `provideRuntimeI18n()` into an existing project. | Not yet published, build from source                                 |
-| [`@ngx-runtime-i18n/cli`](tools/cli/README.md)                           | CLI for extracting translation keys from source and validating catalogs.          | Not yet published, build from source                                 |
+| [`@ngx-runtime-i18n/material`](libs/runtime-i18n-material/README.md)     | Optional Angular Material adapter (paginator, sort, stepper, datepicker labels).   | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/material)   |
+| [`@ngx-runtime-i18n/schematics`](libs/runtime-i18n-schematics/README.md) | `ng add` schematic that scaffolds `provideRuntimeI18n()` into an existing project. | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/schematics) |
+| [`@ngx-runtime-i18n/cli`](tools/cli/README.md)                           | CLI for extracting translation keys from source and validating catalogs.          | [Published](https://www.npmjs.com/package/@ngx-runtime-i18n/cli)       |
 
 ---
 
