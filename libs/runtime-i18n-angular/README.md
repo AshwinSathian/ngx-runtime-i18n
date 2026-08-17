@@ -27,12 +27,12 @@ npm i @ngx-runtime-i18n/angular @ngx-runtime-i18n/core
 
 ```
 your-app/
+  public/
+    i18n/
+      en.json
+      hi.json
+      de.json
   src/
-    public/
-      i18n/
-        en.json
-        hi.json
-        de.json
 ```
 
 At runtime, catalogs are fetched from `/i18n/<lang>.json` by default in our examples.
@@ -236,7 +236,7 @@ Use the same `provideRuntimeI18n(...)` on both server and client app bootstraps.
 
 - **Angular pipes not localizing**: ensure you defined `localeLoaders` for the language you’re testing.
 - **Hydration mismatch**: always seed TransferState on SSR; the wrapper is hydration‑safe when the first paint uses server data.
-- **404 for catalogs**: place files under `src/public/i18n` so they serve as `/i18n/*.json` in dev/prod.
+- **404 for catalogs**: place files under `public/i18n` (a sibling of `src/`, not nested inside it) so they serve as `/i18n/*.json` in dev/prod.
 - **Rapid language toggles**: supported. The wrapper cancels in‑flight fetches, and your `fetchCatalog` must respect `AbortSignal`.
 
 ---

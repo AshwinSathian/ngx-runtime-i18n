@@ -16,16 +16,16 @@ npm i @ngx-runtime-i18n/angular @ngx-runtime-i18n/core
 
 ## Directory layout
 
-Put one JSON catalog per language under `src/public/i18n/`:
+Put one JSON catalog per language under `public/i18n/` — Angular's `public/` asset root is a sibling of `src/`, not nested inside it:
 
 ```
 your-app/
+  public/
+    i18n/
+      en.json
+      hi.json
+      de.json
   src/
-    public/
-      i18n/
-        en.json
-        hi.json
-        de.json
 ```
 
 <content-callout data-type="tip">

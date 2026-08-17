@@ -20,12 +20,12 @@ Peer support: `@angular/common`, `@angular/core`, and `@angular/platform-browser
 
 ```
 your-app/
+  public/
+    i18n/
+      en.json
+      hi.json
+      de.json
   src/
-    public/
-      i18n/
-        en.json
-        hi.json
-        de.json
 ```
 
 At runtime, catalogs are fetched from `/i18n/<lang>.json` by default in the examples on this page — the exact path is whatever your `fetchCatalog` function requests.
@@ -204,7 +204,7 @@ Declare a catalog schema via module augmentation to get compile-time checked key
 
 - Angular pipes not localizing: check that `localeLoaders` includes an entry for the language under test.
 - Hydration mismatch: seed TransferState on SSR. The wrapper is hydration-safe when the first paint uses server data.
-- 404 for catalogs: place catalog files under `src/public/i18n` so they serve as `/i18n/*.json` in both dev and prod.
+- 404 for catalogs: place catalog files under `public/i18n` (a sibling of `src/`, not nested inside it) so they serve as `/i18n/*.json` in both dev and prod.
 - Rapid language toggles: supported. The wrapper cancels in-flight fetches when `setLang()` is called again before the previous switch resolves; your `fetchCatalog` must respect the passed `AbortSignal` for this to work.
 
 ## Versioning and support
