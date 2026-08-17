@@ -16,7 +16,7 @@ import type { NavSection } from '../../core/content.types';
       </p>
       @for (section of tree; track section.section) {
         <section class="mt-10">
-          <h2 class="font-mono text-xs uppercase text-ink/50">
+          <h2 class="font-mono text-xs uppercase text-ink/65">
             {{ section.section }}
           </h2>
           <ul class="mt-3 space-y-2">

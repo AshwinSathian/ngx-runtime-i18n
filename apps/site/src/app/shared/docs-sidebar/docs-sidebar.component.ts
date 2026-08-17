@@ -11,7 +11,7 @@ import type { NavSection } from '../../core/content.types';
     <nav aria-label="Documentation" class="text-sm">
       @for (section of tree(); track section.section) {
         <div class="mb-6">
-          <p class="mb-2 font-mono text-xs uppercase text-ink/50">
+          <p class="mb-2 font-mono text-xs uppercase text-ink/65">
             {{ section.section }}
           </p>
           <ul class="space-y-1">
