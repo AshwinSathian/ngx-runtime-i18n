@@ -68,6 +68,46 @@ function rehypeWrapCodeBlocks() {
 }
 
 // ---------------------------------------------------------------------------
+// rehype plugin: collect TOC headings (depth 2/3) from the actual compiled
+// hast tree, reading each heading's REAL `id` attribute rather than
+// re-deriving a slug from raw Markdown text in a separate code path.
+//
+// This MUST run after `rehypeSlug` in the pipeline below, so the ids it reads
+// are the exact ones rehype-slug (backed by github-slugger) already assigned
+// — the previous approach hand-rolled its own regex-based slugifier over the
+// raw Markdown headings, which disagreed with github-slugger's punctuation/
+// whitespace collapsing and duplicate-heading `-1`/`-2` suffixing, producing
+// dead TOC anchors. Reading the real id off the hast tree makes that class of
+// drift structurally impossible: there is only one slug algorithm now.
+// ---------------------------------------------------------------------------
+
+function headingText(node) {
+  let text = '';
+  visit(node, 'text', (textNode) => {
+    text += textNode.value;
+  });
+  return text;
+}
+
+function rehypeCollectHeadings() {
+  return (tree, file) => {
+    const headings = [];
+    visit(tree, 'element', (node) => {
+      const match = /^h([23])$/.exec(node.tagName);
+      if (!match) return;
+      const id = node.properties?.id;
+      if (typeof id !== 'string' || id.length === 0) return;
+      headings.push({
+        depth: Number(match[1]),
+        text: headingText(node).trim(),
+        id,
+      });
+    });
+    file.data.headings = headings;
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Markdown -> HTML compiler
 // ---------------------------------------------------------------------------
 
@@ -76,38 +116,15 @@ const processor = unified()
   .use(remarkGfm)
   .use(remarkRehype, { allowDangerousHtml: true })
   .use(rehypeSlug)
+  .use(rehypeCollectHeadings)
   .use(rehypeAutolinkHeadings, { behavior: 'wrap' })
   .use(rehypePrettyCode, { theme: { light: 'github-light', dark: 'github-dark' } })
   .use(rehypeWrapCodeBlocks)
   .use(rehypeStringify, { allowDangerousHtml: true });
 
-function extractHeadings(markdown) {
-  const headings = [];
-  let inFence = false;
-  for (const rawLine of markdown.split('\n')) {
-    const line = rawLine.trim();
-    if (/^```/.test(line) || /^~~~/.test(line)) {
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) continue;
-    const m = /^(#{2,3})\s+(.+)$/.exec(line);
-    if (!m) continue;
-    const depth = m[1].length;
-    const text = m[2].trim();
-    const id = text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-');
-    headings.push({ depth, text, id });
-  }
-  return headings;
-}
-
 async function compile(markdown) {
   const file = await processor.process(markdown);
-  return String(file);
+  return { html: String(file), headings: file.data.headings ?? [] };
 }
 
 // ---------------------------------------------------------------------------
@@ -136,8 +153,8 @@ async function buildDocs(contentDir) {
       throw new Error(`Invalid frontmatter in ${file}: ${err.message}`, { cause: err });
     }
     const slug = path.relative(dir, file).replace(/\.md$/, '').split(path.sep);
-    const html = await compile(content);
-    entries.push({ kind: 'doc', slug, frontmatter, html, headings: extractHeadings(content) });
+    const { html, headings } = await compile(content);
+    entries.push({ kind: 'doc', slug, frontmatter, html, headings });
   }
   return entries.sort((a, b) => a.frontmatter.order - b.frontmatter.order);
 }
@@ -155,8 +172,8 @@ async function buildRecipes(contentDir) {
       throw new Error(`Invalid frontmatter in ${file}: ${err.message}`, { cause: err });
     }
     const slug = path.basename(file, '.md');
-    const html = await compile(content);
-    entries.push({ kind: 'recipe', slug, frontmatter, html, headings: extractHeadings(content) });
+    const { html, headings } = await compile(content);
+    entries.push({ kind: 'recipe', slug, frontmatter, html, headings });
   }
   return entries.sort((a, b) => a.frontmatter.order - b.frontmatter.order);
 }
@@ -177,7 +194,7 @@ async function main() {
   );
 
   const changelogRaw = fs.readFileSync(path.join(process.cwd(), '..', '..', 'CHANGELOG.md'), 'utf8');
-  const changelogHtml = await compile(changelogRaw);
+  const { html: changelogHtml } = await compile(changelogRaw);
   fs.writeFileSync(path.join(process.cwd(), 'generated', 'changelog.json'), JSON.stringify({ html: changelogHtml }));
 
   const searchIndex = [
@@ -216,7 +233,13 @@ async function main() {
   );
 
   const BASE_URL = 'https://i18n.ashwinsathian.com';
-  const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((r) => `  <url><loc>${BASE_URL}${r}</loc></url>`).join('\n')}\n</urlset>\n`;
+  // Every route here is a directory-style page (`/docs`, `/compare`, `/docs/getting-started`,
+  // ...), and the live host 308-redirects the non-slash form of each one to a
+  // trailing-slash URL (verified against production) — so the sitemap should list the
+  // final canonical (already-redirected-to) URL directly, not the pre-redirect one. The
+  // root route is the only exception: `/` has no further slash to add.
+  const sitemapLoc = (route) => (route === '/' ? `${BASE_URL}/` : `${BASE_URL}${route}/`);
+  const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((r) => `  <url><loc>${sitemapLoc(r)}</loc></url>`).join('\n')}\n</urlset>\n`;
   fs.writeFileSync(path.join(process.cwd(), 'public', 'sitemap.xml'), sitemapXml);
 
   console.log(`Compiled ${docs.length} docs, ${recipes.length} recipes, changelog.`);
