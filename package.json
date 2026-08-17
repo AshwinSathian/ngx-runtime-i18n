@@ -114,7 +114,7 @@
     "primeng": "^21.1.9",
     "tailwindcss": "^4.1.12",
     "ts-jest": "29.4.9",
-    "ts-node": "10.9.1",
+    "ts-node": "10.9.2",
     "tslib": "^2.3.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "8.67.0",
