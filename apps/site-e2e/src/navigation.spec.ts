@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 // Regression coverage for the fix to DocPageComponent/RecipePageComponent's route-reuse
 // bug: every doc page matches the same `docs/**` route config, and every recipe page
@@ -59,6 +60,13 @@ test.describe('client-side navigation updates page content and SEO tags', () => 
     // StructuredDataService.clearPageScoped() (Minor #10) exists to prevent.
     expect(await page.locator('#ld-software').count()).toBe(0);
     expect(after.breadcrumbLd).not.toBe(before.breadcrumbLd);
+
+    // The a11y suite (a11y.spec.ts) only ever scans a route on a fresh page.goto() —
+    // it never scans the DOM state reached by a client-side navigation, which is
+    // exactly how the route-reuse bug this suite guards against shipped undetected.
+    // Scanning here, on the post-navigation DOM, closes that gap for at least this path.
+    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag22aa']).analyze();
+    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
   });
 
   test('recipe to recipe via search: navigating between two recipe pages updates everything, not just the URL', async ({

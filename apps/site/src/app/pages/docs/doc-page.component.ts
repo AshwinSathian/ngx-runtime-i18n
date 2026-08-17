@@ -94,7 +94,23 @@ export class DocPageComponent {
     effect(() => {
       const doc = this.doc();
       const slug = this.slug();
-      if (doc == null) return;
+
+      // Every in-app link is generated from the content manifest, so this only fires on
+      // a broken/stale external link or a bad browser-history entry — but since this
+      // component is now reactive across client-side navigations (see `slug` above), a
+      // navigation THROUGH this branch would otherwise leave the *previous* page's
+      // title, canonical link, OG tags, and JSON-LD sitting in the DOM. `setPageMeta()`
+      // clears page-scoped JSON-LD as its first action, so calling it here — even
+      // though this route has no content to show — prevents that staleness.
+      if (doc == null) {
+        this.seo.setPageMeta({
+          title: 'Page not found',
+          description: "The page you're looking for doesn't exist. Try the docs, or search with Cmd+K.",
+          path: `/docs/${slug.join('/')}`,
+        });
+        this.seo.setNoIndex();
+        return;
+      }
 
       const pageUrl = `/docs/${slug.join('/')}`;
       const isPackagePage = slug[0] === 'packages';

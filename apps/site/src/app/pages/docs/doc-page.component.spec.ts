@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/angular';
+import { render, screen, waitFor } from '@testing-library/angular';
 import { ActivatedRoute, type UrlSegment } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { DocPageComponent } from './doc-page.component';
@@ -88,5 +88,25 @@ describe('DocPageComponent', () => {
       await screen.findByRole('heading', { level: 1, name: 'Fallback chains' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 1, name: 'Getting started' })).not.toBeInTheDocument();
+  });
+
+  // Regression test for a gap the route-reuse fix itself introduced: the SEO/JSON-LD
+  // effect's `if (doc == null) return;` early return used to skip setPageMeta()
+  // entirely, which left the PREVIOUS page's <title>, canonical link, and JSON-LD
+  // sitting in the DOM when a client-side navigation (broken link, stale search-index
+  // entry, bad history entry) lands on a slug the manifest doesn't resolve.
+  it('clears the previous page title and JSON-LD when navigating to an unknown slug', async () => {
+    const { url$ } = await renderForSlug(['getting-started']);
+    await screen.findByRole('heading', { level: 1, name: 'Getting started' });
+    const titleBefore = document.title;
+
+    url$.next([{ path: 'does-not-exist' } as UrlSegment]);
+
+    await waitFor(() => expect(document.title).not.toBe(titleBefore));
+    expect(document.title).toContain('Page not found');
+    expect(document.querySelector('script[id^="ld-"]')).toBeNull();
+    expect(
+      document.querySelector('meta[name="robots"]')?.getAttribute('content'),
+    ).toBe('noindex');
   });
 });

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/angular';
+import { render, screen, waitFor } from '@testing-library/angular';
 import { ActivatedRoute } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { convertToParamMap, type ParamMap } from '@angular/router';
@@ -100,5 +100,25 @@ describe('RecipePageComponent', () => {
     expect(
       screen.queryByRole('heading', { level: 1, name: 'SSR with Express' }),
     ).not.toBeInTheDocument();
+  });
+
+  // Regression test for a gap the route-reuse fix itself introduced: the SEO/JSON-LD
+  // effect's `if (recipe == null) return;` early return used to skip setPageMeta()
+  // entirely, which left the PREVIOUS page's <title>, canonical link, and JSON-LD
+  // sitting in the DOM when a client-side navigation (broken link, stale search-index
+  // entry, bad history entry) lands on a slug the manifest doesn't resolve.
+  it('clears the previous page title and JSON-LD when navigating to an unknown slug', async () => {
+    const { paramMap$ } = await renderForSlug('ssr-with-express');
+    await screen.findByRole('heading', { level: 1, name: 'SSR with Express' });
+    const titleBefore = document.title;
+
+    paramMap$.next(convertToParamMap({ slug: 'does-not-exist' }));
+
+    await waitFor(() => expect(document.title).not.toBe(titleBefore));
+    expect(document.title).toContain('Page not found');
+    expect(document.querySelector('script[id^="ld-"]')).toBeNull();
+    expect(
+      document.querySelector('meta[name="robots"]')?.getAttribute('content'),
+    ).toBe('noindex');
   });
 });

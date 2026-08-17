@@ -100,7 +100,23 @@ export class RecipePageComponent {
     effect(() => {
       const recipe = this.recipe();
       const slug = this.slug();
-      if (recipe == null) return;
+
+      // Every in-app link is generated from the content manifest, so this only fires on
+      // a broken/stale external link or a bad browser-history entry — but since this
+      // component is now reactive across client-side navigations (see `slug` above), a
+      // navigation THROUGH this branch would otherwise leave the *previous* page's
+      // title, canonical link, OG tags, and JSON-LD sitting in the DOM. `setPageMeta()`
+      // clears page-scoped JSON-LD as its first action, so calling it here — even
+      // though this route has no content to show — prevents that staleness.
+      if (recipe == null) {
+        this.seo.setPageMeta({
+          title: 'Page not found',
+          description: "The page you're looking for doesn't exist. Try the docs, or search with Cmd+K.",
+          path: `/recipes/${slug}`,
+        });
+        this.seo.setNoIndex();
+        return;
+      }
 
       const pageUrl = `/recipes/${slug}`;
 
