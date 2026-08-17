@@ -1,5 +1,12 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
+import { Meta } from '@angular/platform-browser';
 import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
+import { SITE_URL } from '../../core/json-ld';
 import {
   CompareRow,
   CompareTableComponent,
@@ -149,11 +156,10 @@ const ROWS: readonly CompareRow[] = [
       </h1>
       <p class="mt-4 max-w-2xl text-ink/80">
         This is the library author's own comparison against ngx-translate,
-        transloco, and Angular's built-in i18n, so read it with that in
-        mind. Each row is sourced from the compared library's own
-        documentation, release notes, or source code, and cells carry a
-        verification date where the underlying fact can change between
-        releases.
+        transloco, and Angular's built-in i18n, so read it with that in mind.
+        Each row is sourced from the compared library's own documentation,
+        release notes, or source code, and cells carry a verification date where
+        the underlying fact can change between releases.
       </p>
       <div class="mt-10">
         <app-compare-table [rows]="rows" />
@@ -161,6 +167,17 @@ const ROWS: readonly CompareRow[] = [
     </section>
   `,
 })
-export class CompareComponent {
+export class CompareComponent implements OnInit {
+  private readonly meta = inject(Meta);
   protected readonly rows = ROWS;
+
+  ngOnInit(): void {
+    // build-og-images.mjs generates a dedicated compare.png for this route (Task 21) —
+    // without this override the page falls back to the root App component's site-wide
+    // default (home.png, set in app.ts's own ngOnInit), same pattern as FaqComponent.
+    this.meta.updateTag({
+      property: 'og:image',
+      content: `${SITE_URL}/og/compare.png`,
+    });
+  }
 }
