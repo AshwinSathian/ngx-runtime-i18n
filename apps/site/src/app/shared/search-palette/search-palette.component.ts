@@ -18,15 +18,26 @@ interface SearchItem { title: string; description: string; href: string; section
             #searchInput
             role="combobox"
             aria-expanded="true"
+            aria-autocomplete="list"
             [attr.aria-controls]="'search-results'"
+            [attr.aria-activedescendant]="activeDescendantId()"
             placeholder="Search docs and recipes..."
             class="w-full border-b border-rule p-4 outline-none"
-            (input)="query.set($any($event.target).value)"
+            (input)="onQueryInput($any($event.target).value)"
           />
-          <ul id="search-results" class="max-h-80 overflow-y-auto p-2">
-            @for (item of filtered(); track item.href) {
-              <li>
-                <button type="button" (click)="navigate(item.href)" class="w-full rounded-md p-3 text-left hover:bg-accent-en/10">
+          <ul id="search-results" role="listbox" class="max-h-80 overflow-y-auto p-2">
+            @for (item of filtered(); track item.href; let i = $index) {
+              <li role="presentation">
+                <button
+                  type="button"
+                  role="option"
+                  [id]="optionId(i)"
+                  [attr.aria-selected]="i === activeIndex()"
+                  tabindex="-1"
+                  (mouseenter)="highlightedIndex.set(i)"
+                  (click)="navigate(item.href)"
+                  class="w-full rounded-md p-3 text-left hover:bg-accent-en/10 {{ i === activeIndex() ? 'bg-accent-en/10' : '' }}"
+                >
                   <p class="text-sm font-medium">{{ item.title }}</p>
                   <p class="text-xs text-ink/60">{{ item.description }}</p>
                 </button>
@@ -43,12 +54,25 @@ interface SearchItem { title: string; description: string; href: string; section
 export class SearchPaletteComponent {
   protected readonly open = signal(false);
   protected readonly query = signal('');
+  protected readonly highlightedIndex = signal(0);
   private readonly items = signal<SearchItem[]>([]);
 
   protected readonly filtered = computed(() => {
     const q = this.query().toLowerCase().trim();
     if (!q) return this.items();
     return this.items().filter((i) => `${i.title} ${i.description}`.toLowerCase().includes(q));
+  });
+
+  /** Clamps the raw highlighted index to a valid position in the current result set. */
+  protected readonly activeIndex = computed(() => {
+    const len = this.filtered().length;
+    if (len === 0) return -1;
+    return Math.min(this.highlightedIndex(), len - 1);
+  });
+
+  protected readonly activeDescendantId = computed(() => {
+    const idx = this.activeIndex();
+    return idx >= 0 ? this.optionId(idx) : null;
   });
 
   private readonly router = inject(Router);
@@ -71,8 +95,43 @@ export class SearchPaletteComponent {
       } else {
         this.openPalette();
       }
+      return;
     }
-    if (e.key === 'Escape' && this.open()) this.close();
+    if (!this.open()) return;
+
+    if (e.key === 'Escape') {
+      this.close();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      this.moveHighlight(1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      this.moveHighlight(-1);
+    } else if (e.key === 'Enter') {
+      const item = this.filtered()[this.activeIndex()];
+      if (item) {
+        e.preventDefault();
+        this.navigate(item.href);
+      }
+    }
+  }
+
+  protected optionId(index: number): string {
+    return `search-option-${index}`;
+  }
+
+  protected onQueryInput(value: string): void {
+    this.query.set(value);
+    this.highlightedIndex.set(0);
+  }
+
+  private moveHighlight(delta: number): void {
+    const len = this.filtered().length;
+    if (len === 0) return;
+    const current = this.activeIndex();
+    const next = (current + delta + len) % len;
+    this.highlightedIndex.set(next);
+    document.getElementById(this.optionId(next))?.scrollIntoView?.({ block: 'nearest' });
   }
 
   navigate(href: string): void {
@@ -82,6 +141,7 @@ export class SearchPaletteComponent {
 
   private openPalette(): void {
     this.query.set('');
+    this.highlightedIndex.set(0);
     this.open.set(true);
   }
 
