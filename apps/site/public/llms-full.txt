@@ -15,7 +15,7 @@ This file expands on [llms.txt](https://i18n.ashwinsathian.com/llms.txt) with th
 - DX helpers: `getCurrentLang()`, `getLoadedLangs()`, `hasKey(key, lang?)`, `preloadLang(lang)`, `preloadLangs(langs)`, `preloadFallbackChain(lang?)`.
 - Type-safe catalogs via module augmentation of `I18nSchema` — `t()`, `I18nPipe`, and `I18nCompatService.t()` get compile-time checked keys and interpolation params once a schema is declared. Key types come from `DeepKeys<T>` (dot-notation paths up to 4 levels); param types come from `ExtractParams<S>`.
 - ICU-lite formatter (`@ngx-runtime-i18n/core`, dependency-free): interpolation plus `plural`, `select`, and `selectordinal` blocks, nestable inside each other — including the same keyword nested inside itself — to arbitrary depth.
-- Optional PrimeNG adapter (`providePrimeNgRuntimeI18n()`): keeps `PrimeNGConfig`'s translation object in sync with `I18nService.lang()`.
+- Optional PrimeNG adapter (`providePrimeNgRuntimeI18n()`): keeps PrimeNG's own config service's translation object in sync with `I18nService.lang()`. Supports PrimeNG 17-21 (every MIT-licensed release) via a `configToken` you supply — `PrimeNGConfig` from `primeng/api` on v17, `PrimeNG` from `primeng/config` on v18+.
 - Optional Angular Material adapter (`provideMaterialRuntimeI18n()`): keeps `MatPaginatorIntl`, `MatSortHeaderIntl`, and `MatStepperIntl` in sync with language changes; the datepicker's Intl service is a partial exception, documented separately.
 - `ng add @ngx-runtime-i18n/schematics`: adds the core and Angular packages as dependencies, scaffolds sample catalogs under `public/i18n/<lang>.json`, and patches `app.config.ts` to register `provideRuntimeI18n()`.
 - `ngx-i18n` CLI (`@ngx-runtime-i18n/cli`): `extract` scans source for translation key usage and writes a manifest; `check` validates one or more language catalogs against that usage, reporting missing and unused keys, with `--fail-on-missing`/`--fail-on-unused` flags for CI gates.
@@ -26,7 +26,7 @@ This file expands on [llms.txt](https://i18n.ashwinsathian.com/llms.txt) with th
 | --- | --- | --- |
 | `@ngx-runtime-i18n/core` | Framework-agnostic ICU-lite formatter (`formatIcu`) and shared types (`Catalog`, `RuntimeI18nConfig`). No dependencies, no Angular requirement. | Published, 2.1.0 |
 | `@ngx-runtime-i18n/angular` | Angular wrapper: `provideRuntimeI18n()`, `I18nService`, `I18nPipe`, `I18nCompatService`, `withI18nScope()`, `provideRuntimeI18nSsr()`. Peer: `@angular/common`, `@angular/core`, `@angular/platform-browser` at `>=16 <23`. | Published, 2.1.0 |
-| `@ngx-runtime-i18n/primeng` | Optional adapter: `providePrimeNgRuntimeI18n()` syncs PrimeNG's built-in translations with `I18nService.lang()`. Peer: PrimeNG. | Published, 2.1.0 |
+| `@ngx-runtime-i18n/primeng` | Optional adapter: `providePrimeNgRuntimeI18n()` syncs PrimeNG's built-in translations with `I18nService.lang()`. Peer: PrimeNG 17-21 (MIT releases only). | Published, 3.0.0 |
 | `@ngx-runtime-i18n/material` | Optional adapter: `provideMaterialRuntimeI18n()` syncs Angular Material's paginator, sort, and stepper Intl services (datepicker partial). Peer: `@angular/material`. | Published, 2.1.0 |
 | `@ngx-runtime-i18n/schematics` | `ng add` schematic that wires `provideRuntimeI18n()` and scaffolds sample catalogs into an existing Angular workspace. | Published, 2.1.0 |
 | `@ngx-runtime-i18n/cli` | `ngx-i18n` binary: `extract` and `check` commands for source-to-catalog key validation, built for CI. | Published, 2.1.0 |
@@ -50,7 +50,7 @@ This file expands on [llms.txt](https://i18n.ashwinsathian.com/llms.txt) with th
 3. **Preloading and caching** — Warm catalogs ahead of time with the preload helpers, and pick a `cacheMode` for how long they stay in memory.
 4. **Type-safe catalogs** — Walk through module augmentation end to end: declaring a schema, seeing `t()` get checked, and reading what `DeepKeys` and `ExtractParams` compute.
 5. **Angular Material adapter** — Wire `provideMaterialRuntimeI18n()` into an app so the paginator, sort, and stepper Intl services switch language with everything else, plus what it takes to cover the datepicker too.
-6. **PrimeNG adapter** — Keep `PrimeNGConfig`'s translation object in sync with `I18nService.lang()`, choosing between a static map and a lazy resolver.
+6. **PrimeNG adapter** — Keep PrimeNG's own config service's translation object in sync with `I18nService.lang()`, choosing between a static map and a lazy resolver. Supports PrimeNG 17-21 via a `configToken` you supply.
 7. **CI catalog validation** — Wire the `ngx-i18n` CLI's `extract` and `check` commands into a pull request gate that fails the build when code and catalogs drift.
 8. **ng add schematic** — See exactly what the `ng-add` schematic generates and patches in an existing Angular workspace.
 9. **Migrating from ngx-translate** — A concept-mapping table and one worked component conversion for teams moving off `@ngx-translate/core`.

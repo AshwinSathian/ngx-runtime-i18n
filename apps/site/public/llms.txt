@@ -15,7 +15,7 @@ npm i @ngx-runtime-i18n/angular @ngx-runtime-i18n/core
 Optional adapters and tooling:
 
 ```bash
-npm i @ngx-runtime-i18n/primeng      # keeps PrimeNGConfig's translations in sync with I18nService.lang()
+npm i @ngx-runtime-i18n/primeng      # keeps PrimeNG's translation config in sync with I18nService.lang() (PrimeNG 17-21)
 npm i @ngx-runtime-i18n/material     # keeps Material's paginator/sort/stepper Intl services in sync
 ng add @ngx-runtime-i18n/schematics  # scaffolds provideRuntimeI18n() and sample catalogs into a workspace
 npm i -D @ngx-runtime-i18n/cli       # ngx-i18n extract/check for catalog validation in CI

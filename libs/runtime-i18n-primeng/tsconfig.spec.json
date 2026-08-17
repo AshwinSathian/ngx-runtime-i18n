@@ -15,9 +15,6 @@
       ],
       "@ngx-runtime-i18n/core": [
         "libs/runtime-i18n/src/index.ts"
-      ],
-      "primeng/api": [
-        "libs/runtime-i18n-primeng/types/primeng-api.d.ts"
       ]
     }
   },

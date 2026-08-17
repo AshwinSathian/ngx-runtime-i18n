@@ -14,10 +14,10 @@ jest.mock('@angular/core', () => {
 
 import { Signal, signal } from '@angular/core';
 import { I18nService } from '@ngx-runtime-i18n/angular';
-import { PrimeNGConfig } from 'primeng/api';
 import {
   createPrimeNgRuntimeI18nEffect,
   ProvidePrimeNgRuntimeI18nOptions,
+  RuntimeI18nPrimeNgConfig,
 } from './provide-primeng-runtime-i18n';
 
 class MockI18nService implements Partial<I18nService> {
@@ -29,10 +29,13 @@ class MockI18nService implements Partial<I18nService> {
   }
 }
 
+// Deliberately a plain object, not a class imported from `primeng` - this
+// package no longer has a compile-time dependency on any specific PrimeNG
+// module, so nothing here should either. See RuntimeI18nPrimeNgConfig.
 const createPrimeNgConfig = () =>
   ({
     setTranslation: jest.fn(),
-  } as PrimeNGConfig & {
+  } as RuntimeI18nPrimeNgConfig & {
     setTranslation: jest.Mock<void, [Record<string, unknown>]>;
   });
 
@@ -62,9 +65,10 @@ describe('providePrimeNgRuntimeI18n', () => {
       i18n as unknown as I18nService,
       primeNgConfig,
       {
+        configToken: class {} as unknown as ProvidePrimeNgRuntimeI18nOptions['configToken'],
         resolveTranslation,
         onApplied,
-      } as ProvidePrimeNgRuntimeI18nOptions
+      } satisfies ProvidePrimeNgRuntimeI18nOptions
     );
   });
 

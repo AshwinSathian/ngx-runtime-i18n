@@ -1,26 +1,30 @@
 ---
 title: PrimeNG adapter
-description: Keep PrimeNGConfig's translation object in sync with I18nService.lang(), and pick between a static map and a lazy resolver.
+description: Keep PrimeNG's own translation config in sync with I18nService.lang(), and pick between a static map and a lazy resolver.
 eyebrow: recipes.primeng-adapter
 order: 6
 packages: ['@ngx-runtime-i18n/primeng']
 ---
 
-PrimeNG components (calendar, data table, file upload, and others) read their built-in strings from a single `PrimeNGConfig.setTranslation()` call, separate from your own catalog. `@ngx-runtime-i18n/primeng` calls it for you every time `I18nService.lang()` changes, so a language switch updates PrimeNG's chrome along with the rest of the app.
+PrimeNG components (calendar, data table, file upload, and others) read their built-in strings from a single `setTranslation()` call on PrimeNG's config service, separate from your own catalog. `@ngx-runtime-i18n/primeng` calls it for you every time `I18nService.lang()` changes, so a language switch updates PrimeNG's chrome along with the rest of the app.
 
 ```bash
 npm install @ngx-runtime-i18n/core @ngx-runtime-i18n/angular @ngx-runtime-i18n/primeng primeng
 ```
 
-The adapter never runs unless you call `providePrimeNgRuntimeI18n(...)`, so it leaves the core and Angular stacks untouched if your app doesn't use it. PrimeNG stays a peer dependency — your app controls the installed version.
+The adapter never runs unless you call `providePrimeNgRuntimeI18n(...)`, so it leaves the core and Angular stacks untouched if your app doesn't use it. PrimeNG stays a peer dependency — your app controls the installed version, across the full range this adapter supports (PrimeNG 17-21, every MIT-licensed release; PrimeNG 22 moved to a commercial license and isn't supported here).
 
 ## Setup
+
+PrimeNG's config service changed name and import path between major versions — `PrimeNGConfig` in `primeng/api` on v17, `PrimeNG` in `primeng/config` from v18 onward. The adapter doesn't hard-code either one; pass whichever class matches your installed version as `configToken`:
 
 ```ts
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
 import { provideRuntimeI18n } from '@ngx-runtime-i18n/angular';
 import { providePrimeNgRuntimeI18n } from '@ngx-runtime-i18n/primeng';
+import { PrimeNG } from 'primeng/config'; // PrimeNG 18-21
+// import { PrimeNGConfig } from 'primeng/api'; // PrimeNG 17
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -30,6 +34,7 @@ export const appConfig: ApplicationConfig = {
       fetchCatalog: (lang, signal) => fetch(`/i18n/${lang}.json`, { signal }).then((res) => res.json()),
     }),
     providePrimeNgRuntimeI18n({
+      configToken: PrimeNG, // or PrimeNGConfig on PrimeNG 17
       resolveTranslation: (lang) => translationMap[lang] ?? {},
       onApplied: (lang) => console.debug(`PrimeNG translation ${lang} applied`),
     }),
@@ -53,6 +58,7 @@ const translationMap = {
 };
 
 providePrimeNgRuntimeI18n({
+  configToken: PrimeNG,
   resolveTranslation: (lang) => translationMap[lang] ?? {},
 });
 ```
@@ -69,6 +75,7 @@ const translationResolvers = {
 };
 
 providePrimeNgRuntimeI18n({
+  configToken: PrimeNG,
   resolveTranslation: (lang) => translationResolvers[lang]?.() ?? Promise.resolve({}),
 });
 ```
@@ -78,7 +85,7 @@ Each language's translation object lives in its own chunk and only downloads whe
 </div>
 </content-tabs>
 
-Either shape works because `resolveTranslation` may return the object directly or a `Promise` — the adapter awaits whichever it gets back before calling `PrimeNGConfig.setTranslation()`.
+Either shape works because `resolveTranslation` may return the object directly or a `Promise` — the adapter awaits whichever it gets back before calling `setTranslation()` on the config instance behind `configToken`.
 
 ## Caching and rapid switches
 

@@ -1,8 +1,33 @@
-import { EnvironmentProviders, inject, provideAppInitializer, effect } from '@angular/core';
+import {
+  EnvironmentProviders,
+  inject,
+  provideAppInitializer,
+  effect,
+  ProviderToken,
+} from '@angular/core';
 import { I18nService } from '@ngx-runtime-i18n/angular';
-import { PrimeNGConfig } from 'primeng/api';
+
+/**
+ * Structural shape of PrimeNG's config service. PrimeNG has shipped this
+ * under two different names/import paths depending on version:
+ * `PrimeNGConfig` from `primeng/api` (v17), and `PrimeNG` from
+ * `primeng/config` (v18+). Depending on the shape rather than a concrete
+ * class means this package never has to chase PrimeNG's next rename - the
+ * caller imports whichever class matches their installed version and hands
+ * it to `configToken`.
+ */
+export interface RuntimeI18nPrimeNgConfig {
+  setTranslation(translation: Record<string, unknown>): void;
+}
 
 export interface ProvidePrimeNgRuntimeI18nOptions {
+  /**
+   * The injectable PrimeNG config class installed in your app - import
+   * `PrimeNGConfig` from `primeng/api` on PrimeNG 17, or `PrimeNG` from
+   * `primeng/config` on PrimeNG 18 and later.
+   */
+  configToken: ProviderToken<RuntimeI18nPrimeNgConfig>;
+
   /**
    * Return a PrimeNG translation object for a given language code.
    * Can be sync or async (e.g., dynamic import).
@@ -22,7 +47,7 @@ const LOG_TOPIC = '[ngx-runtime-i18n/primeng]';
 /** @internal */
 export function createPrimeNgRuntimeI18nEffect(
   i18n: I18nService,
-  primeng: PrimeNGConfig,
+  primeng: RuntimeI18nPrimeNgConfig,
   options: ProvidePrimeNgRuntimeI18nOptions
 ): void {
   const cache = new Map<string, Record<string, unknown>>();
@@ -73,7 +98,7 @@ export function providePrimeNgRuntimeI18n(
 ): EnvironmentProviders {
   return provideAppInitializer(() => {
     const i18n = inject(I18nService);
-    const primeng = inject(PrimeNGConfig);
+    const primeng = inject(options.configToken);
     createPrimeNgRuntimeI18nEffect(i18n, primeng, options);
   });
 }

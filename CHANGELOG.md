@@ -1,5 +1,15 @@
 # Changelog
 
+## @ngx-runtime-i18n/primeng 3.0.0 (2026-08-17)
+
+Released on its own, out of lockstep with the other five packages (which have no changes here) - the fix below is scoped to this one package and didn't warrant five no-op version bumps.
+
+`@ngx-runtime-i18n/primeng`'s peer range (`primeng: >=17 <20.4.0`) was wrong the moment it shipped: `PrimeNGConfig`, the class this package imported from `primeng/api`, was removed from that module starting PrimeNG 18.0.0 - PrimeNG renamed and relocated it to `PrimeNG` in `primeng/config`. Nothing caught this because `primeng` was never actually installed in this workspace; a hand-written type shim stood in for it in every build and test run. Anyone on PrimeNG 18.x or 19.x - versions inside the range this package claimed to support - would have hit a build failure.
+
+- **Breaking:** `providePrimeNgRuntimeI18n()` now takes a required `configToken` option: the PrimeNG config class installed in your app (`PrimeNGConfig` from `primeng/api` on v17, `PrimeNG` from `primeng/config` on v18-21), typed structurally rather than imported by this package. This package no longer has any compile-time dependency on `primeng` at all, so it isn't coupled to whatever PrimeNG renames next.
+- Peer range corrected to `primeng: >=17 <22` - v17 through v21, every release actually licensed MIT. PrimeNG 22 moved to a commercial license ([PrimeTek's announcement](https://primeui.dev/nextchapter)); verified by pulling the real `LICENSE.md` out of each published version's npm tarball, not the registry's summary field. This package doesn't claim to support v22.
+- Removed the hand-written `primeng/api` type shim. Added a new spec that installs a real, current PrimeNG version (21.1.9) as a devDependency and drives the adapter through the real APP_INITIALIZER + `effect()` pipeline against the actual `PrimeNG` class - the first time this package has been tested against real PrimeNG rather than a fake stand-in.
+
 ## 2.1.0 (2026-08-12)
 
 `@ngx-runtime-i18n/angular` and `/primeng` were stuck on npm at 2.0.0 with an Angular peer range (`>=16 <21`) that didn't support Angular 21 or 22 at all - this release fixes that, and publishes `@ngx-runtime-i18n/material`, `/schematics`, and `/cli` for the first time. `@ngx-runtime-i18n/core` has no functional changes in this release; its version is bumped in lockstep with the rest of the packages, per this project's existing convention of releasing all six together.

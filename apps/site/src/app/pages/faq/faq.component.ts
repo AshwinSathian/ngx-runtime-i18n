@@ -96,7 +96,7 @@ export const FAQS: readonly Faq[] = [
   {
     question: 'Does it work with PrimeNG or Angular Material?',
     answer:
-      "Yes, as separate adapter packages. @ngx-runtime-i18n/primeng listens to I18nService.lang() and applies the matching translation object through PrimeNGConfig. @ngx-runtime-i18n/material keeps Angular Material's paginator, sort, stepper, and datepicker Intl services in sync with the same signal, with no page reload.",
+      "Yes, as separate adapter packages. @ngx-runtime-i18n/primeng listens to I18nService.lang() and applies the matching translation object through PrimeNG's own config service (PrimeNG 17-21, every MIT-licensed release). @ngx-runtime-i18n/material keeps Angular Material's paginator, sort, stepper, and datepicker Intl services in sync with the same signal, with no page reload.",
     link: {
       path: '/docs/packages/primeng',
       label: 'Read the PrimeNG package docs',
