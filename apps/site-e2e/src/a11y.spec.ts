@@ -71,29 +71,65 @@ function analyzeRouteWithReloadRaceRetry(page: Page, route: string) {
   );
 }
 
-for (const route of routes) {
-  test(`${route} has no automatically detectable accessibility violations`, async ({ page }) => {
-    const results = await analyzeRouteWithReloadRaceRetry(page, route);
-    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
-  });
-
-  // Regression guard for the fix that wired per-route SeoService.setPageMeta() calls into
-  // every page (see seo.service.ts / seo.service.spec.ts): before that fix, every route
-  // silently rendered the Angular CLI's generic default `<title>site</title>` with no
-  // `<meta name="description">` at all. Reuses the same cold-start-hardened retry helper
-  // as the axe scan above (via withReloadRaceRetry) rather than a bare page.goto(), since
-  // navigation here is just as exposed to the dev-server HMR reload race described above.
-  test(`${route} has a distinct <title> and a non-empty meta description`, async ({ page }) => {
-    await withReloadRaceRetry(page, route, async () => {
-      const title = await page.title();
-      expect(title).not.toBe('site');
-      expect(title.length).toBeGreaterThan(0);
-
-      const description = await page
-        .locator('meta[name="description"]')
-        .getAttribute('content');
-      expect(description).not.toBeNull();
-      expect(description?.trim().length).toBeGreaterThan(0);
+// Registers one axe scan per route. Factored out so it can run twice — once against the
+// site's default (light) rendering, once inside a `colorScheme: 'dark'` context — without
+// duplicating the per-route loop. Color contrast in particular is exactly the class of
+// check axe can only catch against whatever is *actually rendered*: a token that's fine in
+// light mode can still fail in dark mode (and did — see the `--color-cta-en` fix this
+// suite's dark-mode pass now guards), and running axe only ever against light mode's DOM/
+// CSS can never surface that, regardless of how thorough the light-mode pass is.
+function registerAxeScanTests(routeList: string[]) {
+  for (const route of routeList) {
+    test(`${route} has no automatically detectable accessibility violations`, async ({ page }) => {
+      const results = await analyzeRouteWithReloadRaceRetry(page, route);
+      expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
     });
-  });
+  }
 }
+
+test.describe('light mode (default color scheme)', () => {
+  registerAxeScanTests(routes);
+
+  for (const route of routes) {
+    // Regression guard for the fix that wired per-route SeoService.setPageMeta() calls into
+    // every page (see seo.service.ts / seo.service.spec.ts): before that fix, every route
+    // silently rendered the Angular CLI's generic default `<title>site</title>` with no
+    // `<meta name="description">` at all. Reuses the same cold-start-hardened retry helper
+    // as the axe scan above (via withReloadRaceRetry) rather than a bare page.goto(), since
+    // navigation here is just as exposed to the dev-server HMR reload race described above.
+    // Title/description don't depend on color scheme, so this only needs to run once (here,
+    // not duplicated under the dark-mode describe block below).
+    test(`${route} has a distinct <title> and a non-empty meta description`, async ({ page }) => {
+      await withReloadRaceRetry(page, route, async () => {
+        const title = await page.title();
+        expect(title).not.toBe('site');
+        expect(title.length).toBeGreaterThan(0);
+
+        const description = await page
+          .locator('meta[name="description"]')
+          .getAttribute('content');
+        expect(description).not.toBeNull();
+        expect(description?.trim().length).toBeGreaterThan(0);
+      });
+    });
+  }
+});
+
+test.describe('dark mode', () => {
+  // This site's dark mode isn't driven purely by `prefers-color-scheme`: the real switch
+  // is `ThemeService` writing `data-theme="dark"` onto `<html>`, and the FOUC-prevention
+  // script in index.html only *falls back* to `matchMedia('(prefers-color-scheme: dark)')`
+  // when there's no stored `localStorage` preference yet (see index.html's inline script).
+  // Each Playwright test gets a fresh, unseeded browser context, so there's no stored
+  // preference here — meaning `colorScheme: 'dark'` does correctly drive the fallback path
+  // into dark mode, but that's confirmed below rather than assumed, since it's exactly the
+  // kind of indirection that could silently stop working.
+  test.use({ colorScheme: 'dark' });
+
+  test('colorScheme: dark actually renders the site in dark mode', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  });
+
+  registerAxeScanTests(routes);
+});
