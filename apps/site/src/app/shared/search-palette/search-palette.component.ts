@@ -81,7 +81,19 @@ export class SearchPaletteComponent {
     // Browser-only: `document` and a relative `fetch()` URL don't resolve during
     // SSR/prerendering, so this must not run on the server.
     afterNextRender(() => {
-      fetch('/search-index.json').then((r) => r.json()).then((data) => this.items.set(data));
+      fetch('/search-index.json')
+        .then((r) => {
+          if (!r.ok) throw new Error(`search-index.json responded with ${r.status}`);
+          return r.json();
+        })
+        .then((data) => this.items.set(data))
+        .catch((err) => {
+          // Leaves `items` at its initial empty signal value, which the template's
+          // `@empty` block already renders as "No results found." — a 404/offline
+          // fetch degrades to a gracefully-empty palette instead of an unhandled
+          // promise rejection.
+          console.warn('Failed to load search index:', err);
+        });
       document.getElementById('search-trigger')?.addEventListener('click', () => this.openPalette());
     });
   }

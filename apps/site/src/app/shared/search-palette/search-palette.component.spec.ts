@@ -11,7 +11,9 @@ const items = [
 
 describe('SearchPaletteComponent', () => {
   beforeEach(() => {
-    global.fetch = jest.fn().mockResolvedValue({ json: () => Promise.resolve(items) }) as unknown as typeof fetch;
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve(items) }) as unknown as typeof fetch;
     document.body.innerHTML = '<button id="search-trigger">Search</button>';
   });
 
@@ -134,5 +136,18 @@ describe('SearchPaletteComponent', () => {
 
     expect(navigateSpy).toHaveBeenCalledWith('/recipes/route-guards');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('degrades to an empty, non-crashing palette when the search index fetch fails', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 404 }) as unknown as typeof fetch;
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const user = userEvent.setup();
+    await render(SearchPaletteComponent);
+
+    await user.keyboard('{Meta>}k{/Meta}');
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(await screen.findByText('No results found.')).toBeInTheDocument();
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });

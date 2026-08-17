@@ -55,3 +55,6 @@ Thumbs.db
 .angular
 
 .nx/migrate-runs
+
+# Playwright MCP browser tool scratch output (page snapshots from manual verification)
+.playwright-mcp/
