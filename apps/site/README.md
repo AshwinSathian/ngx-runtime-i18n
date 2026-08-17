@@ -1,6 +1,6 @@
 # apps/site
 
-The marketing and documentation site for the `@ngx-runtime-i18n` package family — an Nx-managed Angular application with SSR + static prerendering (SSG). It covers the landing page, package pages (core, angular, primeng, material, schematics, cli), a live comparison table, docs, recipes, changelog, and FAQ, and dogfoods `@ngx-runtime-i18n/angular`/`@ngx-runtime-i18n/core` for its own language switching.
+The marketing and documentation site for the `@ngx-runtime-i18n` package family — an Nx-managed Angular application with SSR + static prerendering (SSG). It covers the landing page, package pages (core, angular, primeng, material, schematics, cli), a live comparison table, docs, recipes, changelog, and FAQ, and runs a real `provideRuntimeI18n()` instance in the landing-page hero's language-cycling demo — the rest of the site's UI is ordinary English-only Angular.
 
 Deployed to Cloudflare Pages (project `ngx-runtime-i18n-site`), live at [https://i18n.ashwinsathian.com](https://i18n.ashwinsathian.com).
 
