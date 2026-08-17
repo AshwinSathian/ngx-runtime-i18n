@@ -43,6 +43,11 @@
   --color-accent-en: #2c5ce6;
   --color-accent-hi: #c2410c;
   --color-accent-de: #0f766e;
+  /* Solid-fill button background for white-on-accent CTAs (e.g. "Get started").
+     In light mode this equals --color-accent-en, which already passes WCAG AA
+     (5.56:1) for white text. Kept as a distinct token because dark mode needs a
+     different value here — see the dark-mode override below. */
+  --color-cta-en: #2c5ce6;
 }
 
 :root[data-theme='dark'] {
@@ -52,6 +57,16 @@
   --color-accent-en: #5b82ff;
   --color-accent-hi: #f0803a;
   --color-accent-de: #14b8a6;
+  /* --color-accent-en (#5b82ff) only gives white text a 3.45:1 contrast ratio,
+     below the WCAG AA 4.5:1 minimum for normal text — that's fine for its
+     existing uses (text/link/accent against the page background), but not for
+     a solid button fill with white text on top. --color-cta-en is a darker,
+     more saturated blue used only for that solid-fill case; it yields 5.11:1
+     against white while still reading as clearly "accent blue" and holding
+     3.80:1 against --color-paper (#0b0d12) so the button stays visually
+     distinct as a UI control. Do not change --color-accent-en itself for
+     this — it's correct as-is everywhere else it's used. */
+  --color-cta-en: #3560f2;
 }
 
 body {
