@@ -58,12 +58,12 @@ Keep one catalog file per language (`en.json`, `hi.json`, `de.json`, ...).
 
 <content-callout data-type="tip">
 
-For what ICU-lite's `{param}` interpolation and `plural` blocks support — and where they stop short of full ICU MessageFormat — see [ICU-lite formatting](/docs/core-concepts/icu-lite).
+For what ICU-lite's `{param}` interpolation, `plural`, `select`, and `selectordinal` blocks support — and where they stop short of full ICU MessageFormat — see [ICU-lite formatting](/docs/core-concepts/icu-lite).
 
 </content-callout>
 
 ## Pitfalls and notes
 
-- ICU-lite is not a full ICU implementation. It covers common interpolation and plural cases with a small footprint, not the full ICU MessageFormat grammar.
+- ICU-lite is not a full ICU implementation. It covers common interpolation, plural, select, and selectordinal cases with a small footprint, not the full ICU MessageFormat grammar.
 - For Angular binding, signals, or SSR support, use `@ngx-runtime-i18n/angular` — `core` stays deliberately framework-agnostic.
 - Keep catalogs flat and predictable. Deep nested paths are supported but get harder to maintain as they grow.
