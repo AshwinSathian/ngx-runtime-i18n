@@ -8,13 +8,24 @@
   "targets": {
     "build-content": {
       "executor": "nx:run-commands",
-      "options": { "command": "node scripts/build-content.mjs", "cwd": "apps/site" }
+      "options": {
+        "command": "node scripts/build-content.mjs",
+        "cwd": "apps/site"
+      }
+    },
+    "build-og": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build-content"],
+      "options": {
+        "command": "node scripts/build-og-images.mjs",
+        "cwd": "apps/site"
+      }
     },
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
-      "dependsOn": ["build-content"],
+      "dependsOn": ["build-content", "build-og"],
       "options": {
         "outputPath": "dist/apps/site",
         "browser": "apps/site/src/main.ts",

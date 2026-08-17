@@ -9,6 +9,9 @@ out-tsc
 apps/site/generated
 apps/site/public/search-index.json
 
+# generated Open Graph images (built by apps/site/scripts/build-og-images.mjs)
+apps/site/public/og
+
 # dependencies
 node_modules
 

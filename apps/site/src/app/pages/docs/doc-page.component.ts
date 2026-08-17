@@ -6,9 +6,16 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer, Meta, type SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { ContentService } from '../../core/content.service';
+import { StructuredDataService } from '../../core/structured-data.service';
+import {
+  SITE_URL,
+  breadcrumbJsonLd,
+  softwareApplicationJsonLd,
+  type BreadcrumbItem,
+} from '../../core/json-ld';
 import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
 import { TocComponent } from '../../shared/toc/toc.component';
 import type { DocEntry } from '../../core/content.types';
@@ -43,6 +50,8 @@ export class DocPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly content = inject(ContentService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly structuredData = inject(StructuredDataService);
+  private readonly meta = inject(Meta);
   protected readonly doc = signal<DocEntry | null>(null);
   // Angular's default `[innerHTML]` sanitizer strips unknown custom-element tags
   // (`<content-callout>`, `<content-code-block>`, `<content-tabs>`) down to their
@@ -62,6 +71,41 @@ export class DocPageComponent implements OnInit {
     // `getting-started`, two once `core-concepts/*`/`packages/*` docs exist) are
     // available on the route snapshot's `url` (a `UrlSegment[]`) instead.
     const slug = this.route.snapshot.url.map((segment) => segment.path);
-    this.doc.set(this.content.getDocBySlug(slug));
+    const doc = this.content.getDocBySlug(slug);
+    this.doc.set(doc);
+    if (doc == null) return;
+
+    const pageUrl = `${SITE_URL}/docs/${slug.join('/')}`;
+
+    // Package pages (`/docs/packages/<pkg>`) describe a published npm package, so they
+    // additionally emit `SoftwareApplication` JSON-LD alongside the breadcrumb every
+    // doc page gets below.
+    if (slug[0] === 'packages') {
+      this.structuredData.set(
+        'ld-software',
+        softwareApplicationJsonLd({
+          name: '@ngx-runtime-i18n/' + slug[1],
+          description: doc.frontmatter.description,
+          url: pageUrl,
+        }),
+      );
+      this.meta.updateTag({
+        property: 'og:image',
+        content: `${SITE_URL}/og/packages-${slug[1]}.png`,
+      });
+    }
+
+    const crumbs: BreadcrumbItem[] = [
+      { name: 'Home', url: `${SITE_URL}/` },
+      { name: 'Docs', url: `${SITE_URL}/docs` },
+    ];
+    // Two-segment slugs (`core-concepts/*`, `packages/*`) get an extra crumb for their
+    // section, matching the sidebar's own grouping (`frontmatter.section`) — there's no
+    // dedicated section index route, so it links back to the docs index.
+    if (slug.length > 1) {
+      crumbs.push({ name: doc.frontmatter.section, url: `${SITE_URL}/docs` });
+    }
+    crumbs.push({ name: doc.frontmatter.title, url: pageUrl });
+    this.structuredData.set('ld-breadcrumb', breadcrumbJsonLd(crumbs));
   }
 }

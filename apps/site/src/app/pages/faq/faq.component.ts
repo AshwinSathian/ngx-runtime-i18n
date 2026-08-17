@@ -1,7 +1,15 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
+import { Meta } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
 import { FaqItemComponent } from '../../shared/faq-item/faq-item.component';
+import { StructuredDataService } from '../../core/structured-data.service';
+import { SITE_URL, faqPageJsonLd } from '../../core/json-ld';
 
 export interface Faq {
   readonly question: string;
@@ -28,25 +36,33 @@ export const FAQS: readonly Faq[] = [
       "No. Angular's built-in i18n (@angular/localize) compiles a separate build per locale from $localize-tagged strings and XLIFF/ARB translation files, resolved once at build time. ngx-runtime-i18n loads catalogs in the browser through a signals-based I18nService instead, so switching a language does not require a new build.",
     link: {
       path: '/compare',
-      label: "Compare against ngx-translate, transloco, and Angular's built-in i18n",
+      label:
+        "Compare against ngx-translate, transloco, and Angular's built-in i18n",
     },
   },
   {
-    question: 'Is ICU-lite enough for complex plural rules like Arabic or Russian?',
+    question:
+      'Is ICU-lite enough for complex plural rules like Arabic or Russian?',
     answer:
       "Not out of the box. The default plural resolver only distinguishes a one category (count equal to 1) from other, so Russian's three plural forms and Arabic's six are not produced automatically. formatIcu accepts an optional plural-resolver hook, a (count, locale) => PluralCategory function, so a catalog that needs CLDR-accurate categories has to supply one, typically backed by Intl.PluralRules. ICU-lite parses plural, select, and selectordinal blocks, but it stays a small formatter, not a full ICU MessageFormat implementation.",
-    link: { path: '/docs/core-concepts/icu-lite', label: 'Read the ICU-lite core concepts page' },
+    link: {
+      path: '/docs/core-concepts/icu-lite',
+      label: 'Read the ICU-lite core concepts page',
+    },
   },
   {
     question: 'Does it work with server-side rendering?',
     answer:
       "Yes. provideRuntimeI18nSsr() seeds Angular's TransferState on the server with the same keys the client-side provideRuntimeI18n() reads, so the first client render matches the server-rendered markup and hydration does not re-fetch the catalog or mutate the DOM before the app is stable.",
-    link: { path: '/recipes/ssr-with-express', label: 'Walk through the SSR with Express recipe' },
+    link: {
+      path: '/recipes/ssr-with-express',
+      label: 'Walk through the SSR with Express recipe',
+    },
   },
   {
     question: 'Which Angular versions are supported?',
     answer:
-      "@ngx-runtime-i18n/angular, @ngx-runtime-i18n/primeng, and @ngx-runtime-i18n/material each declare a peer dependency of \"@angular/core\": \">=16 <23\", covering Angular 16 through 22 (re-verified against each package's published package.json on npm). @ngx-runtime-i18n/core has no Angular peer dependency at all, so it also runs in any TypeScript project.",
+      '@ngx-runtime-i18n/angular, @ngx-runtime-i18n/primeng, and @ngx-runtime-i18n/material each declare a peer dependency of "@angular/core": ">=16 <23", covering Angular 16 through 22 (re-verified against each package\'s published package.json on npm). @ngx-runtime-i18n/core has no Angular peer dependency at all, so it also runs in any TypeScript project.',
   },
   {
     question: 'Are all six packages published on npm?',
@@ -58,24 +74,33 @@ export const FAQS: readonly Faq[] = [
     question: 'Can I lazy-load translations per route?',
     answer:
       "Yes. withI18nScope('name') in a route's providers array loads a route-scoped catalog on activation, through the same fetchCatalog function used for the global catalog with a third scope argument, and unloads it automatically via DestroyRef when the route is destroyed.",
-    link: { path: '/recipes/route-scoped-catalogs', label: 'Read the route-scoped catalogs recipe' },
+    link: {
+      path: '/recipes/route-scoped-catalogs',
+      label: 'Read the route-scoped catalogs recipe',
+    },
   },
   {
     question: 'Does switching languages reload the page?',
     answer:
-      "No. I18nService.setLang() is asynchronous: it fetches the target catalog, cancels any in-flight fetch for a language the user has since navigated away from, and updates the lang signal once the fetch resolves. Every consumer reading that signal re-renders in place, with no location.reload() or full navigation involved.",
+      'No. I18nService.setLang() is asynchronous: it fetches the target catalog, cancels any in-flight fetch for a language the user has since navigated away from, and updates the lang signal once the fetch resolves. Every consumer reading that signal re-renders in place, with no location.reload() or full navigation involved.',
   },
   {
     question: 'Is there a way to validate catalogs in CI?',
     answer:
-      "Yes. @ngx-runtime-i18n/cli ships an ngx-i18n check command that scans source for every translation key usage and validates one or more language catalogs against that usage, reporting missing and unused keys. Its --fail-on-missing and --fail-on-unused flags turn either condition into a nonzero exit code for a CI gate.",
-    link: { path: '/recipes/ci-catalog-validation', label: 'Read the CI catalog validation recipe' },
+      'Yes. @ngx-runtime-i18n/cli ships an ngx-i18n check command that scans source for every translation key usage and validates one or more language catalogs against that usage, reporting missing and unused keys. Its --fail-on-missing and --fail-on-unused flags turn either condition into a nonzero exit code for a CI gate.',
+    link: {
+      path: '/recipes/ci-catalog-validation',
+      label: 'Read the CI catalog validation recipe',
+    },
   },
   {
     question: 'Does it work with PrimeNG or Angular Material?',
     answer:
       "Yes, as separate adapter packages. @ngx-runtime-i18n/primeng listens to I18nService.lang() and applies the matching translation object through PrimeNGConfig. @ngx-runtime-i18n/material keeps Angular Material's paginator, sort, stepper, and datepicker Intl services in sync with the same signal, with no page reload.",
-    link: { path: '/docs/packages/primeng', label: 'Read the PrimeNG package docs' },
+    link: {
+      path: '/docs/packages/primeng',
+      label: 'Read the PrimeNG package docs',
+    },
   },
   {
     question: 'What license is it released under?',
@@ -96,8 +121,7 @@ export const FAQS: readonly Faq[] = [
       </h1>
       <p class="mt-4 text-ink/80">
         Each answer here traces to this repository's own source code,
-        documentation, or a live npm registry check run while writing this
-        page.
+        documentation, or a live npm registry check run while writing this page.
       </p>
       <div class="mt-10">
         @for (faq of faqs; track faq.question) {
@@ -116,6 +140,19 @@ export const FAQS: readonly Faq[] = [
     </section>
   `,
 })
-export class FaqComponent {
+export class FaqComponent implements OnInit {
+  private readonly structuredData = inject(StructuredDataService);
+  private readonly meta = inject(Meta);
   protected readonly faqs = FAQS;
+
+  ngOnInit(): void {
+    // Built directly from the same `FAQS` array the template above renders (`@for (faq
+    // of faqs; ...`) — never a hand-duplicated copy, so the JSON-LD can't drift from
+    // what's actually on the page.
+    this.structuredData.set('ld-faq', faqPageJsonLd(this.faqs));
+    this.meta.updateTag({
+      property: 'og:image',
+      content: `${SITE_URL}/og/faq.png`,
+    });
+  }
 }

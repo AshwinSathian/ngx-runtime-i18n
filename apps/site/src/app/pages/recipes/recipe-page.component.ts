@@ -9,6 +9,13 @@ import {
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { ContentService } from '../../core/content.service';
+import { StructuredDataService } from '../../core/structured-data.service';
+import {
+  SITE_URL,
+  articleJsonLd,
+  breadcrumbJsonLd,
+  type BreadcrumbItem,
+} from '../../core/json-ld';
 import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
 import { TocComponent } from '../../shared/toc/toc.component';
 import type { RecipeEntry } from '../../core/content.types';
@@ -52,6 +59,7 @@ export class RecipePageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly content = inject(ContentService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly structuredData = inject(StructuredDataService);
   protected readonly recipe = signal<RecipeEntry | null>(null);
   // See DocPageComponent for the empirically-verified reason this bypasses Angular's
   // default `[innerHTML]` sanitizer: it strips `<content-callout>`/`<content-tabs>`/
@@ -68,6 +76,27 @@ export class RecipePageComponent implements OnInit {
     // recipes use a real named `:slug` route param (single-segment slugs only), so
     // it's read from `paramMap` rather than reconstructed from URL segments.
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';
-    this.recipe.set(this.content.getRecipeBySlug(slug));
+    const recipe = this.content.getRecipeBySlug(slug);
+    this.recipe.set(recipe);
+    if (recipe == null) return;
+
+    const pageUrl = `${SITE_URL}/recipes/${slug}`;
+    const crumbs: BreadcrumbItem[] = [
+      { name: 'Home', url: `${SITE_URL}/` },
+      { name: 'Recipes', url: `${SITE_URL}/recipes` },
+      { name: recipe.frontmatter.title, url: pageUrl },
+    ];
+    this.structuredData.set('ld-breadcrumb', breadcrumbJsonLd(crumbs));
+    // Recipes are how-to walkthroughs (a title, description, and prose body under a
+    // single author), which is a reasonable fit for schema.org `Article` — unlike doc
+    // pages, which describe a package/API rather than an authored piece of writing.
+    this.structuredData.set(
+      'ld-article',
+      articleJsonLd({
+        title: recipe.frontmatter.title,
+        description: recipe.frontmatter.description,
+        url: pageUrl,
+      }),
+    );
   }
 }
