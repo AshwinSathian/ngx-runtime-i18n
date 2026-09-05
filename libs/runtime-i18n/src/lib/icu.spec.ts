@@ -15,6 +15,7 @@ const cat: Cat = {
   literalBraces: '{count, plural, other {Use braces {like this} literally}}',
   gender: '{gender, select, male {He is a developer} female {She is a developer} other {They are a developer}}',
   pronoun: '{gender, select, male {his} female {her} other {their}} profile',
+  offsetItems: '{count, plural, offset:1 =0 {No one} =1 {Just you} one {You and # other} other {You and # others}}',
   arabicItems: '{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر قليلة} many {# عناصر كثيرة} other {# عنصر}}',
   nestedPluralInSelect:
     '{gender, select, male {He has {count, plural, one {# item} other {# items}}} other {They have {count, plural, one {# item} other {# items}}}}',
@@ -176,6 +177,59 @@ describe('formatIcu', () => {
       );
       expect(formatIcu('en', '__proto__', emptyCat, {}, (k) => `@@${k}@@`)).toBe(
         '@@__proto__@@'
+      );
+    });
+
+    it('does not crash or leak Object.prototype members when a select arg value matches one', () => {
+      // A user-controlled select arg (e.g. a free-text profile field) equal to
+      // "constructor"/"toString"/etc must never resolve to the inherited
+      // Object.prototype function instead of the "other" clause.
+      expect(formatIcu('en', 'gender', cat, { gender: 'constructor' })).toBe(
+        'They are a developer'
+      );
+      expect(formatIcu('en', 'gender', cat, { gender: 'hasOwnProperty' })).toBe(
+        'They are a developer'
+      );
+      expect(formatIcu('en', 'gender', cat, { gender: 'toString' })).toBe(
+        'They are a developer'
+      );
+    });
+  });
+
+  describe('offset:N plural clauses', () => {
+    it('parses the offset prefix instead of discarding the whole clause', () => {
+      expect(formatIcu('en', 'offsetItems', cat, { count: 0 })).toBe('No one');
+      expect(formatIcu('en', 'offsetItems', cat, { count: 1 })).toBe('Just you');
+    });
+
+    it('subtracts the offset from # and from category selection', () => {
+      // count=2 -> no exact match, shifted = 2-1 = 1 -> "one"
+      expect(formatIcu('en', 'offsetItems', cat, { count: 2 })).toBe('You and 1 other');
+      // count=4 -> shifted = 3 -> "other"
+      expect(formatIcu('en', 'offsetItems', cat, { count: 4 })).toBe('You and 3 others');
+    });
+  });
+
+  describe('edge-case inputs', () => {
+    it('treats a null params argument the same as an empty object instead of throwing', () => {
+      expect(formatIcu('en', 'hello.user', cat, null)).toBe('Hello, {name}!');
+      // count is absent -> Number(undefined ?? 0) === 0 -> hits the =0 exact match.
+      expect(formatIcu('en', 'cart.items', cat, null, undefined)).toBe(
+        'No items in your cart'
+      );
+    });
+
+    it('uses the "one" category for -1 without a resolver (sign-agnostic default)', () => {
+      // options.one has no # placeholder, so this proves category selection
+      // treated -1 as "one" (not "other") rather than proving the displayed number.
+      expect(formatIcu('en', 'cart.items', cat, { count: -1 })).toBe(
+        '1 item in your cart'
+      );
+    });
+
+    it('falls back to 0 for "other" instead of leaking NaN when the count param is non-numeric', () => {
+      expect(formatIcu('en', 'cart.items', cat, { count: 'not-a-number' })).toBe(
+        '0 items in your cart'
       );
     });
   });

@@ -39,18 +39,33 @@ formatIcu('en', 'cart.items', catalog, { count: 2 }); // "2 items"
 
 ## API
 
-### `formatIcu(lang, key, catalog, params?, onMissingKey?)`
+### `formatIcu(lang, key, catalog, params?, onMissingKey?, pluralResolver?)`
 
 - **`lang: string`**: current language (for plural rules and future features).
 - **`key: string`**: dotted path into the catalog.
 - **`catalog: Catalog`**: a nested object of strings/objects.
-- **`params?: Record<string, unknown>`**: interpolation values.
+- **`params?: Record<string, unknown> | null`**: interpolation values (`null`/`undefined` are both treated as no params).
 - **`onMissingKey?: (key: string) => string`**: transform for missing keys (defaults to returning the key).
+- **`pluralResolver?: PluralResolver`**: resolves the CLDR plural category for `plural`/`selectordinal` blocks. Without one, the built-in fallback treats `Math.abs(n) === 1` as `one` and everything else as `other` — English-shaped, but sign-agnostic (`-1` is also `one`).
 
 ### Types
 
 - **`Catalog`**: `Record<string, unknown>` (nested object).
 - **`RuntimeI18nConfig`**: shape shared with the Angular wrapper for consistency.
+- **`I18nSchema`**: an empty, module-augmentable interface. Augment it in your app (see below) to unlock typed keys and params:
+  ```ts
+  // src/i18n.d.ts
+  import type en from '../public/i18n/en.json';
+  declare module '@ngx-runtime-i18n/core' {
+    interface I18nSchema { translations: typeof en; }
+  }
+  ```
+- **`TranslationKey`**: union of dot-notation key paths derived from `I18nSchema['translations']`, or `string` when no schema is augmented.
+- **`TranslationParams<K>`**: the interpolation params required for key `K`, derived from parsing the catalog string for `K` at the type level. Falls back to `Record<string, unknown>` when no schema is augmented.
+- **`DeepKeys<T>`** / **`ExtractParams<S>`**: the type-level machinery behind `TranslationKey`/`TranslationParams` — exported for advanced use (e.g. building your own typed helpers). `ExtractParams` balances nested braces inside `plural`/`select`/`selectordinal` clause bodies, so params are extracted correctly even when a clause contains its own `{...}` (e.g. `{count, plural, other {# items}}` still yields `{ count: number }`, not a param named after the whole clause body).
+- **`ActiveCatalogType`**: the augmented catalog's shape (`I18nSchema['translations']`), or `Record<string, unknown>` when unaugmented.
+- **`PluralCategory`**: `'zero' | 'one' | 'two' | 'few' | 'many' | 'other'` (CLDR TR35 categories).
+- **`PluralResolver`**: `(count: number, locale: string) => PluralCategory` — see `pluralResolver` above.
 
 ---
 
@@ -80,7 +95,7 @@ formatIcu('en', 'cart.items', catalog, { count: 2 }); // "2 items"
 ### Supported
 
 - Basic `{param}` interpolation (tokens may include dots and hyphens for nested data).
-- `plural` blocks with `one`, `other`, `=n` selectors, and `#` replacement.
+- `plural` blocks with `one`, `other`, `=n` selectors, `#` replacement, and an optional leading `offset:N` (subtracted from the count for category selection and `#`, but not for `=n` exact-match comparisons, per ICU).
 - `select` blocks with arbitrary named options, falling back to `other` when a value doesn't match.
 - `selectordinal` blocks, using the same `=n` exact-match syntax as `plural`. Without a custom plural resolver, both `plural` and `selectordinal` fall back to a plain `one`-if-equal-to-1/`other` rule; pass a `pluralResolver` for full CLDR (cardinal or ordinal) categories.
 - Nesting `plural`, `select`, and `selectordinal` blocks inside each other, including the same keyword nested inside itself, to arbitrary depth.

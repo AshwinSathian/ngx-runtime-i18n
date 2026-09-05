@@ -12,22 +12,23 @@ export function formatIcu(
   _lang: string,
   key: string,
   cat: Catalog,
-  params: Record<string, unknown> = {},
+  params: Record<string, unknown> | null = {},
   onMissingKey?: (k: string) => string,
   pluralResolver?: PluralResolver
 ): string {
   const raw = lookup(key, cat);
   if (raw == null) return onMissingKey ? onMissingKey(key) : key;
 
+  const p = params ?? {};
   let out = String(raw);
 
   // 1) Resolve {x, plural, ...}, {x, select, ...}, {x, selectordinal, ...} with a brace-balanced scanner.
-  out = replaceMessageBlocks(out, _lang, params, pluralResolver);
+  out = replaceMessageBlocks(out, _lang, p, pluralResolver);
 
   // 2) Simple {name} interpolation AFTER message block selection.
   INTERPOLATION_PATTERN.lastIndex = 0;
   out = out.replace(INTERPOLATION_PATTERN, (_m: string, p1: string) =>
-    params[p1] != null ? String(params[p1]) : `{${p1}}`
+    p[p1] != null ? String(p[p1]) : `{${p1}}`
   );
 
   return out;
@@ -92,26 +93,27 @@ function replaceMessageBlocks(
 
     // Body is the contents between prefix end and the final '}'.
     const body = s.slice(prefixMatch.lastIndex, j - 1);
-    const options = parsePluralBody(body);
+    const { offset, map: options } = parsePluralBody(body);
 
     if (keyword === 'plural' || keyword === 'selectordinal') {
       const n = Number(params[arg] ?? 0);
       if (Number.isFinite(n)) {
         const exact = options[`=${n}`];
         if (exact != null) {
-          out += replaceHash(replaceMessageBlocks(exact, lang, params, pluralResolver), n);
+          out += replaceHash(replaceMessageBlocks(exact, lang, params, pluralResolver), n - offset);
           i = j;
           continue;
         }
 
+        const shifted = n - offset;
         const category: PluralCategory = pluralResolver
-          ? pluralResolver(n, lang)
-          : n === 1 ? 'one' : 'other';
+          ? pluralResolver(shifted, lang)
+          : Math.abs(shifted) === 1 ? 'one' : 'other';
 
         const match = options[category] ?? options['other'] ?? '';
-        out += replaceHash(replaceMessageBlocks(match, lang, params, pluralResolver), n);
+        out += replaceHash(replaceMessageBlocks(match, lang, params, pluralResolver), shifted);
       } else {
-        out += replaceHash(replaceMessageBlocks(options['other'] ?? '', lang, params, pluralResolver), Number(params[arg]));
+        out += replaceHash(replaceMessageBlocks(options['other'] ?? '', lang, params, pluralResolver), 0);
       }
     } else {
       // select: look up param value directly, then resolve any nested keyword blocks
@@ -131,11 +133,16 @@ function replaceHash(s: string, n: number): string {
 
 /**
  * Parse a simple ICU plural/select clause body: e.g. `one {A} other {B} =0 {C}`.
- * Supports balanced brace bodies and nested forms.
+ * Supports balanced brace bodies, nested forms, and a leading `offset:N` token.
+ * The returned map has no prototype, so a selector value matching an
+ * `Object.prototype` member name (e.g. "constructor") can never resolve to an
+ * inherited function instead of `undefined`.
  */
-function parsePluralBody(body: string): Record<string, string> {
-  const map: Record<string, string> = {};
-  let i = 0;
+function parsePluralBody(body: string): { offset: number; map: Record<string, string> } {
+  const map: Record<string, string> = Object.create(null);
+  const offsetMatch = /^\s*offset:\s*(\d+)\s*/.exec(body);
+  const offset = offsetMatch ? Number(offsetMatch[1]) : 0;
+  let i = offsetMatch ? offsetMatch[0].length : 0;
 
   while (i < body.length) {
     // Skip whitespace between selectors.
@@ -168,5 +175,5 @@ function parsePluralBody(body: string): Record<string, string> {
     map[key] = body.slice(valueStart, i - 1);
   }
 
-  return map;
+  return { offset, map };
 }

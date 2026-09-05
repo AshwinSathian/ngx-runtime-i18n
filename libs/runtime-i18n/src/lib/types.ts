@@ -103,17 +103,46 @@ export type TranslationKey =
     : string;
 
 /**
+ * Splits `S` at the `}` that balances the block's opening `{` (already consumed
+ * by the caller), so nested ICU clause braces don't truncate the match early.
+ * Returns `[Token, Rest]` once `depth` closes back to 0, else `never`.
+ * @internal
+ */
+type SplitBalanced<S extends string, Depth extends unknown[] = [], Token extends string = ''> =
+  S extends `${infer Ch}${infer Rest}`
+    ? Ch extends '{'
+      ? SplitBalanced<Rest, [...Depth, 0], `${Token}${Ch}`>
+      : Ch extends '}'
+      ? Depth extends [unknown, ...infer DepthRest]
+        ? SplitBalanced<Rest, DepthRest, `${Token}${Ch}`>
+        : [Token, Rest]
+      : SplitBalanced<Rest, Depth, `${Token}${Ch}`>
+    : never;
+
+/** Strips leading whitespace, mirroring the runtime scanner's `\s*` after each comma. @internal */
+type TrimLeft<S extends string> = S extends ` ${infer Rest}` ? TrimLeft<Rest> : S;
+
+/**
  * Extracts interpolation param names from an ICU message string literal.
- * Works for simple {name} tokens and ICU keyword blocks {count, plural, ...}.
+ * Works for simple {name} tokens and ICU keyword blocks {count, plural, ...},
+ * balancing nested braces inside plural/select clause bodies (e.g. `{# items}`)
+ * instead of stopping at the first `}`, and tolerating arbitrary whitespace
+ * after the comma the same way the runtime scanner's `\s*` does.
  * @publicApi
  */
 export type ExtractParams<S extends string> =
-  S extends `${string}{${infer Token}}${infer Rest}`
-    ? Token extends `${infer Arg},${infer Keyword},${string}`
-      ? Keyword extends 'plural' | 'select' | 'selectordinal'
-        ? { [K in Arg]: number } & ExtractParams<Rest>
+  S extends `${string}{${infer AfterBrace}`
+    ? SplitBalanced<AfterBrace> extends [infer Token extends string, infer Rest extends string]
+      ? Token extends `${infer Arg},${infer AfterComma}`
+        ? TrimLeft<AfterComma> extends `${infer Keyword},${string}`
+          ? Keyword extends 'plural' | 'selectordinal'
+            ? { [K in Arg]: number } & ExtractParams<Rest>
+            : Keyword extends 'select'
+            ? { [K in Arg]: string | number } & ExtractParams<Rest>
+            : { [K in Token]: string | number } & ExtractParams<Rest>
+          : { [K in Token]: string | number } & ExtractParams<Rest>
         : { [K in Token]: string | number } & ExtractParams<Rest>
-      : { [K in Token]: string | number } & ExtractParams<Rest>
+      : Record<never, never>
     : Record<never, never>;
 
 /** @internal */
