@@ -2,7 +2,7 @@
 
 Optional PrimeNG adapter that listens to `I18nService.lang()` and applies the matching PrimeNG translations to PrimeNG's own config service.
 
-Supports PrimeNG 17 through 21 - every MIT-licensed release. PrimeNG 22 moved to a commercial license ([PrimeTek's announcement](https://primeui.dev/nextchapter)); this package intentionally does not claim support for it.
+Targets PrimeNG 17 through 21 - every MIT-licensed release. PrimeNG 22 moved to a commercial license ([PrimeTek's announcement](https://primeui.dev/nextchapter)); this package intentionally does not claim support for it. 18-21 are verified against a real, current PrimeNG install (`real-primeng.spec.ts`, driven through the actual `PrimeNG` config class); 17's `PrimeNGConfig` shape is supported structurally via `configToken` but isn't exercised by a real v17 install in CI, since the old type shim was removed in favor of testing against a real package.
 
 ## Install
 
