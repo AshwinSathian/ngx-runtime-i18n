@@ -14,7 +14,7 @@ describe('SearchPaletteComponent', () => {
     global.fetch = jest
       .fn()
       .mockResolvedValue({ ok: true, json: () => Promise.resolve(items) }) as unknown as typeof fetch;
-    document.body.innerHTML = '<button id="search-trigger">Search</button>';
+    document.body.innerHTML = '<button id="search-trigger" data-search-trigger>Search</button>';
   });
 
   it('opens on Cmd+K and filters results as the user types', async () => {
@@ -136,6 +136,61 @@ describe('SearchPaletteComponent', () => {
 
     expect(navigateSpy).toHaveBeenCalledWith('/recipes/route-guards');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('opens from a trigger added to the DOM after the component initializes (e.g. the mobile-nav panel)', async () => {
+    const user = userEvent.setup();
+    await render(SearchPaletteComponent);
+
+    // Simulates the mobile-nav search entry, which only exists in the DOM
+    // while its panel is open - a one-time querySelectorAll at component-init
+    // time would never see it, which is exactly why delegation is used.
+    const mobileTrigger = document.createElement('button');
+    mobileTrigger.setAttribute('data-search-trigger', '');
+    document.body.appendChild(mobileTrigger);
+
+    await user.click(mobileTrigger);
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    expect(mobileTrigger).toHaveFocus();
+  });
+
+  it('moves to the first/last option on Home/End', async () => {
+    const user = userEvent.setup();
+    await render(SearchPaletteComponent);
+    await user.keyboard('{Meta>}k{/Meta}');
+    await screen.findByRole('dialog');
+
+    const combobox = screen.getByRole('combobox');
+    await user.type(combobox, 'route');
+    const options = await screen.findAllByRole('option');
+    expect(options).toHaveLength(2);
+
+    await user.keyboard('{End}');
+    expect(options[0]).toHaveAttribute('aria-selected', 'false');
+    expect(options[1]).toHaveAttribute('aria-selected', 'true');
+
+    await user.keyboard('{Home}');
+    expect(options[0]).toHaveAttribute('aria-selected', 'true');
+    expect(options[1]).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('shows a loading state instead of a false "no results" while the search index is still fetching', async () => {
+    let resolveFetch!: (value: { ok: boolean; json: () => Promise<unknown> }) => void;
+    global.fetch = jest.fn(
+      () => new Promise((resolve) => (resolveFetch = resolve))
+    ) as unknown as typeof fetch;
+    const user = userEvent.setup();
+    await render(SearchPaletteComponent);
+
+    await user.keyboard('{Meta>}k{/Meta}');
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Loading…')).toBeInTheDocument();
+    expect(screen.queryByText('No results found.')).not.toBeInTheDocument();
+
+    resolveFetch({ ok: true, json: () => Promise.resolve(items) });
+    await screen.findByText('Getting started');
   });
 
   it('degrades to an empty, non-crashing palette when the search index fetch fails', async () => {

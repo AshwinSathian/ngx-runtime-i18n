@@ -27,6 +27,15 @@ import { XIconComponent } from '../icons/x-icon.component';
       </button>
       @if (open()) {
         <div id="mobile-nav-panel" class="absolute inset-x-0 top-16 z-40 border-b border-rule bg-paper p-4">
+          <button
+            data-search-trigger
+            type="button"
+            aria-label="Open search"
+            (click)="close()"
+            class="mb-3 flex w-full items-center gap-2 rounded-md border border-rule px-3 py-2 text-left text-sm text-ink/70"
+          >
+            Search docs and recipes...
+          </button>
           <nav aria-label="Mobile">
             <ul class="flex flex-col gap-3">
               @for (link of links(); track link.href) {

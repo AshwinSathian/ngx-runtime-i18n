@@ -45,6 +45,8 @@ const CATALOG: Record<(typeof ORDER)[number], Catalog> = {
       [style.minWidth.px]="reservedWidth()"
       [class]="accentClass()"
       [attr.lang]="i18n.lang()"
+      tabindex="0"
+      aria-label="Cycling word, pauses on focus or hover"
       (mouseenter)="paused = true"
       (mouseleave)="paused = false"
       (focus)="paused = true"

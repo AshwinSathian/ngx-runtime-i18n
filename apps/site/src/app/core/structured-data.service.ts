@@ -21,7 +21,11 @@ export class StructuredDataService {
     const script = this.document.createElement('script');
     script.type = 'application/ld+json';
     script.id = id;
-    script.textContent = JSON.stringify(data);
+    // Escapes `<` so a title/description string containing the literal substring
+    // `</script>` can't end the tag early - this runs at prerender time too, so an
+    // unescaped match would corrupt the *static* HTML output, not just the live DOM.
+    // `<` is valid inside a JSON string and parses back to the same `<` character.
+    script.textContent = JSON.stringify(data).replace(/</g, '\\u003c');
     this.document.head.appendChild(script);
   }
 

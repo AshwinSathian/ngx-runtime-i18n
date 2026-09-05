@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { ContentService } from '../../core/content.service';
 import { StructuredDataService } from '../../core/structured-data.service';
@@ -25,7 +25,7 @@ import type { RecipeEntry } from '../../core/content.types';
 @Component({
   selector: 'app-recipe-page',
   standalone: true,
-  imports: [KeyEyebrowComponent, TocComponent],
+  imports: [KeyEyebrowComponent, TocComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (recipe(); as r) {
@@ -53,6 +53,17 @@ import type { RecipeEntry } from '../../core/content.types';
         <aside class="hidden w-48 shrink-0 lg:block">
           <app-toc [headings]="r.headings" />
         </aside>
+      </div>
+    } @else {
+      <div class="mx-auto flex max-w-2xl flex-col items-start px-4 py-24">
+        <p class="font-mono text-sm text-accent-en">error.not-found</p>
+        <h1 class="mt-2 font-display text-3xl font-semibold">This recipe doesn't exist.</h1>
+        <p class="mt-3 text-ink/70">Try the recipes index, or search with Cmd+K.</p>
+        <a
+          routerLink="/recipes"
+          class="mt-6 rounded-md bg-cta-en px-5 py-2.5 text-sm font-medium text-white"
+          >Go to recipes</a
+        >
       </div>
     }
   `,

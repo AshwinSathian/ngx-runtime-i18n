@@ -64,9 +64,16 @@ describe('DocPageComponent', () => {
     expect(tocInstallLink?.textContent?.trim()).toBe('Install');
   });
 
-  it('renders nothing for an unknown slug', async () => {
+  it('renders a not-found message with a link back to the docs index for an unknown slug, instead of a blank page', async () => {
     const { container } = await renderForSlug(['does-not-exist']);
     expect(container.querySelector('article')).toBeNull();
+    expect(
+      screen.getByRole('heading', { level: 1, name: "This doc doesn't exist." }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Go to docs' })).toHaveAttribute(
+      'href',
+      '/docs',
+    );
   });
 
   // Regression test for the Critical route-reuse bug: Angular's default

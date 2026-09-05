@@ -153,7 +153,12 @@ async function buildDocs(contentDir) {
       throw new Error(`Invalid frontmatter in ${file}: ${err.message}`, { cause: err });
     }
     const slug = path.relative(dir, file).replace(/\.md$/, '').split(path.sep);
-    const { html, headings } = await compile(content);
+    let html, headings;
+    try {
+      ({ html, headings } = await compile(content));
+    } catch (err) {
+      throw new Error(`Failed to compile ${file}: ${err.message}`, { cause: err });
+    }
     entries.push({ kind: 'doc', slug, frontmatter, html, headings });
   }
   return entries.sort((a, b) => a.frontmatter.order - b.frontmatter.order);
@@ -172,7 +177,12 @@ async function buildRecipes(contentDir) {
       throw new Error(`Invalid frontmatter in ${file}: ${err.message}`, { cause: err });
     }
     const slug = path.basename(file, '.md');
-    const { html, headings } = await compile(content);
+    let html, headings;
+    try {
+      ({ html, headings } = await compile(content));
+    } catch (err) {
+      throw new Error(`Failed to compile ${file}: ${err.message}`, { cause: err });
+    }
     entries.push({ kind: 'recipe', slug, frontmatter, html, headings });
   }
   return entries.sort((a, b) => a.frontmatter.order - b.frontmatter.order);

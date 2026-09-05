@@ -31,6 +31,7 @@ const NAV_LINKS = [
         <div class="flex items-center gap-2">
           <button
             id="search-trigger"
+            data-search-trigger
             type="button"
             class="hidden items-center gap-2 rounded-md border border-rule px-3 py-1.5 text-sm text-ink/70 md:flex"
             aria-label="Open search (Cmd+K)"

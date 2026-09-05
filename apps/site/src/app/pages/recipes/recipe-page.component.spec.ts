@@ -73,9 +73,16 @@ describe('RecipePageComponent', () => {
     expect(tocLink).not.toBeNull();
   });
 
-  it('renders nothing for an unknown slug', async () => {
+  it('renders a not-found message with a link back to the recipes index for an unknown slug, instead of a blank page', async () => {
     const { container } = await renderForSlug('does-not-exist');
     expect(container.querySelector('article')).toBeNull();
+    expect(
+      screen.getByRole('heading', { level: 1, name: "This recipe doesn't exist." }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Go to recipes' })).toHaveAttribute(
+      'href',
+      '/recipes',
+    );
   });
 
   // Regression test for the Critical route-reuse bug: Angular's default

@@ -43,7 +43,11 @@ interface SearchItem { title: string; description: string; href: string; section
                 </button>
               </li>
             } @empty {
-              <li class="p-4 text-sm text-ink/60">No results found.</li>
+              @if (loading()) {
+                <li class="p-4 text-sm text-ink/60">Loading…</li>
+              } @else {
+                <li class="p-4 text-sm text-ink/60">No results found.</li>
+              }
             }
           </ul>
         </div>
@@ -55,7 +59,13 @@ export class SearchPaletteComponent {
   protected readonly open = signal(false);
   protected readonly query = signal('');
   protected readonly highlightedIndex = signal(0);
+  protected readonly loading = signal(true);
   private readonly items = signal<SearchItem[]>([]);
+  // The element that was actually clicked to open the palette (desktop button or
+  // mobile-nav's search entry) - focus returns to THAT element on close, not always
+  // the desktop trigger. Stays null when opened via the Cmd+K shortcut instead of a
+  // click; close() falls back to the first known trigger in that case.
+  private lastTriggerEl: HTMLElement | null = null;
 
   protected readonly filtered = computed(() => {
     const q = this.query().toLowerCase().trim();
@@ -89,12 +99,28 @@ export class SearchPaletteComponent {
         .then((data) => this.items.set(data))
         .catch((err) => {
           // Leaves `items` at its initial empty signal value, which the template's
-          // `@empty` block already renders as "No results found." — a 404/offline
-          // fetch degrades to a gracefully-empty palette instead of an unhandled
-          // promise rejection.
+          // `@empty` block distinguishes from the loading state below and renders as
+          // "No results found." — a 404/offline fetch degrades to a gracefully-empty
+          // palette instead of an unhandled promise rejection.
           console.warn('Failed to load search index:', err);
-        });
-      document.getElementById('search-trigger')?.addEventListener('click', () => this.openPalette());
+        })
+        .finally(() => this.loading.set(false));
+
+      // Delegated on `document` (rather than queried once here) because the mobile-nav
+      // trigger only exists in the DOM while its panel is open - a one-time
+      // querySelectorAll at this point would miss it entirely, and it's the only way
+      // search was reachable on mobile at all before this fix (the desktop trigger is
+      // `hidden` there). Every current and future trigger just needs this one
+      // attribute; no per-element wiring required.
+      document.addEventListener('click', (e) => {
+        const trigger = (e.target as HTMLElement)?.closest?.(
+          '[data-search-trigger]'
+        ) as HTMLElement | null;
+        if (trigger) {
+          this.lastTriggerEl = trigger;
+          this.openPalette();
+        }
+      });
     });
   }
 
@@ -119,6 +145,12 @@ export class SearchPaletteComponent {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       this.moveHighlight(-1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      this.setHighlighted(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      this.setHighlighted(this.filtered().length - 1);
     } else if (e.key === 'Enter') {
       const item = this.filtered()[this.activeIndex()];
       if (item) {
@@ -142,8 +174,15 @@ export class SearchPaletteComponent {
     if (len === 0) return;
     const current = this.activeIndex();
     const next = (current + delta + len) % len;
-    this.highlightedIndex.set(next);
-    document.getElementById(this.optionId(next))?.scrollIntoView?.({ block: 'nearest' });
+    this.setHighlighted(next);
+  }
+
+  /** Sets the highlighted option by absolute index (used by Home/End/wrap-around) and scrolls it into view. */
+  private setHighlighted(index: number): void {
+    const len = this.filtered().length;
+    if (len === 0 || index < 0 || index >= len) return;
+    this.highlightedIndex.set(index);
+    document.getElementById(this.optionId(index))?.scrollIntoView?.({ block: 'nearest' });
   }
 
   navigate(href: string): void {
@@ -159,6 +198,8 @@ export class SearchPaletteComponent {
 
   close(): void {
     this.open.set(false);
-    document.getElementById('search-trigger')?.focus();
+    // Falls back to the first known trigger when opened via the Cmd+K shortcut
+    // rather than a click (lastTriggerEl stays null in that case).
+    (this.lastTriggerEl ?? document.querySelector<HTMLElement>('[data-search-trigger]'))?.focus();
   }
 }

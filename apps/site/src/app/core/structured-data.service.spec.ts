@@ -17,6 +17,20 @@ describe('StructuredDataService', () => {
     expect(script?.textContent).toBe(JSON.stringify({ '@type': 'BreadcrumbList' }));
   });
 
+  it('set() escapes "<" so a value containing "</script>" cannot end the tag early', () => {
+    // This runs at prerender time too (see file header), so an unescaped match would
+    // corrupt the *static* HTML output, not just the live DOM.
+    const service = TestBed.inject(StructuredDataService);
+
+    service.set('ld-breadcrumb', { name: 'Evil</script><script>alert(1)</script>' });
+
+    const script = document.getElementById('ld-breadcrumb');
+    expect(script?.textContent).not.toContain('</script>');
+    expect(JSON.parse(script?.textContent ?? '{}')).toEqual({
+      name: 'Evil</script><script>alert(1)</script>',
+    });
+  });
+
   it('set() replaces a prior tag with the same id rather than appending a duplicate', () => {
     const service = TestBed.inject(StructuredDataService);
 

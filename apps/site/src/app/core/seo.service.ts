@@ -81,12 +81,20 @@ export class SeoService {
     this.meta.updateTag({ property: 'og:type', content: type });
     this.meta.updateTag({ property: 'og:image', content: image });
     this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+
+    // A prior page on this same client-side navigation history (a bad doc/recipe slug,
+    // the 404 route) may have called setNoIndex() below. Without resetting it here, that
+    // `noindex` tag would keep suppressing indexing of every real page navigated to
+    // afterwards, for the rest of the SPA session — this is the one place every page
+    // load/navigation is guaranteed to pass through, so it's where the reset belongs.
+    this.meta.updateTag({ name: 'robots', content: 'index,follow' });
   }
 
   // Standard practice for pages that should never appear in search results — the wildcard
-  // 404 route is the only place this site uses it, so it's kept separate from
-  // `setPageMeta` rather than folded into it as another flag every real page would have to
-  // remember to omit.
+  // 404 route (and a bad doc/recipe slug) are the only places this site uses it, so it's
+  // kept separate from `setPageMeta` rather than folded into it as another flag every real
+  // page would have to remember to omit. Always called AFTER setPageMeta() on those routes,
+  // so its `noindex` isn't immediately overwritten by the `index,follow` above.
   setNoIndex(): void {
     this.meta.updateTag({ name: 'robots', content: 'noindex' });
   }

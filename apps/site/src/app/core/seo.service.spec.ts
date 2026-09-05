@@ -62,6 +62,22 @@ describe('SeoService', () => {
     expect(meta.getTag('name="robots"')?.content).toBe('noindex');
   });
 
+  it('setPageMeta() resets a noindex left by a previous page on the same client-side navigation history', () => {
+    // A bad doc/recipe slug (or the 404 route) calls setNoIndex() after
+    // setPageMeta(). Without setPageMeta() itself resetting robots, that tag
+    // would keep suppressing indexing of every real page navigated to
+    // afterwards, for the rest of the SPA session.
+    const service = TestBed.inject(SeoService);
+    const meta = TestBed.inject(Meta);
+
+    service.setPageMeta({ title: 'Not found', description: 'd', path: '/docs/bad-slug' });
+    service.setNoIndex();
+    expect(meta.getTag('name="robots"')?.content).toBe('noindex');
+
+    service.setPageMeta({ title: 'Getting started', description: 'd', path: '/docs/getting-started' });
+    expect(meta.getTag('name="robots"')?.content).toBe('index,follow');
+  });
+
   it('adds a trailing-slash canonical link for a non-root path, matching the live host\'s own redirect behavior', () => {
     const service = TestBed.inject(SeoService);
 
