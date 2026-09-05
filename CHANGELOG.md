@@ -1,5 +1,78 @@
 # Changelog
 
+## 2.2.0 (2026-09-05)
+
+A full-repo adversarial review (five parallel deep-dive passes: core, the Angular bindings, the Material/PrimeNG/schematics adapters, the CLI, and the marketing/docs site) surfaced and fixed a real prototype-pollution crash, a client-side hydration-mismatch flash, a language-switching race condition, several silent-failure bugs in the schematics and CLI, and three site bugs (a blank page on a bad doc/recipe URL, a `noindex` tag that never cleared, and search being completely unreachable on mobile). `@ngx-runtime-i18n/primeng` has no functional changes in this release (see below) and stays at 3.0.0.
+
+### `@ngx-runtime-i18n/core`
+
+- **Security/correctness:** a `select` block's argument value (e.g. a user-supplied profile field) equal to `"constructor"`, `"hasOwnProperty"`, or another `Object.prototype` member name resolved to the inherited prototype function instead of the catalog's `other` clause, crashing with `TypeError: s.indexOf is not a function`. `parsePluralBody`'s option map is now built with `Object.create(null)`, closing this off entirely.
+- **Correctness:** `offset:N` (valid ICU plural syntax, e.g. `{count, plural, offset:1 =0 {no one} other {you and # others}}`) was parsed as an ordinary selector key, which broke parsing of the *entire* clause and silently rendered `''` with no error. `offset:N` is now parsed and applied correctly (subtracted from the count for category selection and `#`, but not for `=N` exact-match comparisons, per the ICU spec).
+- **Correctness:** `ExtractParams<S>`, the type-level machinery behind `TranslationParams<K>`, stopped at the first `}` in a message string - for any `plural`/`select`/`selectordinal` block (i.e. exactly the messages this package is built to support), it produced garbage property names instead of the real param shape. It's now brace-depth-aware, and also tolerates the arbitrary whitespace after a keyword's comma that the runtime scanner already allowed.
+- **Fix:** `formatIcu(lang, key, catalog, params)` crashed on `params: null` (only `undefined` triggers a default parameter); it now treats `null` the same as an empty object.
+- **Fix:** the built-in one/other plural fallback (used when no `pluralResolver` is supplied) treated negative counts as `other` (`"-1 items"`); it's now sign-agnostic (`Math.abs(n) === 1`), matching real CLDR cardinal rules.
+- **Fix:** a non-numeric `plural`/`selectordinal` count (e.g. a stray string param) rendered the literal text `"NaN"` into `#`; it now falls back to `0`.
+- **Docs:** the README's API section was missing the `pluralResolver` parameter and didn't document `I18nSchema`, `TranslationKey`, `TranslationParams`, `DeepKeys`, `ExtractParams`, `ActiveCatalogType`, `PluralCategory`, or `PluralResolver` at all - all now documented, including the module-augmentation workflow.
+- 6 new regression tests cover all of the above.
+
+### `@ngx-runtime-i18n/angular`
+
+- **Critical (hydration mismatch):** `I18nService`'s `_lang` signal was seeded with `defaultLang` and only corrected to the SSR-resolved language inside an `ApplicationRef.isStable` callback - which fires *after* the first render/hydration pass. Any template reading `lang()`/`t()`/`I18nPipe` during that first pass used the wrong language whenever SSR resolved a non-default one (e.g. `hi` while `defaultLang` is `en`), a visible flash on every such page load. `_lang` is now peeked from the TransferState snapshot synchronously in the constructor (read-only; the existing `isStable` block still does its own read + remove at the same timing as before, so SSR-side TransferState serialization is unaffected).
+- **Critical (race condition):** rapid concurrent `setLang()` calls (e.g. `fr` then `de` before the first resolves) could abort each other unpredictably and leave the active language as whichever fetch happened to *settle* last, not whichever was *requested* last. `setLang()` now tracks a generation token so a stale, superseded call can't clobber a newer one's result.
+- **High:** that same cancellation (`cancelFetchesOutside`) also aborted any unrelated in-flight `preloadLang()`/`preloadLangs()` fetch that fell outside the switch's chain, silently defeating deliberate preloading. Preload-tagged fetches are now never cancelled by a switch.
+- **High:** `t()`, `I18nPipe.transform()`, and `I18nCompatService.t()` all typed `params` as optional (`params?:`) even when `TranslationParams<K>` resolved to a required shape, so a schema-augmented app could omit a required param and still compile - directly contradicting the README's documented "Error - missing required param" behavior. All three now use a conditional tuple (`ParamsArgs<K>`) that makes the argument required exactly when the schema says it should be, and stays optional both when no schema is augmented and when a key genuinely takes no params.
+- **High:** `provideRuntimeI18nTesting()` never installed a `RUNTIME_I18N_PLURAL_RESOLVER`, so any test asserting `plural`/`selectordinal` output silently exercised only the core one/other fallback instead of the real CLDR-backed resolver production uses. Both providers now share the same resolver factory.
+- **Medium:** re-loading an already-loaded scope catalog (e.g. a parent route re-activating after a child scope loaded) never moved it back to "most recently loaded" in `t()`'s scope-precedence order, since re-`set`-ing an existing `Map` key doesn't reorder it. `loadScope()` now deletes-then-recreates the entry so recency is always correct.
+- **Medium:** `ensureLocale()` skipped the locale-data loader entirely on the server (`isBrowserPlatform` gate), leaving server-rendered `DatePipe`/`DecimalPipe` mis-localized to Angular's default locale instead of the target language. A locale loader is a plain dynamic import with no DOM dependency, so it now runs on the server too.
+- **Medium:** `provideRuntimeI18n()` now throws a clear startup error when `defaultLang` isn't included in `supported`, instead of silently resolving to an empty fallback chain and failing every single `t()` call with no indication why.
+- 8 new regression tests cover all of the above (hydration seeding, the race condition, preload isolation, scope recency, SSR locale registration, plural-resolver parity, and the startup validation).
+
+### `@ngx-runtime-i18n/material`
+
+- **Fix:** the `datepicker` field in `MaterialI18nLabels` was accepted by the public API and documented ("Keeps ... datepicker ... in sync"), but the code path that applied it was a no-op comment. `MatDatepickerIntl` is a real injectable Intl service with the exact same shape as the three already wired up (`MatPaginatorIntl`/`MatSortHeaderIntl`/`MatStepperIntl`), so it's now actually applied instead of the claim being walked back.
+- **Fix:** a synchronous throw inside a caller-supplied `resolveLabels()` escaped uncaught out of `effect()` (`Promise.resolve(fn())` evaluates `fn()` eagerly, outside the promise machinery) - unlike the equivalent PrimeNG adapter, which already wrapped this in try/catch. Now wrapped identically via an async IIFE.
+- 2 new regression tests (datepicker application, the sync-throw fix).
+
+### `@ngx-runtime-i18n/schematics`
+
+- **Critical:** if none of the three candidate `app.config.ts` paths existed at all (an NgModule-based app, a non-standard layout, or the wrong `--project`), `ng add` completed with no error and no warning while `provideRuntimeI18n()` was never wired in. Now throws, matching the existing "no `providers: [` array" failure mode.
+- **High:** the import-presence check was keyed on the module specifier (`@ngx-runtime-i18n/angular`) rather than the `provideRuntimeI18n` symbol - an app that already imported anything else from that module (e.g. `I18nService`) would get a call to `provideRuntimeI18n(...)` injected with no import added for it, producing an uncompilable `app.config.ts`. Now checks for the specific named import.
+- **Docs:** the README claimed the package wasn't yet published to npm and documented a `--ssr` schematic option that doesn't exist in `schema.json` - both stale; corrected.
+- 2 new regression tests.
+
+### `@ngx-runtime-i18n/cli`
+
+- **Critical:** running `check` with neither `--src` nor `--manifest` silently treated the used-key set as empty and reported a clean pass (`✓ en: 0/0 keys present`, exit code 0) - even with `--fail-on-missing` set. A CI script that drops one of those flags by mistake would silently stop catching missing keys forever. `check()` now throws (and the CLI prints a clear error and exits non-zero) when neither is provided.
+- **High:** both scanners only matched within a single line, so a call/pipe usage split across lines (formatted code, long keys) was silently dropped with no diagnostic. Both now scan whole-file content and map match offsets back to line numbers.
+- **High:** neither scanner stripped comments before scanning, so a key referenced only in a `// commented-out` call or a `<!-- commented-out -->` template was counted as "used", masking genuinely-unused catalog keys and defeating `--fail-on-unused`. Both now blank out comments before matching (HTML comments exactly, via `<!-- -->`; TS comments heuristically, since this is a regex scanner rather than a full parser).
+- **High:** the HTML pipe-usage regex used `[\w.]+` for the key, excluding hyphens, while the TS scanner's equivalent pattern allowed them - a hyphenated key in a template was silently missed. Now consistent between both scanners.
+- **High:** a dynamic/computed key (a template literal, a bare variable) was silently dropped from both "used" and "unused" reporting with zero diagnostic. Both `extract` and `check` now surface these as `⚠ N i18n call(s) use a dynamic/computed key` warnings with the exact `file:line`.
+- **High:** a malformed `--manifest` JSON file produced a raw, unhandled `SyntaxError` with no filename; running with `program.parse()` instead of `parseAsync()` also meant any internal crash became an unhandled promise rejection whose "success" as a non-zero exit code depended on Node's default behavior rather than an explicit one. Manifest parsing is now wrapped with a clear error message, and the CLI uses `parseAsync()` with an explicit top-level catch and `process.exitCode`.
+- **Medium:** "unused" keys were only ever computed when `--fail-on-unused` was passed, so there was no way to get an informational-only listing; now always computed, with that flag only controlling whether it fails the run.
+- **Medium:** `readCatalog()` joined an unsanitized `--langs` entry directly into a file path (`--langs ../../secret` resolves outside the catalog directory); language codes are now validated against a safe charset.
+- **Docs:** the README claimed the CLI wasn't yet published to npm (it has been since 2.1.0); corrected, and the above behaviors documented.
+- 16 new regression tests across the scanners, `check()`, and the catalog reader.
+
+### Site (`apps/site`, not published to npm)
+
+- **Critical:** a bad `/docs/**` or `/recipes/:slug` URL correctly set `noindex` and a "not found" title, but the page body rendered completely blank - `@if (doc(); as d)` had no `@else`. Both pages now render a proper not-found message with a link back to the docs/recipes index.
+- **Critical:** `setNoIndex()` (used on the 404 route and a bad doc/recipe slug) was never reset by `setPageMeta()`, so navigating from a 404 to a real page client-side left `<meta name="robots" content="noindex">` in place for the rest of the session - permanently de-indexing a real page for any crawler that renders JS. `setPageMeta()` now resets it to `index,follow` as part of its normal path.
+- **Critical:** search was completely unreachable on mobile - the trigger button is `hidden md:flex`, and the mobile nav panel had no equivalent entry. A search entry was added to the mobile nav panel; both triggers now share a `data-search-trigger` attribute picked up via event delegation (not a one-time query), since the mobile entry only exists in the DOM while its panel is open.
+- **Medium:** the search palette's combobox had no `Home`/`End` handling (ARIA APG expects it); added.
+- **Medium:** opening the search palette while its index was still fetching showed a false "No results found." instead of a loading state; added.
+- **Medium:** JSON-LD was serialized with no escaping - a title/description containing the literal substring "closing script tag" would corrupt the *prerendered static HTML*, not just the live DOM, by ending the tag early. Every less-than character is now replaced with its escaped Unicode code point before being written into the script tag, so the substring can no longer appear literally.
+- **Medium:** the hero's auto-cycling language text paused on mouse hover/focus, but the element had no `tabindex` and so was never natively focusable - a keyboard-only user had no way to pause it (WCAG 2.2.2). Now focusable.
+- **Low:** `build-content.mjs` had no per-file error handling around markdown compilation, so an unsupported code-fence language or similar Shiki/rehype-pretty-code failure in any single doc/recipe would fail the entire production build with no indication of which file caused it. Now wrapped with a clear `Failed to compile <file>` message.
+- 5 new regression tests.
+
+### Not changed in this release
+
+`@ngx-runtime-i18n/primeng` had no functional changes (only a README wording correction on its PrimeNG-17 support claim, clarifying what's actually verified against a real install vs. structurally assumed) and stays at 3.0.0, consistent with this project's practice of not bumping a package for a docs-only change.
+
+### Packages
+
+Bumped `@ngx-runtime-i18n/core`, `/angular`, `/material`, `/schematics`, and `/cli` to v2.2.0.
+
 ## @ngx-runtime-i18n/primeng 3.0.0 (2026-08-17)
 
 Released on its own, out of lockstep with the other five packages (which have no changes here) - the fix below is scoped to this one package and didn't warrant five no-op version bumps.
