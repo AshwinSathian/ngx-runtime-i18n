@@ -1,4 +1,4 @@
-import { signal, TransferState } from '@angular/core';
+import { makeStateKey, PLATFORM_ID, signal, TransferState } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
 import { I18nService } from './i18n.service';
@@ -8,6 +8,10 @@ import {
   RUNTIME_I18N_LOCALES,
   RuntimeI18nOptions,
 } from './tokens';
+import {
+  DEFAULT_RUNTIME_I18N_STATE_KEY_PREFIX,
+  getRuntimeI18nBootstrapStateKey,
+} from './transfer-state-keys';
 
 describe('I18nService', () => {
   let service: I18nService;
@@ -78,6 +82,69 @@ describe('I18nService', () => {
   afterEach(() => {
     window.localStorage.clear();
     jest.restoreAllMocks();
+  });
+
+  it('seeds _lang from an SSR TransferState snapshot synchronously - before ApplicationRef ever stabilizes - so first render does not flash defaultLang', async () => {
+    TestBed.resetTestingModule();
+    const cfg: RuntimeI18nConfig = {
+      defaultLang: 'en',
+      supported: ['en', 'hi'],
+      fetchCatalog: async () => ({}),
+    };
+
+    await TestBed.configureTestingModule({
+      providers: [
+        provideRuntimeI18n(cfg, { options: { autoDetect: false, storageKey: null } }),
+        TransferState,
+      ],
+    }).compileComponents();
+
+    // Seed the bootstrap TransferState key BEFORE I18nService is ever
+    // injected/constructed - exactly as provideRuntimeI18nSsr() does on the
+    // server for a non-default resolved language.
+    const ts = TestBed.inject(TransferState);
+    const bootstrapKey = makeStateKey<{ lang: string; catalogs: Record<string, Catalog> }>(
+      getRuntimeI18nBootstrapStateKey(DEFAULT_RUNTIME_I18N_STATE_KEY_PREFIX)
+    );
+    ts.set(bootstrapKey, { lang: 'hi', catalogs: {} });
+
+    const seededService = TestBed.inject(I18nService);
+
+    // Must already be 'hi' RIGHT NOW - synchronously, immediately after
+    // construction - not defaultLang until ApplicationRef.isStable fires
+    // later. Previously this read defaultLang ('en') until stability, which
+    // is a visible hydration-mismatch flash whenever SSR resolved a
+    // non-default language.
+    expect(seededService.lang()).toBe('hi');
+  });
+
+  it('registers locale data on the server too (SSR), not only in the browser', async () => {
+    TestBed.resetTestingModule();
+    const cfg: RuntimeI18nConfig = {
+      defaultLang: 'en',
+      supported: ['en', 'hi'],
+      fetchCatalog: async () => ({ greeting: 'Namaste' }),
+    };
+    const hiLocaleLoader = jest.fn().mockResolvedValue(undefined);
+
+    await TestBed.configureTestingModule({
+      providers: [
+        provideRuntimeI18n(cfg, {
+          options: { autoDetect: false, storageKey: null },
+          localeLoaders: { hi: hiLocaleLoader },
+        }),
+        TransferState,
+        // Simulate SSR: previously ensureLocale() skipped the locale loader
+        // entirely whenever isBrowserPlatform was false, leaving
+        // server-rendered DatePipe/DecimalPipe mis-localized.
+        { provide: PLATFORM_ID, useValue: 'server' },
+      ],
+    }).compileComponents();
+
+    const serverService = TestBed.inject(I18nService);
+    await serverService.setLang('hi');
+
+    expect(hiLocaleLoader).toHaveBeenCalledTimes(1);
   });
 
   it('translates using the active language catalog first', () => {
@@ -160,6 +227,75 @@ describe('I18nService', () => {
     await pending;
     expect(service.switching()).toBe(false);
     expect(service.activeSwitchLang()).toBeNull();
+  });
+
+  it('settles on the LAST requested language, not whichever fetch resolves first, under rapid concurrent switching', async () => {
+    // Promises (and their resolvers) built upfront, independent of call
+    // timing/ordering - avoids racing against exactly how many microtask
+    // ticks setLang() takes internally before it invokes fetchCatalog.
+    let resolveDe!: (catalog: Catalog) => void;
+    let resolveHi!: (catalog: Catalog) => void;
+    const dePromise = new Promise<Catalog>((resolve) => {
+      resolveDe = resolve;
+    });
+    const hiPromise = new Promise<Catalog>((resolve) => {
+      resolveHi = resolve;
+    });
+    const baseCatalogs = createDefaultCatalogs();
+    await setup({
+      // Only 'en' pre-seeded, so both 'de' and 'hi' genuinely go to fetchCatalog.
+      catalogs: new Map<string, Catalog>([['en', requiredCatalog(baseCatalogs, 'en')]]),
+      config: {
+        // No fallbacks: otherwise 'de' being a fallback of 'hi' would make the
+        // 'hi' switch also wait on 'de' resolving, entangling the two fetches
+        // this test needs to control independently.
+        fallbacks: [],
+        fetchCatalog: async (lang: string) => {
+          if (lang === 'de') return dePromise;
+          if (lang === 'hi') return hiPromise;
+          return {};
+        },
+      },
+    });
+
+    const firstRequested = service.setLang('de'); // requested first
+    const lastRequested = service.setLang('hi'); // requested second (more recent)
+
+    // Resolve the FIRST-requested switch's fetch LAST, to prove the final
+    // active lang is whichever was requested last ('hi'), not whichever
+    // fetch happened to settle last in real time by coincidence.
+    resolveHi({ hello: { user: 'Namaste' } });
+    await lastRequested;
+    resolveDe({ hello: { user: 'Hallo' } });
+    await firstRequested.catch(() => void 0);
+
+    expect(service.lang()).toBe('hi');
+    expect(service.switching()).toBe(false);
+    expect(service.activeSwitchLang()).toBeNull();
+  });
+
+  it('does not let a concurrent setLang() abort an unrelated preloadLang() fetch', async () => {
+    const resolvers = new Map<string, (catalog: Catalog) => void>();
+    await setup({
+      config: {
+        fetchCatalog: (lang: string) =>
+          new Promise<Catalog>((resolve) => {
+            resolvers.set(lang, resolve);
+          }),
+      },
+    });
+
+    // Start a deliberate preload for 'hi' that's still in flight...
+    const preloadPending = service.preloadLang('hi');
+    // ...then switch to 'de', which is already cached (createDefaultCatalogs())
+    // so setLang() resolves immediately and calls cancelFetchesOutside() -
+    // that call must not abort the unrelated 'hi' preload fetch above.
+    await service.setLang('de');
+
+    resolvers.get('hi')?.({ hello: { user: 'Namaste' } });
+    await preloadPending;
+
+    expect(service.getLoadedLangs()).toContain('hi');
   });
 
   it('resets switching when a language fails to load', async () => {
@@ -335,6 +471,29 @@ describe('I18nService', () => {
 
       await service.loadScope('checkout');
       expect(service.t('checkout.title')).toBe('Scope Checkout');
+    });
+
+    it('re-loading an already-loaded scope makes it "most recent" again, winning over a scope loaded after it originally', async () => {
+      await setup({
+        config: {
+          fetchCatalog: async (lang: string, _signal?: AbortSignal, scope?: string) => {
+            if (lang === 'en' && scope === 'parent') return { title: { key: 'Parent title' } };
+            if (lang === 'en' && scope === 'child') return { title: { key: 'Child title' } };
+            return {};
+          },
+        },
+      });
+
+      await service.loadScope('parent');
+      await service.loadScope('child');
+      // 'child' loaded after 'parent' -> child currently wins (expected).
+      expect(service.t('title.key')).toBe('Child title');
+
+      // Re-entering 'parent' (e.g. its route reactivating) must make it the
+      // most-recently-loaded scope again, not leave 'child' permanently
+      // winning just because it happened to load once, later, in the past.
+      await service.loadScope('parent');
+      expect(service.t('title.key')).toBe('Parent title');
     });
 
     it('unloadScope removes the scope catalog so global key is used again', async () => {

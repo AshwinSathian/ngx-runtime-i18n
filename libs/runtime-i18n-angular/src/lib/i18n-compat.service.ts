@@ -2,9 +2,10 @@ import { DestroyRef, Injectable, Injector, inject } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import type { TranslationKey, TranslationParams } from '@ngx-runtime-i18n/core';
+import type { TranslationKey } from '@ngx-runtime-i18n/core';
 import { RUNTIME_I18N_CONFIG } from './tokens';
 import { I18nService } from './i18n.service';
+import type { ParamsArgs } from './params-args';
 
 /**
  * RxJS-backed compatibility service mirroring I18nService.
@@ -36,8 +37,8 @@ export class I18nCompatService {
       .subscribe((l) => this._lang$.next(l));
   }
 
-  t<K extends TranslationKey>(key: K, params?: TranslationParams<K>): string {
-    return this.signals.t(key, params as Record<string, unknown>);
+  t<K extends TranslationKey>(key: K, ...args: ParamsArgs<K>): string {
+    return this.signals.t(key, ...args);
   }
 
   async setLang(lang: string): Promise<void> {

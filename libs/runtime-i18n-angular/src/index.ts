@@ -24,3 +24,12 @@ export type { RuntimeI18nOptions } from './lib/tokens';
 
 export { I18nCompatService } from './lib/i18n-compat.service';
 export { withI18nScope } from './lib/with-i18n-scope';
+
+/**
+ * The CLDR-backed plural resolver `provideRuntimeI18n()` installs by default.
+ * Exported so `@ngx-runtime-i18n/angular/testing` can install the exact same
+ * resolver, rather than testing silently diverging from production
+ * pluralization behavior.
+ * @internal
+ */
+export { createCldrPluralResolver } from './lib/cldr-plural-resolver';

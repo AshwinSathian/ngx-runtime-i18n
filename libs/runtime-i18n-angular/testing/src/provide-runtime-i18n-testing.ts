@@ -1,11 +1,13 @@
 import { Provider } from '@angular/core';
 import type { Catalog } from '@ngx-runtime-i18n/core';
 import {
+  createCldrPluralResolver,
   RUNTIME_I18N_CATALOGS,
   RUNTIME_I18N_CONFIG,
   RUNTIME_I18N_LOCALE_LOADERS,
   RUNTIME_I18N_LOCALES,
   RUNTIME_I18N_OPTIONS,
+  RUNTIME_I18N_PLURAL_RESOLVER,
   RUNTIME_I18N_STATE_KEY,
 } from '@ngx-runtime-i18n/angular';
 
@@ -63,5 +65,9 @@ export function provideRuntimeI18nTesting(opts: RuntimeI18nTestingOptions = {}):
         preferNavigatorBase: false,
       },
     },
+    // Same CLDR-backed resolver provideRuntimeI18n() installs, so a test
+    // asserting plural/selectordinal output sees real CLDR categories
+    // instead of silently falling back to a plain one/other heuristic.
+    { provide: RUNTIME_I18N_PLURAL_RESOLVER, useValue: createCldrPluralResolver() },
   ];
 }

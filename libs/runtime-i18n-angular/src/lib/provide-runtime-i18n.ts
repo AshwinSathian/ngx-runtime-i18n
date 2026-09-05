@@ -6,8 +6,8 @@ import {
   provideEnvironmentInitializer,
   TransferState,
 } from '@angular/core';
-import { getLocalePluralCase, Plural } from '@angular/common';
-import type { Catalog, PluralCategory, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
+import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
+import { createCldrPluralResolver } from './cldr-plural-resolver';
 import {
   RUNTIME_I18N_CATALOGS,
   RUNTIME_I18N_CONFIG,
@@ -48,6 +48,15 @@ export function provideRuntimeI18n(
     options?: RuntimeI18nOptions;
   }
 ): (Provider | EnvironmentProviders)[] {
+  if (!cfg.supported.includes(cfg.defaultLang)) {
+    // Otherwise getFallbackChain() silently resolves to an empty chain and
+    // every single t() call falls through to onMissingKey()/the raw key,
+    // with no clear startup error pointing at the actual misconfiguration.
+    throw new Error(
+      `[ngx-runtime-i18n] defaultLang "${cfg.defaultLang}" must be included in "supported" (got: [${cfg.supported.join(', ')}]).`
+    );
+  }
+
   const catalogs = new Map<string, Catalog>();
   const locales = new Set<string>();
   const stateKeyPrefix =
@@ -95,22 +104,7 @@ export function provideRuntimeI18n(
 
     {
       provide: RUNTIME_I18N_PLURAL_RESOLVER,
-      useValue: (count: number, locale: string): PluralCategory => {
-        const CLDR_MAP: Record<number, PluralCategory> = {
-          [Plural.Zero]: 'zero',
-          [Plural.One]: 'one',
-          [Plural.Two]: 'two',
-          [Plural.Few]: 'few',
-          [Plural.Many]: 'many',
-          [Plural.Other]: 'other',
-        };
-        try {
-          const plural = getLocalePluralCase(locale)(count);
-          return CLDR_MAP[plural] ?? 'other';
-        } catch {
-          return count === 1 ? 'one' : 'other';
-        }
-      },
+      useValue: createCldrPluralResolver(),
     },
 
     // Client boot: populate catalogs from TransferState if present (SSR→CSR).

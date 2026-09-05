@@ -1,6 +1,7 @@
 import { Pipe, PipeTransform, inject } from '@angular/core';
-import type { TranslationKey, TranslationParams } from '@ngx-runtime-i18n/core';
+import type { TranslationKey } from '@ngx-runtime-i18n/core';
 import { I18nService } from './i18n.service';
+import type { ParamsArgs } from './params-args';
 
 /**
  * Translate a key within templates.
@@ -20,9 +21,9 @@ import { I18nService } from './i18n.service';
 export class I18nPipe implements PipeTransform {
   private i18n = inject(I18nService);
 
-  transform<K extends TranslationKey>(key: K, params?: TranslationParams<K>): string {
+  transform<K extends TranslationKey>(key: K, ...args: ParamsArgs<K>): string {
     // establish dependency on the lang signal (read-only)
     this.i18n.lang();
-    return this.i18n.t(key, params);
+    return this.i18n.t(key, ...args);
   }
 }

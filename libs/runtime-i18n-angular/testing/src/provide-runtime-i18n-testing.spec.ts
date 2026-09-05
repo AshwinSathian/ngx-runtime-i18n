@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { TransferState } from '@angular/core';
-import { I18nService } from '@ngx-runtime-i18n/angular';
+import { I18nService, RUNTIME_I18N_PLURAL_RESOLVER } from '@ngx-runtime-i18n/angular';
 import { provideRuntimeI18nTesting } from './provide-runtime-i18n-testing';
 
 describe('provideRuntimeI18nTesting', () => {
@@ -97,5 +97,21 @@ describe('provideRuntimeI18nTesting', () => {
     const i18n = TestBed.inject(I18nService);
     expect(i18n.lang()).toBe('en');
     expect(i18n.t('anything')).toBe('anything');
+  });
+
+  it('installs a RUNTIME_I18N_PLURAL_RESOLVER, matching provideRuntimeI18n() rather than leaving it unset', () => {
+    // Previously this token simply wasn't provided at all under
+    // provideRuntimeI18nTesting(), so I18nService.pluralResolver was
+    // undefined and every plural/selectordinal test silently exercised only
+    // the core one/other fallback, never the CLDR-backed resolver production
+    // actually uses.
+    TestBed.configureTestingModule({
+      providers: [TransferState, provideRuntimeI18nTesting()],
+    });
+
+    const resolver = TestBed.inject(RUNTIME_I18N_PLURAL_RESOLVER, undefined, { optional: true });
+    expect(resolver).toBeInstanceOf(Function);
+    expect(resolver?.(1, 'en')).toBe('one');
+    expect(resolver?.(2, 'en')).toBe('other');
   });
 });

@@ -9,7 +9,7 @@ Lean, SSR‑safe Angular wrapper around `@ngx-runtime-i18n/core`.
 - Lazy Angular locale data per language to power pipes (`DatePipe`, `DecimalPipe`, ...)
 - Configurable fallback chains with in-memory or localStorage catalog caching
 
-Peer support: `@angular/* >=16 <22`
+Peer support: `@angular/* >=16 <23`
 
 ---
 
@@ -325,7 +325,7 @@ When no schema is declared (the default), `t()` accepts `string`, preserving ful
 
 ## Versioning & Support
 
-- Angular: `>=16 <22`
+- Angular: `>=16 <23`
 - Node: LTS recommended
 - SemVer: breaking changes will bump major versions.
 

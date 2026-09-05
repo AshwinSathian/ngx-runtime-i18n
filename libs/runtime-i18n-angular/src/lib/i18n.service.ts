@@ -12,6 +12,7 @@ import {
   TransferState,
 } from '@angular/core';
 import { Catalog, formatIcu, TranslationKey, TranslationParams, PluralResolver } from '@ngx-runtime-i18n/core';
+import type { ParamsArgs } from './params-args';
 import { isPlatformBrowser } from '@angular/common';
 import {
   RUNTIME_I18N_CATALOGS,
@@ -29,6 +30,10 @@ import {
 } from './transfer-state-keys';
 
 const isBrowser = typeof window !== 'undefined';
+
+// 'switch' fetches (setLang() / initial bootstrap resolution) are cancelled
+// once a newer chain supersedes them; 'preload' fetches never are.
+type FetchPurpose = 'switch' | 'preload';
 
 // Angular sets ngDevMode to true in dev builds, undefined in prod (tree-shaken).
 declare const ngDevMode: boolean;
@@ -65,8 +70,13 @@ export class I18nService {
   private _activeSwitchLang = signal<string | null>(null);
   private catalogFetches = new Map<
     string,
-    { controller?: AbortController; promise: Promise<void> }
+    { controller?: AbortController; promise: Promise<void>; purpose: FetchPurpose }
   >();
+
+  // Bumped on every setLang() call; lets a stale, still-in-flight setLang()
+  // detect that a newer call has since started and avoid clobbering _lang
+  // (or the switching/activeSwitchLang signals) with its own late result.
+  private switchGeneration = 0;
 
   /** Named scope catalogs: scope name → (lang → Catalog) */
   private scopeCatalogs = new Map<string, Map<string, Catalog>>();
@@ -85,6 +95,29 @@ export class I18nService {
   private _warnedMissing = DEV ? new Set<string>() : undefined;
 
   constructor() {
+    // Peek at any SSR-seeded TransferState snapshot synchronously, here in
+    // the constructor - which always runs before the very first render/
+    // hydration pass - so a server-resolved non-default language is honored
+    // on first paint instead of flashing defaultLang until
+    // ApplicationRef.isStable fires (a visible hydration mismatch whenever
+    // the SSR-resolved lang differs from defaultLang). This is read-only
+    // (no ts.remove()): the isStable block below still performs its own
+    // read + remove at the exact same timing as before, so it's unaffected
+    // and server-side TransferState serialization timing is unchanged.
+    if (this.ts) {
+      const peekKey = makeStateKey<{
+        lang: string;
+        catalogs: Record<string, Catalog>;
+      }>(getRuntimeI18nBootstrapStateKey(this.stateKeyPrefix));
+      if (this.ts.hasKey(peekKey)) {
+        const snap = this.ts.get(peekKey, {
+          lang: this.cfg.defaultLang,
+          catalogs: {},
+        });
+        if (snap.lang) this._lang.set(snap.lang);
+      }
+    }
+
     // Defer initial work until app is stable (prevents pre-hydration mutations).
     const sub = this.appRef.isStable.subscribe(async (stable) => {
       if (!stable) return;
@@ -171,7 +204,8 @@ export class I18nService {
    * Translate a key using the active language. Supports ICU-lite + interpolation.
    * Falls back to {@link RuntimeI18nConfig.onMissingKey} or the raw key.
    */
-  t<K extends TranslationKey>(key: K, params?: TranslationParams<K>): string {
+  t<K extends TranslationKey>(key: K, ...args: ParamsArgs<K>): string {
+    const params = args[0];
     const chain = this.getFallbackChain(this._lang());
 
     // Check scope catalogs first (most recently loaded scope wins)
@@ -232,11 +266,18 @@ export class I18nService {
   async loadScope(scope: string): Promise<void> {
     const lang = this._lang();
     const chain = this.getFallbackChain(lang);
+
+    // Re-inserting an already-loaded scope moves it to the end of the Map's
+    // iteration order (delete + set; re-setting an existing key alone does
+    // NOT reorder it). t() relies on that order ("most recently loaded scope
+    // wins" via reverse iteration), so without this, re-entering a scope
+    // (e.g. a parent route re-activating after a child scope loaded) would
+    // never actually become "most recent" again.
+    const scopeMap = this.scopeCatalogs.get(scope) ?? new Map<string, Catalog>();
+    this.scopeCatalogs.delete(scope);
+    this.scopeCatalogs.set(scope, scopeMap);
+
     for (const candidate of chain) {
-      if (!this.scopeCatalogs.has(scope)) {
-        this.scopeCatalogs.set(scope, new Map());
-      }
-      const scopeMap = this.scopeCatalogs.get(scope)!;
       if (!scopeMap.has(candidate)) {
         try {
           const fetched = await this.cfg.fetchCatalog(candidate, undefined, scope);
@@ -281,11 +322,19 @@ export class I18nService {
     if (lang === this._lang()) return;
     const resolved = this.resolveLangOrThrow(lang);
     const chain = new Set(this.getFallbackChain(resolved));
+    const myGeneration = ++this.switchGeneration;
     this._switching.set(true);
     this._activeSwitchLang.set(resolved);
     try {
       await this.ensureLocale(resolved);
       await this.ensureCatalog(resolved);
+
+      // A newer setLang() call started while this one was in flight (e.g.
+      // rapid fr -> de switching) - let that one win. Applying this call's
+      // now-stale result would make the FINAL active lang whichever fetch
+      // happened to settle last, not whichever was requested last.
+      if (myGeneration !== this.switchGeneration) return;
+
       this.cancelFetchesOutside(chain);
       if (this.options.cacheMode === 'none') {
         this.pruneCatalogCache(chain);
@@ -299,15 +348,20 @@ export class I18nService {
         }
       }
     } finally {
-      this._switching.set(false);
-      this._activeSwitchLang.set(null);
+      // Only the latest generation resets the switching signals - an older,
+      // stale call's finally must not flip switching back to false while a
+      // newer switch is still (or was more recently) in flight.
+      if (myGeneration === this.switchGeneration) {
+        this._switching.set(false);
+        this._activeSwitchLang.set(null);
+      }
     }
   }
 
   async preloadLang(lang: string): Promise<void> {
     const resolved = this.resolveLangOrThrow(lang);
     await this.ensureLocale(resolved);
-    await this.ensureCatalog(resolved);
+    await this.ensureCatalog(resolved, true, new Set(), 'preload');
   }
 
   async preloadLangs(langs: string[]): Promise<void> {
@@ -319,7 +373,7 @@ export class I18nService {
     const chain = this.getFallbackChain(base);
     for (const candidate of chain) {
       await this.ensureLocale(candidate);
-      await this.ensureCatalog(candidate, false);
+      await this.ensureCatalog(candidate, false, new Set(), 'preload');
     }
   }
 
@@ -328,32 +382,35 @@ export class I18nService {
   private async ensureLocale(lang: string) {
     const base = lang.toLowerCase().split('-')[0];
     if (this.locales.has(base)) return;
-    if (this.isBrowserPlatform) {
-      const loader = this.localeLoaders[base];
-      if (loader) await loader();
-    }
+    // Runs on the server too (not just isBrowserPlatform): a locale loader is
+    // a plain dynamic import with no DOM dependency, and skipping it on SSR
+    // left server-rendered DatePipe/DecimalPipe mis-localized to Angular's
+    // default locale instead of the target language.
+    const loader = this.localeLoaders[base];
+    if (loader) await loader();
     this.locales.add(base);
   }
 
   private async ensureCatalog(
     lang: string,
     includeFallbacks = true,
-    visited = new Set<string>()
+    visited = new Set<string>(),
+    purpose: FetchPurpose = 'switch'
   ) {
     if (visited.has(lang)) return;
     visited.add(lang);
 
-    await this.loadCatalog(lang);
+    await this.loadCatalog(lang, purpose);
 
     if (!includeFallbacks) return;
 
     const fallbacks = this.getFallbackChain(lang).slice(1);
     for (const fb of fallbacks) {
-      await this.ensureCatalog(fb, false, visited);
+      await this.ensureCatalog(fb, false, visited, purpose);
     }
   }
 
-  private async loadCatalog(lang: string): Promise<void> {
+  private async loadCatalog(lang: string, purpose: FetchPurpose = 'switch'): Promise<void> {
     if (this.catalogs.has(lang)) return;
 
     const stateKey = makeStateKey<Catalog>(
@@ -376,11 +433,11 @@ export class I18nService {
         this.options.cacheKeyPrefix ?? '@ngx-runtime-i18n:catalog:'
       )
     ) {
-      void this.fetchCatalogFromNetwork(lang, true);
+      void this.fetchCatalogFromNetwork(lang, true, purpose);
       return;
     }
 
-    await this.fetchCatalogFromNetwork(lang);
+    await this.fetchCatalogFromNetwork(lang, false, purpose);
   }
 
   private resolveLangOrThrow(lang: string): string {
@@ -391,7 +448,8 @@ export class I18nService {
 
   private async fetchCatalogFromNetwork(
     lang: string,
-    background = false
+    background = false,
+    purpose: FetchPurpose = 'switch'
   ): Promise<void> {
     if (!this.isBrowserPlatform) return;
 
@@ -425,7 +483,7 @@ export class I18nService {
       }
     })();
 
-    this.catalogFetches.set(lang, { controller, promise });
+    this.catalogFetches.set(lang, { controller, promise, purpose });
 
     if (background) {
       promise.catch(() => void 0);
@@ -478,6 +536,12 @@ export class I18nService {
 
   private cancelFetchesOutside(keep: Set<string>) {
     for (const [lang, entry] of this.catalogFetches.entries()) {
+      // Never cancel a deliberate preloadLang()/preloadLangs() fetch just
+      // because it falls outside the chain a setLang() call (or the initial
+      // bootstrap) happens to be resolving right now - that would silently
+      // defeat preloading warmed by the app for an unrelated reason (e.g. a
+      // settings screen prefetching every supported language).
+      if (entry.purpose === 'preload') continue;
       if (!keep.has(lang)) {
         entry.controller?.abort();
         this.catalogFetches.delete(lang);
