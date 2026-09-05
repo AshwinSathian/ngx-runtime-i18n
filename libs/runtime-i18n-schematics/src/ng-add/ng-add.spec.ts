@@ -143,4 +143,38 @@ export const appConfig = { providers: [provideRuntimeI18n({ defaultLang: 'en', s
       runner.runSchematic('ng-add', { project: 'my-app' }, initialTree)
     ).rejects.toThrow(/Could not find a "providers: \[" array/);
   });
+
+  it('throws instead of silently no-op-ing when no app.config.ts exists at any candidate path', async () => {
+    const baseTree = Tree.empty();
+    baseTree.create('/package.json', JSON.stringify({ name: 'test-app', dependencies: {} }, null, 2));
+    // No app.config.ts anywhere - e.g. an NgModule-based app.
+    const initialTree = new UnitTestTree(baseTree);
+
+    await expect(
+      runner.runSchematic('ng-add', { project: 'my-app' }, initialTree)
+    ).rejects.toThrow(/Could not find an app\.config\.ts/);
+  });
+
+  it('adds the provideRuntimeI18n import even when the module is already imported for something else', async () => {
+    const baseTree = Tree.empty();
+    baseTree.create('/package.json', JSON.stringify({ name: 'test-app', dependencies: {} }, null, 2));
+    baseTree.create(
+      '/src/app/app.config.ts',
+      `import { ApplicationConfig } from '@angular/core';
+import { I18nService } from '@ngx-runtime-i18n/angular';
+
+export const appConfig: ApplicationConfig = {
+  providers: []
+};
+`
+    );
+    const initialTree = new UnitTestTree(baseTree);
+
+    const tree = await runner.runSchematic('ng-add', { project: 'my-app' }, initialTree);
+    const config = tree.readContent('/src/app/app.config.ts');
+    // Must compile: provideRuntimeI18n has to actually be imported, not just
+    // referenced, even though '@ngx-runtime-i18n/angular' was already imported.
+    expect(config).toMatch(/import\s*\{\s*provideRuntimeI18n\s*\}\s*from\s*'@ngx-runtime-i18n\/angular'/);
+    expect(config).toContain('I18nService');
+  });
 });

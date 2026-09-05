@@ -2,8 +2,6 @@
 
 Angular schematics for `@ngx-runtime-i18n`. Provides an `ng-add` schematic that wires the runtime i18n library into an existing Angular workspace.
 
-> **Not yet published to npm.** This package currently ships as part of this workspace only. Build it from source (see the [Contributing guide](../../CONTRIBUTING.md)) until it's published.
-
 ## What `ng-add` does
 
 Running the schematic against an Angular project:
@@ -20,9 +18,8 @@ Running the schematic against an Angular project:
 | `project`        | `string`   | -       | The Angular project to configure (required).    |
 | `defaultLang`    | `string`   | `en`    | The default language tag (BCP-47).              |
 | `additionalLangs`| `string[]` | `[]`    | Additional language tags to scaffold catalogs for. |
-| `ssr`            | `boolean`  | `false` | Reserved for SSR provider setup.                |
 
-## Usage (once published)
+## Usage
 
 ```bash
 ng add @ngx-runtime-i18n/schematics --default-lang=en --additional-langs=hi,de

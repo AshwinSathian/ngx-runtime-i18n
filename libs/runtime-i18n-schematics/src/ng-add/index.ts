@@ -45,6 +45,15 @@ function readOwnVersion(): string {
   return pkg.version;
 }
 
+// ponytail: pins @ngx-runtime-i18n/angular and /core to this schematics
+// package's own version, on the assumption all @ngx-runtime-i18n packages
+// release in lockstep. That assumption has already broken once (primeng
+// 3.0.0 shipped standalone, out of lockstep - see CHANGELOG.md). If
+// schematics ever diverges the same way, this pins a version range that may
+// not match what's actually compatible. Upgrade path: bundle each
+// dependency's own package.json as a schematics build asset and read its
+// real version instead of reusing readOwnVersion() for every package.
+
 function addDependencies(): Rule {
   return (tree: Tree) => {
     const pkgPath = '/package.json';
@@ -104,8 +113,15 @@ function patchAppConfig(options: Schema): Rule {
 
       let updated = content;
 
-      // Add import if not present
-      if (!updated.includes('@ngx-runtime-i18n/angular')) {
+      // Add the import only if this exact symbol isn't already imported from
+      // this module - checking for the module specifier alone (as before)
+      // wrongly skipped adding the import whenever the app already imported
+      // ANYTHING else from '@ngx-runtime-i18n/angular' (e.g. I18nService),
+      // while still injecting a call to the now-undefined provideRuntimeI18n.
+      const hasProvideRuntimeI18nImport = new RegExp(
+        `import\\s*\\{[^}]*\\bprovideRuntimeI18n\\b[^}]*\\}\\s*from\\s*['"]@ngx-runtime-i18n/angular['"]`
+      ).test(updated);
+      if (!hasProvideRuntimeI18nImport) {
         updated = `${importStatement}\n${updated}`;
       }
 
@@ -128,6 +144,15 @@ function patchAppConfig(options: Schema): Rule {
       tree.overwrite(configPath, updated);
       return;
     }
+
+    // None of the candidate paths existed at all (NgModule-based app, a
+    // non-standard layout, or the wrong --project) - fail loudly instead of
+    // silently completing with provideRuntimeI18n() never wired in.
+    throw new SchematicsException(
+      `Could not find an app.config.ts at any of: ${candidates.join(', ')}. ` +
+        `Add provideRuntimeI18n() to your ApplicationConfig manually — see the ` +
+        `@ngx-runtime-i18n/angular README for the Quick Start snippet.`
+    );
   };
 }
 
