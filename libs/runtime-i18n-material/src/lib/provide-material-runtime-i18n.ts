@@ -2,6 +2,7 @@ import { EnvironmentProviders, inject, provideAppInitializer, effect } from '@an
 import { MatPaginatorIntl } from '@angular/material/paginator';
 import { MatSortHeaderIntl } from '@angular/material/sort';
 import { MatStepperIntl } from '@angular/material/stepper';
+import { MatDatepickerIntl } from '@angular/material/datepicker';
 import { I18nService } from '@ngx-runtime-i18n/angular';
 import type { MaterialI18nLabels } from './material-i18n-labels';
 
@@ -25,6 +26,7 @@ export function applyMaterialLabels(
   paginatorIntl: MatPaginatorIntl | null,
   sortIntl: MatSortHeaderIntl | null,
   stepperIntl: MatStepperIntl | null,
+  datepickerIntl: MatDatepickerIntl | null,
   onApplied?: (lang: string) => void,
 ): void {
   if (paginatorIntl && labels.paginator) {
@@ -39,8 +41,9 @@ export function applyMaterialLabels(
     Object.assign(stepperIntl, labels.stepper);
     stepperIntl.changes.next();
   }
-  if (labels.datepicker) {
-    // Datepicker Intl is handled per-token by apps; expose via onApplied callback
+  if (datepickerIntl && labels.datepicker) {
+    Object.assign(datepickerIntl, labels.datepicker);
+    datepickerIntl.changes.next();
   }
   onApplied?.(lang);
 }
@@ -64,6 +67,7 @@ export function provideMaterialRuntimeI18n(
     const paginatorIntl = inject(MatPaginatorIntl, { optional: true });
     const sortIntl = inject(MatSortHeaderIntl, { optional: true });
     const stepperIntl = inject(MatStepperIntl, { optional: true });
+    const datepickerIntl = inject(MatDatepickerIntl, { optional: true });
     const cache = new Map<string, MaterialI18nLabels>();
 
     effect(() => {
@@ -71,16 +75,19 @@ export function provideMaterialRuntimeI18n(
       const cached = cache.get(lang);
 
       if (cached) {
-        applyMaterialLabels(cached, lang, paginatorIntl, sortIntl, stepperIntl, options.onApplied);
+        applyMaterialLabels(cached, lang, paginatorIntl, sortIntl, stepperIntl, datepickerIntl, options.onApplied);
         return;
       }
 
-      Promise.resolve(options.resolveLabels(lang))
+      // resolveLabels is caller-supplied and may throw synchronously (not just
+      // reject); wrap in Promise.resolve()'s .then() chain via an async IIFE
+      // so both failure modes land in the same catch.
+      (async () => options.resolveLabels(lang))()
         .then((labels) => {
           if (!labels) return;
           cache.set(lang, labels);
           if (i18n.lang() !== lang) return;
-          applyMaterialLabels(labels, lang, paginatorIntl, sortIntl, stepperIntl, options.onApplied);
+          applyMaterialLabels(labels, lang, paginatorIntl, sortIntl, stepperIntl, datepickerIntl, options.onApplied);
         })
         .catch((err) => {
           console.error(`${LOG_TOPIC} failed to apply labels for "${lang}"`, err);

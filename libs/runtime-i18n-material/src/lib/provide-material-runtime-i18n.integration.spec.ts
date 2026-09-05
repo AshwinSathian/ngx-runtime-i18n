@@ -36,4 +36,35 @@ describe('provideMaterialRuntimeI18n (real DI wiring)', () => {
     const paginatorIntl = TestBed.inject(MatPaginatorIntl);
     expect(paginatorIntl.itemsPerPageLabel).toBe('Items:');
   });
+
+  it('does not throw out of effect() when resolveLabels throws synchronously', async () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    TestBed.configureTestingModule({
+      providers: [
+        provideRuntimeI18n({
+          defaultLang: 'en',
+          supported: ['en'],
+          fetchCatalog: async () => ({}),
+        }),
+        provideMaterialRuntimeI18n({
+          resolveLabels: () => {
+            throw new Error('boom');
+          },
+        }),
+      ],
+    });
+
+    const fixture = TestBed.createComponent(HostCmp);
+    expect(() => fixture.detectChanges()).not.toThrow();
+
+    await TestBed.inject(ApplicationRef).whenStable();
+    await Promise.resolve();
+
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining('failed to apply labels'),
+      expect.any(Error)
+    );
+    consoleError.mockRestore();
+  });
 });

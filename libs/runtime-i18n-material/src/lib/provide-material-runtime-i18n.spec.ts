@@ -23,27 +23,42 @@ const createMockStepperIntl = () => ({
   changes: { next: jest.fn() },
 });
 
+const createMockDatepickerIntl = () => ({
+  openCalendarLabel: 'Open calendar',
+  prevMonthLabel: 'Previous month',
+  nextMonthLabel: 'Next month',
+  prevYearLabel: 'Previous year',
+  nextYearLabel: 'Next year',
+  switchToMonthViewLabel: 'Choose date',
+  switchToMultiYearViewLabel: 'Choose month and year',
+  changes: { next: jest.fn() },
+});
+
 describe('applyMaterialLabels', () => {
   const enLabels: MaterialI18nLabels = {
     paginator: { itemsPerPageLabel: 'Items per page:', nextPageLabel: 'Next' },
     sort: { sortButtonLabel: () => 'Sort' },
     stepper: { optionalLabel: 'Optional' },
+    datepicker: { openCalendarLabel: 'Open calendar' },
   };
   const deLabels: MaterialI18nLabels = {
     paginator: { itemsPerPageLabel: 'Einträge pro Seite:', nextPageLabel: 'Weiter' },
     sort: { sortButtonLabel: () => 'Sortieren' },
     stepper: { optionalLabel: 'Optional (DE)' },
+    datepicker: { openCalendarLabel: 'Kalender öffnen' },
   };
 
   let paginatorIntl: ReturnType<typeof createMockPaginatorIntl>;
   let sortIntl: ReturnType<typeof createMockSortIntl>;
   let stepperIntl: ReturnType<typeof createMockStepperIntl>;
+  let datepickerIntl: ReturnType<typeof createMockDatepickerIntl>;
   let onApplied: jest.Mock<void, [string]>;
 
   beforeEach(() => {
     paginatorIntl = createMockPaginatorIntl();
     sortIntl = createMockSortIntl();
     stepperIntl = createMockStepperIntl();
+    datepickerIntl = createMockDatepickerIntl();
     onApplied = jest.fn();
   });
 
@@ -52,44 +67,59 @@ describe('applyMaterialLabels', () => {
   });
 
   it('applies paginator labels and notifies changes', () => {
-    applyMaterialLabels(enLabels, 'en', paginatorIntl as never, null, null, onApplied);
+    applyMaterialLabels(enLabels, 'en', paginatorIntl as never, null, null, null, onApplied);
     expect(paginatorIntl.itemsPerPageLabel).toBe('Items per page:');
     expect(paginatorIntl.nextPageLabel).toBe('Next');
     expect(paginatorIntl.changes.next).toHaveBeenCalled();
   });
 
   it('applies sort labels and notifies changes', () => {
-    applyMaterialLabels(enLabels, 'en', null, sortIntl as never, null, onApplied);
+    applyMaterialLabels(enLabels, 'en', null, sortIntl as never, null, null, onApplied);
     expect(sortIntl.sortButtonLabel('col')).toBe('Sort');
     expect(sortIntl.changes.next).toHaveBeenCalled();
   });
 
   it('applies stepper labels and notifies changes', () => {
-    applyMaterialLabels(enLabels, 'en', null, null, stepperIntl as never, onApplied);
+    applyMaterialLabels(enLabels, 'en', null, null, stepperIntl as never, null, onApplied);
     expect(stepperIntl.optionalLabel).toBe('Optional');
     expect(stepperIntl.changes.next).toHaveBeenCalled();
   });
 
+  it('applies datepicker labels and notifies changes', () => {
+    applyMaterialLabels(enLabels, 'en', null, null, null, datepickerIntl as never, onApplied);
+    expect(datepickerIntl.openCalendarLabel).toBe('Open calendar');
+    expect(datepickerIntl.changes.next).toHaveBeenCalled();
+  });
+
   it('invokes the onApplied callback with the language', () => {
-    applyMaterialLabels(enLabels, 'en', paginatorIntl as never, sortIntl as never, stepperIntl as never, onApplied);
+    applyMaterialLabels(
+      enLabels, 'en',
+      paginatorIntl as never, sortIntl as never, stepperIntl as never, datepickerIntl as never,
+      onApplied,
+    );
     expect(onApplied).toHaveBeenCalledWith('en');
   });
 
   it('applies de labels correctly', () => {
-    applyMaterialLabels(deLabels, 'de', paginatorIntl as never, sortIntl as never, stepperIntl as never, onApplied);
+    applyMaterialLabels(
+      deLabels, 'de',
+      paginatorIntl as never, sortIntl as never, stepperIntl as never, datepickerIntl as never,
+      onApplied,
+    );
     expect(paginatorIntl.itemsPerPageLabel).toBe('Einträge pro Seite:');
     expect(stepperIntl.optionalLabel).toBe('Optional (DE)');
+    expect(datepickerIntl.openCalendarLabel).toBe('Kalender öffnen');
     expect(onApplied).toHaveBeenCalledWith('de');
   });
 
   it('is a no-op when all intl services are null', () => {
-    expect(() => applyMaterialLabels(enLabels, 'en', null, null, null, onApplied)).not.toThrow();
+    expect(() => applyMaterialLabels(enLabels, 'en', null, null, null, null, onApplied)).not.toThrow();
     expect(onApplied).toHaveBeenCalledWith('en');
   });
 
   it('skips paginator when labels have no paginator section', () => {
     const minimalLabels: MaterialI18nLabels = {};
-    applyMaterialLabels(minimalLabels, 'en', paginatorIntl as never, null, null, onApplied);
+    applyMaterialLabels(minimalLabels, 'en', paginatorIntl as never, null, null, null, onApplied);
     expect(paginatorIntl.changes.next).not.toHaveBeenCalled();
   });
 
@@ -99,11 +129,13 @@ describe('applyMaterialLabels', () => {
       paginatorIntl as never,
       sortIntl as never,
       stepperIntl as never,
+      datepickerIntl as never,
       onApplied,
     );
     expect(paginatorIntl.changes.next).toHaveBeenCalled();
     expect(sortIntl.changes.next).toHaveBeenCalled();
     expect(stepperIntl.changes.next).toHaveBeenCalled();
+    expect(datepickerIntl.changes.next).toHaveBeenCalled();
     expect(onApplied).toHaveBeenCalledTimes(1);
   });
 });
