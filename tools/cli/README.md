@@ -2,7 +2,11 @@
 
 CLI for `@ngx-runtime-i18n` that scans your source for translation key usage and validates your catalogs against it. Ships as the `ngx-i18n` binary.
 
-> **Not yet published to npm.** This package currently ships as part of this workspace only. Build it from source (see the [Contributing guide](../../CONTRIBUTING.md)) until it's published.
+## Install
+
+```bash
+npm i -D @ngx-runtime-i18n/cli
+```
 
 ## Commands
 
@@ -35,6 +39,12 @@ ngx-i18n check --catalog public/i18n --langs en,hi,de --src src --fail-on-missin
 | `--manifest`         | -             | Use a pre-computed manifest JSON (from `extract`) instead of re-scanning. |
 | `--fail-on-missing`  | `false`       | Exit with code `1` if any catalog is missing keys.              |
 | `--fail-on-unused`   | `false`       | Exit with code `1` if any catalog has unused keys.              |
+
+`--src` or `--manifest` is required — `check` refuses to run with neither, rather than silently reporting a clean pass on zero used keys.
+
+Unused keys are always computed against the catalog for the *first* `--langs` entry (e.g. `--langs de,fr` uses `de` as the reference) and printed as an informational listing even without `--fail-on-unused`; that flag only controls whether their presence fails the run.
+
+A call whose key argument isn't a string literal (a template literal, a variable, ...) can't be statically resolved by either command. Instead of silently vanishing from both "used" and "unused" reporting, it's printed as a `⚠ N i18n call(s) use a dynamic/computed key` warning with the exact `file:line`.
 
 Typical CI usage: run `extract` once, then `check --manifest translation-manifest.json --fail-on-missing` per language to catch drift between code and catalogs before merge.
 

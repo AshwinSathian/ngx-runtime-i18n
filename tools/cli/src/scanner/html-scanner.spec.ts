@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { scanHtmlFile, scanHtmlDirectory } from './html-scanner';
+import { scanHtmlFile, scanHtmlDirectory, scanHtmlFileForDynamicKeys } from './html-scanner';
 
 describe('html-scanner', () => {
   let tmpDir: string;
@@ -36,6 +36,42 @@ describe('html-scanner', () => {
       const file = path.join(tmpDir, 'plain.html');
       fs.writeFileSync(file, '<div>Hello</div>');
       expect(scanHtmlFile(file)).toHaveLength(0);
+    });
+
+    it('extracts a hyphenated key, matching the TS scanner charset', () => {
+      const file = path.join(tmpDir, 'hyphen.html');
+      fs.writeFileSync(file, `{{ 'hyphen-key' | i18n }}`);
+      const results = scanHtmlFile(file);
+      expect(results.map(r => r.key)).toContain('hyphen-key');
+    });
+
+    it('finds a key and pipe split across lines', () => {
+      const file = path.join(tmpDir, 'multiline.html');
+      fs.writeFileSync(file, `{{ 'multiline.key'\n  | i18n }}`);
+      const results = scanHtmlFile(file);
+      expect(results.map(r => r.key)).toContain('multiline.key');
+    });
+
+    it('ignores a key referenced only inside an HTML comment', () => {
+      const file = path.join(tmpDir, 'commented.html');
+      fs.writeFileSync(file, `<!-- {{ 'commented.html.key' | i18n }} -->`);
+      const results = scanHtmlFile(file);
+      expect(results.map(r => r.key)).not.toContain('commented.html.key');
+    });
+  });
+
+  describe('scanHtmlFileForDynamicKeys()', () => {
+    it('flags a piped expression that is not a bare string literal', () => {
+      const file = path.join(tmpDir, 'dynamic.html');
+      fs.writeFileSync(file, `{{ someExpr | i18n }}`);
+      const warnings = scanHtmlFileForDynamicKeys(file);
+      expect(warnings).toHaveLength(1);
+    });
+
+    it('does not flag a bare string literal pipe usage', () => {
+      const file = path.join(tmpDir, 'static.html');
+      fs.writeFileSync(file, `{{ 'static.key' | i18n }}`);
+      expect(scanHtmlFileForDynamicKeys(file)).toHaveLength(0);
     });
   });
 

@@ -38,5 +38,10 @@ describe('catalog reader', () => {
       );
       expect(() => readCatalog(tmpDir, 'broken')).toThrow(filePath);
     });
+
+    it('rejects a lang value that would escape the catalog directory', () => {
+      expect(() => readCatalog(tmpDir, '../../secret')).toThrow(/Invalid language code/);
+      expect(() => readCatalog(tmpDir, '../secret')).toThrow(/Invalid language code/);
+    });
   });
 });

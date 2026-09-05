@@ -52,7 +52,29 @@ describe('check command', () => {
       langs: ['en', 'de'],
       manifest: { keys: ['app.title'], sources: {} },
     });
-    expect(result.reports.find(r => r.lang === 'en')!.missing).toHaveLength(0);
-    expect(result.reports.find(r => r.lang === 'de')!.missing).toContain('app.title');
+    const enReport = result.reports.find(r => r.lang === 'en');
+    const deReport = result.reports.find(r => r.lang === 'de');
+    expect(enReport).toBeDefined();
+    expect(deReport).toBeDefined();
+    expect(enReport?.missing).toHaveLength(0);
+    expect(deReport?.missing).toContain('app.title');
+  });
+
+  it('throws instead of silently reporting a clean pass when neither src nor manifest is given', async () => {
+    writeCatalog('en', { app: { title: 'My App' } });
+    await expect(
+      check({ catalog: tmpDir, langs: ['en'], failOnMissing: true })
+    ).rejects.toThrow(/requires either "src".*or "manifest"/);
+  });
+
+  it('computes unused keys even when --fail-on-unused is not set', async () => {
+    writeCatalog('en', { app: { title: 'My App' }, orphan: { key: 'Unused' } });
+    const result = await check({
+      catalog: tmpDir,
+      langs: ['en'],
+      manifest: { keys: ['app.title'], sources: {} },
+    });
+    expect(result.unused).toContain('orphan.key');
+    expect(result.hasFailures).toBe(false);
   });
 });

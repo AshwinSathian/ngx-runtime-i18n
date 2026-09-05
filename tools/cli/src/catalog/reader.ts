@@ -15,6 +15,9 @@ export function flattenCatalog(obj: Record<string, unknown>, prefix = ''): strin
 }
 
 export function readCatalog(catalogDir: string, lang: string): string[] {
+  if (!/^[\w-]+$/.test(lang)) {
+    throw new Error(`Invalid language code "${lang}": expected letters, digits, "-", or "_" only.`);
+  }
   const filePath = path.join(catalogDir, `${lang}.json`);
   if (!fs.existsSync(filePath)) return [];
   const content = fs.readFileSync(filePath, 'utf-8');
