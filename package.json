@@ -27,7 +27,7 @@
     "publish:cli:dry": "cd tools/cli && npm publish --dry-run"
   },
   "dependencies": {
-    "@angular-devkit/build-angular": "22.1.3",
+    "@angular-devkit/build-angular": "22.2.2",
     "@angular/common": "22.1.1",
     "@angular/compiler": "22.1.1",
     "@angular/core": "22.1.1",
@@ -64,7 +64,7 @@
   "devDependencies": {
     "@angular-devkit/core": "22.1.3",
     "@angular-devkit/schematics": "22.1.3",
-    "@angular/build": "22.1.3",
+    "@angular/build": "22.2.2",
     "@angular/cdk": "22.1.1",
     "@angular/cli": "22.1.3",
     "@angular/compiler-cli": "22.1.1",
