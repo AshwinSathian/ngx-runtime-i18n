@@ -1,4 +1,4 @@
-import { makeStateKey, TransferState } from '@angular/core';
+import { inject, InjectionToken, makeStateKey, TransferState } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { Catalog } from '@ngx-runtime-i18n/core';
 import {
@@ -60,5 +60,36 @@ describe('provideRuntimeI18nSsr', () => {
       );
       expect(ts.get(key, null)).toBe(catalog);
     }
+  });
+
+  describe('factory form (per-request snapshot)', () => {
+    const bootstrapKey = makeStateKey<{ lang: string; catalogs: Record<string, Catalog> }>(
+      getRuntimeI18nBootstrapStateKey(DEFAULT_RUNTIME_I18N_STATE_KEY_PREFIX)
+    );
+    // Stands in for Angular's REQUEST_CONTEXT, which AngularNodeAppEngine.handle(req, ctx) fills.
+    const CTX = new InjectionToken<RuntimeI18nSsrSnapshot | null>('ctx');
+
+    it('resolves the snapshot in an injection context, so it can read REQUEST_CONTEXT', async () => {
+      await TestBed.configureTestingModule({
+        providers: [
+          TransferState,
+          { provide: CTX, useValue: { lang: 'de', bootstrap: catalogs.de } },
+          provideRuntimeI18nSsr(() => inject(CTX)),
+        ],
+      }).compileComponents();
+
+      expect(TestBed.inject(TransferState).get(bootstrapKey, null)).toEqual({
+        lang: 'de',
+        catalogs: { de: catalogs.de },
+      });
+    });
+
+    it('seeds nothing when the factory returns null (e.g. a prerender with no request)', async () => {
+      await TestBed.configureTestingModule({
+        providers: [TransferState, { provide: CTX, useValue: null }, provideRuntimeI18nSsr(() => inject(CTX))],
+      }).compileComponents();
+
+      expect(TestBed.inject(TransferState).hasKey(bootstrapKey)).toBe(false);
+    });
   });
 });

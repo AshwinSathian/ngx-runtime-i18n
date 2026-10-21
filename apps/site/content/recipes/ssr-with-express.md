@@ -9,8 +9,8 @@ packages: ['@ngx-runtime-i18n/angular']
 This recipe walks through `apps/demo-ssr` in the repo, a complete Express + Angular SSR server that reads catalog JSON on each request and seeds TransferState before the response goes out. Run it locally with:
 
 ```bash
-nx build demo-ssr
-nx serve demo-ssr   # http://localhost:4000
+nx serve demo-ssr                              # dev server, http://localhost:4200
+nx build demo-ssr && node dist/apps/demo-ssr/server/server.mjs   # production build, http://localhost:4000
 ```
 
 ## Reading catalogs from the built output
@@ -63,37 +63,56 @@ function buildSnapshot(req: Request): RuntimeI18nSsrSnapshot {
 
 `bootstrap` holds the active language's catalog; `catalogs` seeds any additional locales the client might need without an extra fetch.
 
-## Seeding TransferState
+## Getting the snapshot into the app
 
-`provideRuntimeI18nSsr()` seeds TransferState with the same keys `provideRuntimeI18n()` reads on the client. Wrap it in a small helper:
-
-```ts
-// i18n.server.providers.ts
-import { EnvironmentProviders } from '@angular/core';
-import { RuntimeI18nSsrSnapshot, provideRuntimeI18nSsr } from '@ngx-runtime-i18n/angular';
-
-export function i18nServerProviders(snapshot: RuntimeI18nSsrSnapshot): EnvironmentProviders {
-  return provideRuntimeI18nSsr(snapshot);
-}
-```
-
-<content-callout data-type="tip">
-
-`provideRuntimeI18nSsr()` returns `EnvironmentProviders`, an opaque value, not an array (this changed in v2.1.0 when the package moved off `APP_INITIALIZER` to `provideEnvironmentInitializer()`). Put the result directly in a `providers` array — spreading it (`...provideRuntimeI18nSsr(...)`) no longer works.
-
-</content-callout>
-
-Pass the snapshot into `AngularNodeAppEngine.handle()` for every request. Register the handler with no path. Angular 22 projects ship Express 5, whose router throws `Missing parameter name` at start-up for an unnamed wildcard like `'/**'` or `'*'`, and a path-less `app.use()` already matches everything:
+`AngularNodeAppEngine.handle(request, requestContext)` takes a request context as its second argument, not providers. Whatever you pass there shows up inside the app as Angular's `REQUEST_CONTEXT` token. So the server passes the snapshot as the context:
 
 ```ts
+// server.ts
 app.use((req, res, next) => {
-  const snapshot = buildSnapshot(req);
   angularApp
-    .handle(req, { providers: [i18nServerProviders(snapshot)] })
+    .handle(req, buildSnapshot(req)) // the second argument becomes REQUEST_CONTEXT
     .then((response) => (response ? writeResponseToNodeResponse(response, res) : next()))
     .catch(next);
 });
 ```
+
+Register the handler with no path. Angular 22 projects ship Express 5, whose router throws `Missing parameter name` at start-up for an unnamed wildcard like `'/**'` or `'*'`, and a path-less `app.use()` already matches every request.
+
+Then the server config reads it back. `provideRuntimeI18nSsr()` accepts a factory, which runs in an injection context, so it can `inject(REQUEST_CONTEXT)`:
+
+```ts
+// app.config.server.ts
+import { inject, mergeApplicationConfig, REQUEST_CONTEXT, type ApplicationConfig } from '@angular/core';
+import { provideServerRendering, withRoutes } from '@angular/ssr';
+import { provideRuntimeI18nSsr, type RuntimeI18nSsrSnapshot } from '@ngx-runtime-i18n/angular';
+
+const serverConfig: ApplicationConfig = {
+  providers: [
+    provideServerRendering(withRoutes(serverRoutes)),
+    provideRuntimeI18nSsr(
+      () => inject(REQUEST_CONTEXT, { optional: true }) as RuntimeI18nSsrSnapshot | null
+    ),
+  ],
+};
+```
+
+During prerendering there's no request, so `REQUEST_CONTEXT` is `null`. The factory returns nothing, nothing is seeded, and the client loads catalogs as usual.
+
+<content-callout data-type="warning">
+
+Before 3.0, this recipe passed `{ providers: [...] }` as the second argument to `handle()`. That's the old `CommonEngine` API. `AngularNodeAppEngine` treats it as an opaque context and ignores it, so the snapshot never reached the app. If your server still does that, switch to the pattern above.
+
+</content-callout>
+
+The routes that use a per-request language have to render on the server, not at build time. A prerendered page is built once, before any request exists, so it can't follow `?lang`, a cookie or `Accept-Language`:
+
+```ts
+// app.routes.server.ts
+export const serverRoutes: ServerRoute[] = [{ path: '**', renderMode: RenderMode.Server }];
+```
+
+`provideRuntimeI18nSsr()` returns `EnvironmentProviders`, an opaque value, so put it straight into `providers`. Don't spread it.
 
 ## Hydrating on the client
 

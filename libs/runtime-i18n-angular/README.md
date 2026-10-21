@@ -182,23 +182,35 @@ Use this to preload catalogs during login, before showing a heavy route, or whil
 
 See `apps/demo-ssr` in this repo for a complete Express + Angular SSR demo (including TransferState seeding and catalog fallbacks).
 
-On the server, use the exported helper to seed TransferState with the same keys that `provideRuntimeI18n()` reads on the client:
+On the server, `provideRuntimeI18nSsr()` seeds TransferState with the same keys `provideRuntimeI18n()` reads on the client. With `AngularNodeAppEngine`, pass the per-request snapshot as `handle()`'s second argument, the request context, and read it back with `REQUEST_CONTEXT`:
 
 ```ts
-// i18n.server.providers.ts
-import { EnvironmentProviders } from '@angular/core';
-import { RuntimeI18nSsrSnapshot, provideRuntimeI18nSsr } from '@ngx-runtime-i18n/angular';
-
-export function i18nServerProviders(snapshot: RuntimeI18nSsrSnapshot): EnvironmentProviders {
-  return provideRuntimeI18nSsr(snapshot);
-}
+// server.ts
+app.use((req, res, next) => {
+  angularApp
+    .handle(req, buildSnapshot(req)) // the second argument becomes REQUEST_CONTEXT
+    .then((response) => (response ? writeResponseToNodeResponse(response, res) : next()))
+    .catch(next);
+});
 ```
-
-Include the result directly in your `providers` array — don't spread it (`EnvironmentProviders` is an opaque value, not an array):
 
 ```ts
-angularApp.handle(req, { providers: [i18nServerProviders(snapshot)] });
+// app.config.server.ts
+import { inject, mergeApplicationConfig, REQUEST_CONTEXT, type ApplicationConfig } from '@angular/core';
+import { provideServerRendering, withRoutes } from '@angular/ssr';
+import { provideRuntimeI18nSsr, type RuntimeI18nSsrSnapshot } from '@ngx-runtime-i18n/angular';
+
+const serverConfig: ApplicationConfig = {
+  providers: [
+    provideServerRendering(withRoutes(serverRoutes)),
+    provideRuntimeI18nSsr(
+      () => inject(REQUEST_CONTEXT, { optional: true }) as RuntimeI18nSsrSnapshot | null
+    ),
+  ],
+};
 ```
+
+`handle()`'s second argument is a request context, not providers, so `{ providers: [...] }` there is silently ignored. Routes that pick the language per request need `RenderMode.Server`. `provideRuntimeI18nSsr()` also still accepts a plain snapshot, and its result is an opaque `EnvironmentProviders` value, so don't spread it.
 
 `RuntimeI18nSsrSnapshot.bootstrap` holds the active language catalog and `catalogs` can optionally seed additional locales. Everything defaults to the same prefix as `provideRuntimeI18n()` (`@ngx-runtime-i18n/core`), but pass `stateKeyPrefix` to both helpers when you override it.
 

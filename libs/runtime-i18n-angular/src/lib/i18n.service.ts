@@ -119,8 +119,14 @@ export class I18nService {
     }
 
     // Defer initial work until app is stable (prevents pre-hydration mutations).
+    // Startup must run once. It awaits locale and catalog loading before it can
+    // unsubscribe, and the language change it makes can itself make the app unstable
+    // and stable again (it does during an SSR render). A second run would find the
+    // TransferState snapshot already removed and reset the language to defaultLang.
+    let started = false;
     const sub = this.appRef.isStable.subscribe(async (stable) => {
-      if (!stable) return;
+      if (!stable || started) return;
+      started = true;
 
       let initial = this.cfg.defaultLang;
 
@@ -136,7 +142,10 @@ export class I18nService {
             catalogs: {},
           });
           initial = snap.lang || initial;
-          this.ts.remove(key);
+          // Only the browser consumes the snapshot. On the server it has to stay put:
+          // TransferState is serialized after this runs, and removing it here would
+          // drop it from the HTML, so the browser would hydrate in defaultLang.
+          if (this.isBrowserPlatform) this.ts.remove(key);
           Object.entries(snap.catalogs).forEach(([l, c]) => {
             if (!this.catalogs.has(l)) this.catalogs.set(l, c as Catalog);
           });

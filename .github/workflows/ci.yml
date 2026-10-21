@@ -62,3 +62,44 @@ jobs:
 
       - name: Test tooling
         run: npx nx test cli --runInBand --skip-nx-cache=false
+
+  apps:
+    # The libs job never builds an app or starts a server, so a broken SSR server
+    # (the Express 5 '/**' crash, a lost TransferState snapshot) used to pass CI.
+    name: Apps & SSR e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+      NX_DAEMON: false
+      NX_CLOUD: 'false'
+      NX_DISABLE_CLOUD: 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Use Node.js >=22.22.3 with npm cache
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '>=22.22.3'
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --prefer-offline --no-audit --fund=false --legacy-peer-deps
+
+      - name: Disable Nx Cloud via nx.json patch
+        run: |
+          node -e "const fs=require('fs');const p='./nx.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));if(j.nxCloudId){delete j.nxCloudId;fs.writeFileSync(p,JSON.stringify(j,null,2));}"
+
+      - name: Build apps
+        run: npx nx run-many -t build -p=demo,demo-ssr,site
+
+      - name: Test site
+        run: npx nx test site --runInBand
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: SSR e2e (per-request language, hydration)
+        run: npx nx e2e demo-ssr-e2e -- --project=chromium
