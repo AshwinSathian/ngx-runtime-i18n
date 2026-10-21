@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### `@ngx-runtime-i18n/core`
+
+- **Breaking:** ICU apostrophe quoting. `''` now renders as `'`, and a `'` directly before `{` or `}`, or before `#` inside a `plural`/`selectordinal` block, quotes text up to the next lone `'`. A lone apostrophe anywhere else (`don't`, or `'#42'` outside a plural) is still literal. Messages that wrapped a placeholder in straight quotes, like `"Delete '{name}'?"`, now render `{name}` as literal text. Write `''{name}''` to keep the quotes around the value, or use typographic quotes. Catalogs exported from ICU-aware translation tools already double their apostrophes, and those now render correctly instead of showing `''`.
+- **Feature:** ICU `number`, `date` and `time` arguments: `{n, number}`, `{n, number, integer|percent|::currency/XXX}` and `{d, date|time, short|medium|long|full}`, formatted with `Intl.NumberFormat`/`Intl.DateTimeFormat` for the active language. Formatters are cached per kind, language and style, capped at 256 entries so a server passing request-derived languages can't grow the cache without limit. A missing argument is left as written. A value that can't be formatted renders as `String(value)` instead of throwing, and is never read again as a `{placeholder}`. That covers an invalid date, a date value that isn't a `Date` or a number, a non-numeric number, a malformed currency code and an invalid language tag. Dates render in the runtime's local time zone. `ExtractParams` types these arguments as `number` and `Date | number`; before, it produced a param literally named `"d, date"`.
+- **Fix:** `#` in `plural`/`selectordinal` branches rendered `String(n)` (`1234`) in every language. It's now formatted for the locale (`1,234` in `en`, `1.234` in `de`), as ICU specifies. Like ICU, this rounds a fractional count to three decimal places, and `-0` renders as `0`.
+- **Fix:** `{toString}`, `{constructor}` and other `Object.prototype` names were read off the params object's prototype, so they rendered `function toString() { [native code] }`. Params are now read as own properties only, and those placeholders stay as written.
+- **Fix:** `plural`, `select` and `selectordinal` blocks only recognised `\w+` argument names, so `{item-count, plural, ...}` rendered as literal text while `{item-count}` interpolated fine. All argument patterns now accept the same dotted and hyphenated names as `{user.name}`.
+- **Fix:** `ExtractParams` only trimmed spaces after a keyword's comma. It now trims tabs, newlines and trailing spaces too, so `{n, number }` types as `{ n: number }`.
+
 ### `@ngx-runtime-i18n/cli`
 
 - **Breaking:** requires Node.js 22.12 or newer (`engines.node` was `>=18`), because it now depends on `commander@15`, which is ESM-only and sets that floor. Node 18 and 20 are both past end-of-life.
