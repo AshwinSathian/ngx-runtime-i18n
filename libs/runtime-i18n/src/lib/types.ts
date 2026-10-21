@@ -119,12 +119,29 @@ type SplitBalanced<S extends string, Depth extends unknown[] = [], Token extends
       : SplitBalanced<Rest, Depth, `${Token}${Ch}`>
     : never;
 
+/** Whitespace the runtime scanner's `\s*` accepts in practice. @internal */
+type Whitespace = ' ' | '\t' | '\n' | '\r';
+
 /** Strips leading whitespace, mirroring the runtime scanner's `\s*` after each comma. @internal */
-type TrimLeft<S extends string> = S extends ` ${infer Rest}` ? TrimLeft<Rest> : S;
+type TrimLeft<S extends string> = S extends `${Whitespace}${infer Rest}` ? TrimLeft<Rest> : S;
+
+/** Strips trailing whitespace, mirroring the `\s*` before an argument's closing brace. @internal */
+type TrimRight<S extends string> = S extends `${infer Rest}${Whitespace}` ? TrimRight<Rest> : S;
+
+/** The ICU keyword after an argument's first comma, with any `, style` dropped. @internal */
+type ArgKeyword<S extends string> = TrimRight<S extends `${infer Keyword},${string}` ? Keyword : S>;
+
+/** Param type for an ICU argument keyword; `unknown` means "not a known keyword". @internal */
+type ArgType<Keyword extends string> =
+  Keyword extends 'plural' | 'selectordinal' | 'number' ? number
+  : Keyword extends 'select' ? string | number
+  : Keyword extends 'date' | 'time' ? Date | number
+  : unknown;
 
 /**
  * Extracts interpolation param names from an ICU message string literal.
- * Works for simple {name} tokens and ICU keyword blocks {count, plural, ...},
+ * Works for simple {name} tokens, ICU keyword blocks {count, plural, ...}, and
+ * {n, number} / {d, date} / {d, time} arguments (typed `number` / `Date | number`),
  * balancing nested braces inside plural/select clause bodies (e.g. `{# items}`)
  * instead of stopping at the first `}`, and tolerating arbitrary whitespace
  * after the comma the same way the runtime scanner's `\s*` does.
@@ -134,13 +151,9 @@ export type ExtractParams<S extends string> =
   S extends `${string}{${infer AfterBrace}`
     ? SplitBalanced<AfterBrace> extends [infer Token extends string, infer Rest extends string]
       ? Token extends `${infer Arg},${infer AfterComma}`
-        ? TrimLeft<AfterComma> extends `${infer Keyword},${string}`
-          ? Keyword extends 'plural' | 'selectordinal'
-            ? { [K in Arg]: number } & ExtractParams<Rest>
-            : Keyword extends 'select'
-            ? { [K in Arg]: string | number } & ExtractParams<Rest>
-            : { [K in Token]: string | number } & ExtractParams<Rest>
-          : { [K in Token]: string | number } & ExtractParams<Rest>
+        ? unknown extends ArgType<ArgKeyword<TrimLeft<AfterComma>>>
+          ? { [K in Token]: string | number } & ExtractParams<Rest>
+          : { [K in Arg]: ArgType<ArgKeyword<TrimLeft<AfterComma>>> } & ExtractParams<Rest>
         : { [K in Token]: string | number } & ExtractParams<Rest>
       : Record<never, never>
     : Record<never, never>;

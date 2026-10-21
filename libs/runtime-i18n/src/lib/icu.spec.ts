@@ -251,4 +251,181 @@ describe('formatIcu', () => {
       expect(s).toBe('No items in your cart');
     });
   });
+
+  describe('number, date, and time arguments', () => {
+    const fmt = (lang: string, msg: string, params: Record<string, unknown> = {}) =>
+      formatIcu(lang, 'm', { m: msg }, params);
+    const day = new Date(2026, 0, 15, 14, 30);
+
+    it('formats {n, number} with the active locale', () => {
+      expect(fmt('en', 'Total: {n, number}', { n: 1234.5 })).toBe('Total: 1,234.5');
+      expect(fmt('de', 'Total: {n, number}', { n: 1234.5 })).toBe('Total: 1.234,5');
+    });
+
+    it('supports the integer and percent number styles', () => {
+      expect(fmt('en', '{n, number, integer}', { n: 1234.56 })).toBe('1,235');
+      expect(fmt('en', '{n, number, percent}', { n: 0.25 })).toBe('25%');
+    });
+
+    it('supports a ::currency/XXX skeleton', () => {
+      expect(fmt('en', '{p, number, ::currency/EUR}', { p: 9.5 })).toBe(
+        new Intl.NumberFormat('en', { style: 'currency', currency: 'EUR' }).format(9.5)
+      );
+    });
+
+    it('formats {d, date} and {d, time} with the default medium style', () => {
+      expect(fmt('en', '{d, date}', { d: day })).toBe(
+        new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(day)
+      );
+      expect(fmt('en', '{d, time}', { d: day })).toBe(
+        new Intl.DateTimeFormat('en', { timeStyle: 'medium' }).format(day)
+      );
+    });
+
+    it('supports short/medium/long/full date and time styles', () => {
+      for (const style of ['short', 'medium', 'long', 'full'] as const) {
+        expect(fmt('fr', `{d, date, ${style}}`, { d: day })).toBe(
+          new Intl.DateTimeFormat('fr', { dateStyle: style }).format(day)
+        );
+        expect(fmt('fr', `{d, time, ${style}}`, { d: day })).toBe(
+          new Intl.DateTimeFormat('fr', { timeStyle: style }).format(day)
+        );
+      }
+    });
+
+    it('accepts an epoch-millisecond timestamp for date arguments', () => {
+      expect(fmt('en', '{d, date, long}', { d: day.getTime() })).toBe('January 15, 2026');
+    });
+
+    it('formats arguments nested inside plural and select branches', () => {
+      const msg = '{count, plural, one {# order, {total, number, ::currency/USD}} other {# orders, {total, number, ::currency/USD}}}';
+      expect(fmt('en', msg, { count: 1200, total: 5000 })).toBe('1,200 orders, $5,000.00');
+    });
+
+    it('leaves the placeholder intact when the param is missing, like {name}', () => {
+      expect(fmt('en', 'Due {d, date, short}', {})).toBe('Due {d, date, short}');
+    });
+
+    it('renders the raw value instead of throwing for an invalid date or number', () => {
+      expect(fmt('en', '{d, date}', { d: 'not-a-date' })).toBe('not-a-date');
+      expect(fmt('en', '{n, number}', { n: 'abc' })).toBe('abc');
+      expect(fmt('en', '[{n, number}]', { n: '' })).toBe('[]');
+    });
+
+    it('falls back to the raw value for a malformed currency code instead of throwing', () => {
+      expect(fmt('en', '{p, number, ::currency/notacode}', { p: 5 })).toBe('5');
+    });
+
+    it('formats a well-formed but unassigned currency code the way Intl does', () => {
+      expect(fmt('en', '{p, number, ::currency/XYZ}', { p: 5 })).toBe(
+        new Intl.NumberFormat('en', { style: 'currency', currency: 'XYZ' }).format(5)
+      );
+    });
+
+    it('falls back to the raw value for number, date and # when the language tag is invalid', () => {
+      expect(fmt('xx-!!', '{n, number}|{d, date}|{c, plural, other {# x}}', { n: 1234, d: 0, c: 1234 })).toBe(
+        '1234|0|1234 x'
+      );
+    });
+
+    it('renders only Date objects and finite numbers as dates, anything else as String(value)', () => {
+      expect(fmt('en', '{d, date}', { d: true })).toBe('true');
+      expect(fmt('en', '{d, date}', { d: '2026-01-15' })).toBe('2026-01-15');
+    });
+
+    it('never re-scans an unformattable value as a placeholder', () => {
+      expect(fmt('en', '{n, number}', { n: '{token}', token: 'SECRET' })).toBe('{token}');
+      expect(fmt('en', '{d, date}', { d: '{token}', token: 'SECRET' })).toBe('{token}');
+    });
+
+    it('does not resolve Object.prototype members as argument or placeholder values', () => {
+      expect(fmt('en', '{constructor, number}|{toString, date}|{toString}', {})).toBe(
+        '{constructor, number}|{toString, date}|{toString}'
+      );
+    });
+
+    it('renders negative zero as 0, in arguments and in #', () => {
+      expect(fmt('en', '{n, number}|{c, plural, other {# x}}', { n: -0, c: -0 })).toBe('0|0 x');
+    });
+
+    it('accepts whitespace around the keyword and style, matching ExtractParams', () => {
+      expect(fmt('en', '{n, number }|{d,\tdate , long}', { n: 1234, d: day })).toBe('1,234|January 15, 2026');
+    });
+
+    it('accepts dotted and hyphenated argument names, like {user.name}', () => {
+      expect(fmt('en', "{user.age, number}|{item-count, plural, one {# item} other {# items}}|{u.g, select, f {she} other {they}}", { 'user.age': 1234, 'item-count': 2, 'u.g': 'f' })).toBe('1,234|2 items|she');
+      expect(fmt('en', "{item-count, plural, other {'#'#}}", { 'item-count': 3 })).toBe('#3');
+    });
+
+    it('keeps formatting correctly when many distinct languages overflow the formatter cache', () => {
+      for (let i = 0; i < 300; i++) fmt(`en-x-k${i}`, '{n, number}', { n: 1 });
+      expect(fmt('de', '{n, number}', { n: 1234.5 })).toBe('1.234,5');
+      expect(fmt('en', '{n, number}', { n: 1234.5 })).toBe('1,234.5');
+    });
+
+    it('accepts an underscore-separated language tag', () => {
+      expect(fmt('de_DE', '{n, number}', { n: 1234.5 })).toBe('1.234,5');
+    });
+  });
+
+  describe('locale-aware # in plural branches', () => {
+    it('rounds a fractional # to three digits, like ICU and Intl.NumberFormat defaults', () => {
+      expect(formatIcu('en', 'cart.items', cat, { count: 1.23456 })).toBe('1.235 items in your cart');
+    });
+
+    it('formats # with the active locale instead of a raw String(n)', () => {
+      expect(formatIcu('en', 'cart.items', cat, { count: 1234 })).toBe('1,234 items in your cart');
+      expect(formatIcu('de', 'cart.items', cat, { count: 1234 })).toBe('1.234 items in your cart');
+    });
+  });
+
+  describe('ICU apostrophe quoting', () => {
+    const fmt = (msg: string, params: Record<string, unknown> = {}) =>
+      formatIcu('en', 'm', { m: msg }, params);
+
+    it("turns '' into a single apostrophe", () => {
+      expect(fmt("It''s {name}''s turn", { name: 'Ana' })).toBe("It's Ana's turn");
+    });
+
+    it('leaves a lone apostrophe that does not precede syntax as a literal', () => {
+      expect(fmt("Don't panic, {name}", { name: 'Ana' })).toBe("Don't panic, Ana");
+    });
+
+    it("renders a quoted '{...}' as literal text instead of a placeholder", () => {
+      expect(fmt("Use '{name}' as the token", { name: 'Ana' })).toBe('Use {name} as the token');
+    });
+
+    it("keeps a quoted '#' literal inside a plural branch", () => {
+      expect(fmt("{n, plural, other {Ticket '#'# of 9}}", { n: 3 })).toBe('Ticket #3 of 9');
+    });
+
+    it('does not let quoted braces unbalance a plural block', () => {
+      expect(fmt("{n, plural, one {one '}'} other {# '{'}}", { n: 2 })).toBe('2 {');
+    });
+
+    it("supports '' inside a quoted section", () => {
+      expect(fmt("'{it''s}'")).toBe("{it's}");
+    });
+
+    it("keeps the quotes around a value written as ''{name}'' (the documented migration)", () => {
+      expect(fmt("Delete ''{name}''?", { name: 'Ana' })).toBe("Delete 'Ana'?");
+    });
+
+    it("does not treat '# as a quote outside plural/selectordinal, where # is plain text", () => {
+      expect(fmt("Issue '#42' closed")).toBe("Issue '#42' closed");
+      expect(fmt("Tag '#fun and don't stop")).toBe("Tag '#fun and don't stop");
+    });
+
+    it("treats '# as a quote inside a select nested in a plural, where # is still the count", () => {
+      expect(fmt("{n, plural, other {{g, select, other {'#'#}}}}", { n: 2, g: 'x' })).toBe('#2');
+    });
+
+    it('leaves private-use characters in catalog text alone', () => {
+      expect(fmt('icon \uE000\uE001\uE002 here')).toBe('icon \uE000\uE001\uE002 here');
+    });
+
+    it('treats an unterminated quote as quoting to the end of the message', () => {
+      expect(fmt("Literal '{name} forever", { name: 'Ana' })).toBe('Literal {name} forever');
+    });
+  });
 });
