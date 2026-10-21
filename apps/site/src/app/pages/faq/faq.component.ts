@@ -67,7 +67,7 @@ export const FAQS: readonly Faq[] = [
   {
     question: 'Are all six packages published on npm?',
     answer:
-      'Yes. @ngx-runtime-i18n/core, @ngx-runtime-i18n/angular, @ngx-runtime-i18n/primeng, @ngx-runtime-i18n/material, @ngx-runtime-i18n/schematics, and @ngx-runtime-i18n/cli are all published at version 2.1.0, confirmed with npm view against the public registry while writing this page.',
+      'Yes, all six are on npm. @ngx-runtime-i18n/core, /angular, /material, /schematics and /cli are released together and share a version number (3.0.0 as of October 2026). @ngx-runtime-i18n/primeng has its own version line (3.0.1). The changelog lists what changed in each release.',
     link: { path: '/changelog', label: 'See the release history' },
   },
   {

@@ -133,7 +133,7 @@ const ROWS: readonly CompareRow[] = [
   {
     feature: 'npm package maturity',
     ngxRuntimeI18n:
-      '6 packages at npm 2.1.0 (core, angular, primeng, material, schematics, cli), confirmed via npm view on 2026-08-17',
+      '6 packages on npm: core, angular, material, schematics and cli at 3.0.0, primeng at 3.0.1, confirmed via npm view on 2026-10-21',
     ngxTranslate:
       '@ngx-translate/core at npm 18.0.0, confirmed via npm view on 2026-08-17',
     transloco:

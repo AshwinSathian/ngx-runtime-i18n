@@ -2,12 +2,10 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { PackageCardComponent } from '../../shared/package-card/package-card.component';
 
 // Descriptions sourced verbatim from root README.md's "Packages" table.
-// Publish status re-verified directly against the npm registry (`npm view
-// @ngx-runtime-i18n/<pkg> version`) rather than trusted from README prose,
-// since all six packages now resolve to 2.1.0 — the README's per-package
-// "Not yet published" notes for material/schematics/cli predate the 2.1.0
-// release (see CHANGELOG.md's 2.1.0 entry, which publishes those three for
-// the first time) and are stale at the time this page was written.
+// Publish status is checked against the npm registry (`npm view
+// @ngx-runtime-i18n/<pkg> version`), not README prose. All six are
+// published; core/angular/material/schematics/cli share a version and
+// primeng has its own (see CHANGELOG.md).
 interface PackageEntry {
   readonly name: string;
   readonly description: string;

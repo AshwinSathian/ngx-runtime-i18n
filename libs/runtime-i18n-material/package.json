@@ -1,13 +1,13 @@
 {
   "name": "@ngx-runtime-i18n/material",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "description": "Angular Material adapter for @ngx-runtime-i18n/angular",
   "type": "module",
   "sideEffects": false,
   "peerDependencies": {
     "@angular/core": ">=16 <23",
     "@angular/material": ">=16 <23",
-    "@ngx-runtime-i18n/angular": "^2.0.0"
+    "@ngx-runtime-i18n/angular": "^2.0.0 || ^3.0.0"
   },
   "keywords": ["angular", "material", "i18n", "translations", "runtime"],
   "repository": {

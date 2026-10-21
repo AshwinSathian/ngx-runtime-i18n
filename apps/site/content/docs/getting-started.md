@@ -8,7 +8,7 @@ section: Start here
 
 ## Install
 
-Install the core package and the Angular integration together — the Angular package expects a matching `core` version as a peer dependency:
+Install the core package and the Angular integration together. The Angular package depends on `core` and needs the same major version (3.x with 3.x), so installing both keeps them in step:
 
 ```bash
 npm i @ngx-runtime-i18n/angular @ngx-runtime-i18n/core
