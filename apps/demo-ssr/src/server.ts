@@ -101,9 +101,11 @@ app.use(
 );
 
 /**
- * SSR render for all other routes.
+ * SSR render for all other routes. Path-less on purpose: Express 5's router
+ * rejects the old `'/**'` wildcard (wildcards must be named, e.g. `'/{*splat}'`)
+ * and `app.use` without a path already matches every request.
  */
-app.use('/**', (req, res, next) => {
+app.use((req, res, next) => {
   const snapshot = buildSnapshot(req);
   // Optional: log once per request
   // console.log('[i18n][SSR] lang=%s catalogs=%s', snapshot.lang, Object.keys(snapshot.catalogs));
@@ -119,7 +121,14 @@ app.use('/**', (req, res, next) => {
 if (isMainModule(import.meta.url)) {
   const port = process.env['PORT'] || 4000;
   console.log('[ngx-i18n][SSR] Serving dist from:', browserDistFolder);
-  app.listen(port, () => {
+  // Express 5 hands listen errors (e.g. EADDRINUSE) to this callback instead of
+  // throwing, so without the check a taken port logs "listening" and exits 0.
+  // Exit explicitly: @angular/ssr's global handler would log a rethrow and still exit 0.
+  app.listen(port, (error) => {
+    if (error) {
+      console.error(error);
+      process.exit(1);
+    }
     console.log(`Node Express server listening on http://localhost:${port}`);
   });
 }

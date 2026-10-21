@@ -83,10 +83,10 @@ export function i18nServerProviders(snapshot: RuntimeI18nSsrSnapshot): Environme
 
 </content-callout>
 
-Pass the snapshot into `AngularNodeAppEngine.handle()` for every request:
+Pass the snapshot into `AngularNodeAppEngine.handle()` for every request. Register the handler with no path. Angular 22 projects ship Express 5, whose router throws `Missing parameter name` at start-up for an unnamed wildcard like `'/**'` or `'*'`, and a path-less `app.use()` already matches everything:
 
 ```ts
-app.use('/**', (req, res, next) => {
+app.use((req, res, next) => {
   const snapshot = buildSnapshot(req);
   angularApp
     .handle(req, { providers: [i18nServerProviders(snapshot)] })

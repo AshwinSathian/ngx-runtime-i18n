@@ -20,7 +20,7 @@ const angularApp = new AngularNodeAppEngine();
  *
  * Example:
  * ```ts
- * app.get('/api/**', (req, res) => {
+ * app.get('/api/{*splat}', (req, res) => {
  *   // Handle API request
  * });
  * ```
@@ -39,8 +39,9 @@ app.use(
 
 /**
  * Handle all other requests by rendering the Angular application.
+ * Path-less: Express 5 rejects the old `'/**'` wildcard.
  */
-app.use('/**', (req, res, next) => {
+app.use((req, res, next) => {
   angularApp
     .handle(req)
     .then((response) =>
@@ -55,7 +56,14 @@ app.use('/**', (req, res, next) => {
  */
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
   const port = process.env['PORT'] || 4000;
-  app.listen(port, () => {
+  // Express 5 hands listen errors (e.g. EADDRINUSE) to this callback instead of
+  // throwing, so without the check a taken port logs "listening" and exits 0.
+  // Exit explicitly: @angular/ssr's global handler would log a rethrow and still exit 0.
+  app.listen(port, (error) => {
+    if (error) {
+      console.error(error);
+      process.exit(1);
+    }
     console.log(`Node Express server listening on http://localhost:${port}`);
   });
 }
