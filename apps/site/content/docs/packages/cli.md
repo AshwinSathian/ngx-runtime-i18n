@@ -14,6 +14,8 @@ npm install --save-dev @ngx-runtime-i18n/cli
 
 The package ships the `ngx-i18n` binary, which scans your source for `i18n` key usage and validates your catalogs against it.
 
+It needs Node.js 22.12 or newer.
+
 ## `ngx-i18n extract`
 
 Scans source files for all translation key usages and writes a manifest.
@@ -38,7 +40,7 @@ ngx-i18n check --catalog public/i18n --langs en,hi,de --src src --fail-on-missin
 | Option | Default | Description |
 | --- | --- | --- |
 | `--catalog` | `public/i18n` | Catalog directory containing `<lang>.json` files. |
-| `--langs` | `en` | Comma-separated language codes to validate. |
+| `--langs` | `en` | Comma-separated language codes to validate. A space-separated list (`--langs en fr`) is rejected with `too many arguments`. |
 | `--src` | — | Source directory to scan for key usage. Skip if using `--manifest`. |
 | `--manifest` | — | Use a pre-computed manifest JSON (from `extract`) instead of re-scanning. |
 | `--fail-on-missing` | `false` | Exit with code `1` if any catalog is missing keys. |
