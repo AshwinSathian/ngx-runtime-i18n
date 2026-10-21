@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 3.0.0 (2026-10-21)
+
+`core`, `angular`, `material`, `schematics` and `cli` go to 3.0.0 together, and `primeng` goes to 3.0.1. The headline is ICU `number`/`date`/`time` formatting and apostrophe quoting in core. Quoting changes how some existing messages render, which is why this is a major. The release also fixes the SSR language handoff, which hadn't been working with `AngularNodeAppEngine`.
+
+### Upgrading from 2.x
+
+- **Catalogs:** search for an apostrophe directly before `{`, `}`, or before `#` inside a plural. `"Delete '{name}'?"` now renders `{name}` literally; write `"Delete ''{name}''?"` to keep the quotes around the value. A lone `'` anywhere else (`don't`) is unchanged.
+- **SSR:** if your server calls `angularApp.handle(req, { providers: [...] })`, the snapshot never reached your app. Pass it as `angularApp.handle(req, snapshot)` and use `provideRuntimeI18nSsr(() => inject(REQUEST_CONTEXT, { optional: true }) as RuntimeI18nSsrSnapshot | null)` in `app.config.server.ts`. Routes that pick the language per request need `RenderMode.Server`.
+- **CLI:** needs Node.js 22.12 or newer. A space-separated `--langs en fr` is now an error; use `--langs en,fr`.
+- **Versions:** `@ngx-runtime-i18n/angular` 3.x needs `@ngx-runtime-i18n/core` 3.x. `material` and `primeng` accept `angular` 2.x or 3.x. `ng add @ngx-runtime-i18n/schematics` installs `^3.0.0` of both.
 
 ### `@ngx-runtime-i18n/core`
 
@@ -17,6 +26,18 @@
 - **Fix (SSR):** service startup is subscribed to `ApplicationRef.isStable` and only unsubscribed after it finished loading. When the app went unstable and stable again in between, which the startup's own language change does during a server render, startup ran a second time, found the snapshot gone and reset the language to `defaultLang`. Startup now runs once.
 - **Feature:** `provideRuntimeI18nSsr()` also accepts a factory, which runs in an injection context. That's what lets a per-request snapshot reach the app under `AngularNodeAppEngine`: pass it as `handle(req, snapshot)` and read it back with `inject(REQUEST_CONTEXT)`. A factory that returns `null` (prerendering, where there's no request) seeds nothing.
 - **Docs:** the SSR guide, the Express recipe and the README passed the snapshot as `handle(req, { providers: [...] })`. That's the old `CommonEngine` API. `AngularNodeAppEngine` treats the second argument as an opaque request context, so the snapshot was silently dropped. They now show the `REQUEST_CONTEXT` pattern and explain that per-request routes need `RenderMode.Server`.
+
+### `@ngx-runtime-i18n/material`
+
+- Peer range widened to `@ngx-runtime-i18n/angular` `^2.0.0 || ^3.0.0`. No code changes; it's on 3.0.0 to stay in step with the other packages.
+
+### `@ngx-runtime-i18n/primeng` 3.0.1
+
+- Peer range widened to `@ngx-runtime-i18n/angular` `^2.0.1 || ^3.0.0`. No code changes.
+
+### `@ngx-runtime-i18n/schematics`
+
+- `ng add` installs `@ngx-runtime-i18n/angular` and `@ngx-runtime-i18n/core` at `^` its own version, so 3.0.0 is what makes it install the 3.x packages. No code changes.
 
 ### `@ngx-runtime-i18n/cli`
 
