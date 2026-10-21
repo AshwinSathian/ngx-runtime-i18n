@@ -67,7 +67,9 @@ jobs:
     # The libs job never builds an app or starts a server, so a broken SSR server
     # (the Express 5 '/**' crash, a lost TransferState snapshot) used to pass CI.
     name: Apps & SSR e2e
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is 26.04, and Playwright 1.57 refuses to install
+    # Chromium there ("does not support chromium on ubuntu26.04-x64").
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       CI: true
