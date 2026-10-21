@@ -54,7 +54,7 @@ describe('RecipePageComponent', () => {
     const { container } = await renderForSlug('ssr-with-express');
 
     expect(
-      container.querySelector('content-callout[data-type="tip"]'),
+      container.querySelector('content-callout[data-type="warning"]'),
     ).not.toBeNull();
     expect(container.querySelector('content-code-block')).not.toBeNull();
     expect(
@@ -68,7 +68,7 @@ describe('RecipePageComponent', () => {
     const toc = screen.getByRole('navigation', { name: 'On this page' });
     expect(toc).toBeInTheDocument();
     const tocLink = container.querySelector(
-      'nav[aria-label="On this page"] a[href="#seeding-transferstate"]',
+      'nav[aria-label="On this page"] a[href="#getting-the-snapshot-into-the-app"]',
     );
     expect(tocLink).not.toBeNull();
   });

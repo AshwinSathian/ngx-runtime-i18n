@@ -30,7 +30,9 @@ test.describe('hydration', () => {
     });
 
     await page.goto('/?lang=hi');
-    await page.waitForLoadState('networkidle');
+    // Client startup has finished (and any language swap would have happened) once
+    // the service reports ready.
+    await expect(page.locator('main')).toHaveAttribute('data-i18n-ready', 'true');
 
     await expect(page.locator('h1')).toHaveText('नमस्ते, Ashwin!');
     await expect(page.locator('main')).toHaveAttribute('lang', 'hi');
