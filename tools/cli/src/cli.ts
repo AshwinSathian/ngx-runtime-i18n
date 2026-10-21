@@ -4,12 +4,15 @@ import { extract } from './commands/extract.js';
 import { check } from './commands/check.js';
 import * as fs from 'fs';
 
+// dist/cli.js -> ../package.json; npm always ships package.json, so this can't drift from the release.
+const { version } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
+
 const program = new Command();
 
 program
   .name('ngx-i18n')
   .description('CLI for @ngx-runtime-i18n — extract keys and validate catalogs')
-  .version('2.2.0');
+  .version(version);
 
 function fail(message: string): never {
   console.error(`✗ ${message}`);

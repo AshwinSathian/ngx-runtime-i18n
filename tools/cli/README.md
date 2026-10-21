@@ -8,6 +8,8 @@ CLI for `@ngx-runtime-i18n` that scans your source for translation key usage and
 npm i -D @ngx-runtime-i18n/cli
 ```
 
+Requires Node.js 22.12 or newer.
+
 ## Commands
 
 ### `ngx-i18n extract`
@@ -39,6 +41,8 @@ ngx-i18n check --catalog public/i18n --langs en,hi,de --src src --fail-on-missin
 | `--manifest`         | -             | Use a pre-computed manifest JSON (from `extract`) instead of re-scanning. |
 | `--fail-on-missing`  | `false`       | Exit with code `1` if any catalog is missing keys.              |
 | `--fail-on-unused`   | `false`       | Exit with code `1` if any catalog has unused keys.              |
+
+Unexpected positional arguments are an error, so a space-separated list like `--langs en fr` fails loudly instead of checking only `en`.
 
 `--src` or `--manifest` is required — `check` refuses to run with neither, rather than silently reporting a clean pass on zero used keys.
 

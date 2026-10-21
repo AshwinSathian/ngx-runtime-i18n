@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### `@ngx-runtime-i18n/cli`
+
+- **Breaking:** requires Node.js 22.12 or newer (`engines.node` was `>=18`), because it now depends on `commander@15`, which is ESM-only and sets that floor. Node 18 and 20 are both past end-of-life.
+- **Behavior change:** unexpected positional arguments now fail the run (commander 13+ default). The common mistake `--langs en fr` used to check only `en` and silently ignore `fr`; it now exits with `error: too many arguments`.
+- **Fix:** `ngx-i18n --version` was a hardcoded string that had to be bumped by hand on every release; it's now read from the package's own `package.json`.
+- The bin itself is now covered end to end: the test target builds the CLI and runs `dist/cli.js` for `--version`, `extract` then `check`, the missing `--src`/`--manifest` guard, and excess-argument rejection.
+
 ## 2.2.0 (2026-09-05)
 
 A full-repo adversarial review (five parallel deep-dive passes: core, the Angular bindings, the Material/PrimeNG/schematics adapters, the CLI, and the marketing/docs site) surfaced and fixed a real prototype-pollution crash, a client-side hydration-mismatch flash, a language-switching race condition, several silent-failure bugs in the schematics and CLI, and three site bugs (a blank page on a bad doc/recipe URL, a `noindex` tag that never cleared, and search being completely unreachable on mobile). `@ngx-runtime-i18n/primeng` has no functional changes in this release (see below) and stays at 3.0.0.
