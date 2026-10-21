@@ -97,6 +97,8 @@ const serverConfig: ApplicationConfig = {
 };
 ```
 
+`AngularNodeAppEngine` and `REQUEST_CONTEXT` arrived in Angular 19. On older versions with `CommonEngine`, pass a plain snapshot instead: `commonEngine.render({ ..., providers: [provideRuntimeI18nSsr(snapshot)] })`.
+
 During prerendering there's no request, so `REQUEST_CONTEXT` is `null`. The factory returns nothing, nothing is seeded, and the client loads catalogs as usual.
 
 <content-callout data-type="warning">

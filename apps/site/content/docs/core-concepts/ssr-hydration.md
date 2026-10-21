@@ -36,6 +36,8 @@ const serverConfig: ApplicationConfig = {
 };
 ```
 
+`AngularNodeAppEngine` and `REQUEST_CONTEXT` arrived in Angular 19. On older versions with `CommonEngine`, pass a plain snapshot instead: `commonEngine.render({ ..., providers: [provideRuntimeI18nSsr(snapshot)] })`.
+
 `handle()`'s second argument is a request context, not providers. Passing `{ providers: [...] }` there, which is what the `CommonEngine` API used to take, is silently ignored. Routes that pick the language per request need `RenderMode.Server`, because a prerendered page is built before any request exists.
 
 `provideRuntimeI18nSsr()` returns `EnvironmentProviders`, an opaque value, not an array. Put it directly in `providers`. Don't spread it.

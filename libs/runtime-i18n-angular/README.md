@@ -210,6 +210,8 @@ const serverConfig: ApplicationConfig = {
 };
 ```
 
+`AngularNodeAppEngine` and `REQUEST_CONTEXT` arrived in Angular 19. On older versions with `CommonEngine`, pass a plain snapshot instead: `commonEngine.render({ ..., providers: [provideRuntimeI18nSsr(snapshot)] })`.
+
 `handle()`'s second argument is a request context, not providers, so `{ providers: [...] }` there is silently ignored. Routes that pick the language per request need `RenderMode.Server`. `provideRuntimeI18nSsr()` also still accepts a plain snapshot, and its result is an opaque `EnvironmentProviders` value, so don't spread it.
 
 `RuntimeI18nSsrSnapshot.bootstrap` holds the active language catalog and `catalogs` can optionally seed additional locales. Everything defaults to the same prefix as `provideRuntimeI18n()` (`@ngx-runtime-i18n/core`), but pass `stateKeyPrefix` to both helpers when you override it.
