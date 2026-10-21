@@ -17,7 +17,7 @@
     </nav>
   </header>
 
-  <main class="content" [attr.lang]="lang()">
+  <main class="content" [attr.lang]="lang()" [attr.data-i18n-ready]="ready()">
     <section class="card">
       <h1>{{ 'hello.user' | i18n:{ name: 'Ashwin' } }}</h1>
 

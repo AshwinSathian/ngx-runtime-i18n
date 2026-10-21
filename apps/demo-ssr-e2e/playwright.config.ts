@@ -3,7 +3,10 @@ import { nxE2EPreset } from '@nx/playwright/preset';
 import { workspaceRoot } from '@nx/devkit';
 
 // For CI, you may want to set BASE_URL to the deployed application.
-const baseURL = process.env['BASE_URL'] || 'http://localhost:4200';
+// A dedicated port: with reuseExistingServer, anything already listening on the
+// default 4200 (another project's dev server) would silently be tested instead.
+const port = 4310;
+const baseURL = process.env['BASE_URL'] || `http://localhost:${port}`;
 
 /**
  * Read environment variables from file.
@@ -24,8 +27,10 @@ export default defineConfig({
   },
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npx nx run demo-ssr:serve',
-    url: 'http://localhost:4200',
+    // The built production server, not `nx serve`, so the e2e covers what actually
+    // ships: the bundled server.ts, its listen() handling and the copied catalogs.
+    command: `npx nx build demo-ssr && PORT=${port} node dist/apps/demo-ssr/server/server.mjs`,
+    url: `http://localhost:${port}`,
     reuseExistingServer: true,
     cwd: workspaceRoot,
   },

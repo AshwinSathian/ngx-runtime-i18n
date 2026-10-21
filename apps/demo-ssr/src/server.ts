@@ -7,14 +7,18 @@ import {
 import type { Catalog } from '@ngx-runtime-i18n/core';
 import type { Request } from 'express';
 import express from 'express';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { i18nServerProviders, I18nSnapshot } from './app/i18n.server.providers';
+import type { RuntimeI18nSsrSnapshot } from '@ngx-runtime-i18n/angular';
 
 const serverDistFolder = dirname(fileURLToPath(import.meta.url));
 const browserDistFolder = resolve(serverDistFolder, '../browser');
-const i18nDir = join(browserDistFolder, 'i18n'); // catalogs live in dist/browser/i18n
+// Built server: catalogs are copied to dist/browser/i18n. Under `nx serve` there's no
+// dist, so fall back to the source copy (the dev server runs from the workspace root).
+const i18nDir = [join(browserDistFolder, 'i18n'), resolve('apps/demo-ssr/public/i18n')].find((d) =>
+  existsSync(d)
+) ?? join(browserDistFolder, 'i18n');
 
 const app = express();
 // Angular 22's AngularNodeAppEngine validates the Host/X-Forwarded-Host
@@ -64,7 +68,7 @@ function readCatalogSafe(lang: string): Catalog | undefined {
   }
 }
 
-function buildSnapshot(req: Request): I18nSnapshot {
+function buildSnapshot(req: Request): RuntimeI18nSsrSnapshot {
   const supported = ['en', 'hi', 'de'];
   const fallbacks = ['de'];
   const lang = pickLang(req, supported, 'en');
@@ -111,7 +115,9 @@ app.use((req, res, next) => {
   // console.log('[i18n][SSR] lang=%s catalogs=%s', snapshot.lang, Object.keys(snapshot.catalogs));
 
   angularApp
-    .handle(req, { providers: [i18nServerProviders(snapshot)] })
+    // handle()'s second argument is the request context, exposed to the app as
+    // REQUEST_CONTEXT; app.config.server.ts reads the snapshot back from there.
+    .handle(req, snapshot)
     .then((response) =>
       response ? writeResponseToNodeResponse(response, res) : next()
     )

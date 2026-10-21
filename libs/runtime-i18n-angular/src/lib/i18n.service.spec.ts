@@ -1,4 +1,5 @@
-import { makeStateKey, PLATFORM_ID, signal, TransferState } from '@angular/core';
+import { ApplicationRef, makeStateKey, PLATFORM_ID, signal, TransferState } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import type { Catalog, RuntimeI18nConfig } from '@ngx-runtime-i18n/core';
 import { I18nService } from './i18n.service';
@@ -116,6 +117,82 @@ describe('I18nService', () => {
     // is a visible hydration-mismatch flash whenever SSR resolved a
     // non-default language.
     expect(seededService.lang()).toBe('hi');
+  });
+
+  it('runs its startup once even when ApplicationRef.isStable emits true again mid-startup, so a second pass cannot reset the SSR language', async () => {
+    TestBed.resetTestingModule();
+    // Startup awaits the catalog fetch; meanwhile the app goes unstable and stable
+    // again (exactly what the language change itself causes during an SSR render).
+    let releaseFetch!: () => void;
+    const fetchGate = new Promise<void>((r) => (releaseFetch = r));
+    const isStable = new BehaviorSubject<boolean>(false);
+    const cfg: RuntimeI18nConfig = {
+      defaultLang: 'en',
+      supported: ['en', 'hi'],
+      fetchCatalog: async () => {
+        await fetchGate;
+        return { greeting: 'Namaste' };
+      },
+    };
+
+    await TestBed.configureTestingModule({
+      providers: [
+        provideRuntimeI18n(cfg, { options: { autoDetect: false, storageKey: null } }),
+        TransferState,
+      ],
+    }).compileComponents();
+    // Drive stability by hand: swap the real ApplicationRef's isStable for a subject
+    // before I18nService subscribes to it.
+    Object.defineProperty(TestBed.inject(ApplicationRef), 'isStable', { value: isStable });
+
+    const ts = TestBed.inject(TransferState);
+    const bootstrapKey = makeStateKey<{ lang: string; catalogs: Record<string, Catalog> }>(
+      getRuntimeI18nBootstrapStateKey(DEFAULT_RUNTIME_I18N_STATE_KEY_PREFIX)
+    );
+    ts.set(bootstrapKey, { lang: 'hi', catalogs: {} });
+
+    const svc = TestBed.inject(I18nService);
+    isStable.next(true);
+    await Promise.resolve();
+    isStable.next(false);
+    isStable.next(true);
+    releaseFetch();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(svc.lang()).toBe('hi');
+  });
+
+  it('leaves the SSR bootstrap snapshot in TransferState on the server, so it is serialized for the browser', async () => {
+    TestBed.resetTestingModule();
+    const cfg: RuntimeI18nConfig = {
+      defaultLang: 'en',
+      supported: ['en', 'hi'],
+      fetchCatalog: async () => ({}),
+    };
+    const isStable = new BehaviorSubject<boolean>(false);
+
+    await TestBed.configureTestingModule({
+      providers: [
+        provideRuntimeI18n(cfg, { options: { autoDetect: false, storageKey: null } }),
+        TransferState,
+        { provide: PLATFORM_ID, useValue: 'server' },
+      ],
+    }).compileComponents();
+    Object.defineProperty(TestBed.inject(ApplicationRef), 'isStable', { value: isStable });
+
+    const ts = TestBed.inject(TransferState);
+    const bootstrapKey = makeStateKey<{ lang: string; catalogs: Record<string, Catalog> }>(
+      getRuntimeI18nBootstrapStateKey(DEFAULT_RUNTIME_I18N_STATE_KEY_PREFIX)
+    );
+    ts.set(bootstrapKey, { lang: 'hi', catalogs: { hi: { greeting: 'Namaste' } } });
+
+    const svc = TestBed.inject(I18nService);
+    isStable.next(true);
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(svc.lang()).toBe('hi');
+    // Removing it here would drop it from the HTML; the browser then hydrates in defaultLang.
+    expect(ts.hasKey(bootstrapKey)).toBe(true);
   });
 
   it('registers locale data on the server too (SSR), not only in the browser', async () => {

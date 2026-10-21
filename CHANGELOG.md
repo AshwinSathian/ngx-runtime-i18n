@@ -11,12 +11,25 @@
 - **Fix:** `plural`, `select` and `selectordinal` blocks only recognised `\w+` argument names, so `{item-count, plural, ...}` rendered as literal text while `{item-count}` interpolated fine. All argument patterns now accept the same dotted and hyphenated names as `{user.name}`.
 - **Fix:** `ExtractParams` only trimmed spaces after a keyword's comma. It now trims tabs, newlines and trailing spaces too, so `{n, number }` types as `{ n: number }`.
 
+### `@ngx-runtime-i18n/angular`
+
+- **Fix (SSR):** on the server, `I18nService` removed the TransferState bootstrap snapshot before Angular serialized the state, so it never reached the browser. The browser then picked a language on its own (stored choice, then `navigator.language`) and could swap the server-rendered text right after hydration. The snapshot is now only removed in the browser, after it has been read.
+- **Fix (SSR):** service startup is subscribed to `ApplicationRef.isStable` and only unsubscribed after it finished loading. When the app went unstable and stable again in between, which the startup's own language change does during a server render, startup ran a second time, found the snapshot gone and reset the language to `defaultLang`. Startup now runs once.
+- **Feature:** `provideRuntimeI18nSsr()` also accepts a factory, which runs in an injection context. That's what lets a per-request snapshot reach the app under `AngularNodeAppEngine`: pass it as `handle(req, snapshot)` and read it back with `inject(REQUEST_CONTEXT)`. A factory that returns `null` (prerendering, where there's no request) seeds nothing.
+- **Docs:** the SSR guide, the Express recipe and the README passed the snapshot as `handle(req, { providers: [...] })`. That's the old `CommonEngine` API. `AngularNodeAppEngine` treats the second argument as an opaque request context, so the snapshot was silently dropped. They now show the `REQUEST_CONTEXT` pattern and explain that per-request routes need `RenderMode.Server`.
+
 ### `@ngx-runtime-i18n/cli`
 
 - **Breaking:** requires Node.js 22.12 or newer (`engines.node` was `>=18`), because it now depends on `commander@15`, which is ESM-only and sets that floor. Node 18 and 20 are both past end-of-life.
 - **Behavior change:** unexpected positional arguments now fail the run (commander 13+ default). The common mistake `--langs en fr` used to check only `en` and silently ignore `fr`; it now exits with `error: too many arguments`.
 - **Fix:** `ngx-i18n --version` was a hardcoded string that had to be bumped by hand on every release; it's now read from the package's own `package.json`.
 - The bin itself is now covered end to end: the test target builds the CLI and runs `dist/cli.js` for `--version`, `extract` then `check`, the missing `--src`/`--manifest` guard, and excess-argument rejection.
+
+### Repo
+
+- `apps/demo-ssr` now renders per request (`RenderMode.Server`) and passes its snapshot through `REQUEST_CONTEXT`, so `?lang`, the `lang` cookie and `Accept-Language` actually change the server-rendered language. It used to prerender every page in English. Under `nx serve` it now reads catalogs from the source folder, where it used to render raw keys.
+- The `demo-ssr-e2e` scaffold test (which expected "Welcome") is replaced with real checks: the server-rendered language, the serialized snapshot, `?lang` over `Accept-Language`, and a hydration test in a German-locale browser on a Hindi page. It runs against the built server, on its own port.
+- CI has a new "Apps & SSR e2e" job that builds the apps, runs the site tests and runs that e2e on Chromium. Before, CI only built and tested the libraries.
 
 ## 2.2.0 (2026-09-05)
 

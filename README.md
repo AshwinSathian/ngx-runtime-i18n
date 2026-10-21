@@ -145,11 +145,11 @@ const missingLegacy = !this.i18n.hasKey('legacy.title');
 
 ## SSR example
 
-The repo ships with `apps/demo-ssr`, a full Express + Angular SSR demo. The server reads catalogs from `dist/browser/i18n`, injects them via `i18nServerProviders`, and the browser reuses them through TransferState. Run it locally:
+The repo ships with `apps/demo-ssr`, a full Express + Angular SSR demo. For each request, the server picks a language from `?lang`, a `lang` cookie or `Accept-Language`, reads the catalogs and passes them to `handle()` as the request context. `provideRuntimeI18nSsr()` seeds TransferState from that, and the browser hydrates in the same language. Run it locally:
 
 ```bash
-nx build demo-ssr
-nx serve demo-ssr   # http://localhost:4000
+nx serve demo-ssr                              # dev server, http://localhost:4200
+nx build demo-ssr && node dist/apps/demo-ssr/server/server.mjs   # production build, http://localhost:4000
 ```
 
 ---

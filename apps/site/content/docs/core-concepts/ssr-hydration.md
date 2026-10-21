@@ -8,23 +8,39 @@ section: Core concepts
 
 ## Seeding TransferState on the server
 
-On the server, use `provideRuntimeI18nSsr()` to seed TransferState with the same keys `provideRuntimeI18n()` reads on the client:
+On the server, `provideRuntimeI18nSsr()` seeds TransferState with the same keys `provideRuntimeI18n()` reads on the client. With `AngularNodeAppEngine`, the per-request snapshot travels as the request context: pass it as the second argument to `handle()`, and read it back with `REQUEST_CONTEXT` in a factory:
 
 ```ts
-// i18n.server.providers.ts
-import { EnvironmentProviders } from '@angular/core';
-import { RuntimeI18nSsrSnapshot, provideRuntimeI18nSsr } from '@ngx-runtime-i18n/angular';
-
-export function i18nServerProviders(snapshot: RuntimeI18nSsrSnapshot): EnvironmentProviders {
-  return provideRuntimeI18nSsr(snapshot);
-}
+// server.ts
+app.use((req, res, next) => {
+  angularApp
+    .handle(req, buildSnapshot(req)) // the second argument becomes REQUEST_CONTEXT
+    .then((response) => (response ? writeResponseToNodeResponse(response, res) : next()))
+    .catch(next);
+});
 ```
-
-`provideRuntimeI18nSsr()` returns `EnvironmentProviders`, an opaque value, not an array. Include the result directly in your `providers` array — don't spread it:
 
 ```ts
-angularApp.handle(req, { providers: [i18nServerProviders(snapshot)] });
+// app.config.server.ts
+import { inject, mergeApplicationConfig, REQUEST_CONTEXT, type ApplicationConfig } from '@angular/core';
+import { provideServerRendering, withRoutes } from '@angular/ssr';
+import { provideRuntimeI18nSsr, type RuntimeI18nSsrSnapshot } from '@ngx-runtime-i18n/angular';
+
+const serverConfig: ApplicationConfig = {
+  providers: [
+    provideServerRendering(withRoutes(serverRoutes)),
+    provideRuntimeI18nSsr(
+      () => inject(REQUEST_CONTEXT, { optional: true }) as RuntimeI18nSsrSnapshot | null
+    ),
+  ],
+};
 ```
+
+`AngularNodeAppEngine` and `REQUEST_CONTEXT` arrived in Angular 19. On older versions with `CommonEngine`, pass a plain snapshot instead: `commonEngine.render({ ..., providers: [provideRuntimeI18nSsr(snapshot)] })`.
+
+`handle()`'s second argument is a request context, not providers. Passing `{ providers: [...] }` there, which is what the `CommonEngine` API used to take, is silently ignored. Routes that pick the language per request need `RenderMode.Server`, because a prerendered page is built before any request exists.
+
+`provideRuntimeI18nSsr()` returns `EnvironmentProviders`, an opaque value, not an array. Put it directly in `providers`. Don't spread it.
 
 ## RuntimeI18nSsrSnapshot
 
@@ -41,8 +57,8 @@ The repo ships `apps/demo-ssr`, a complete Express + Angular SSR demo covering T
 </content-callout>
 
 ```bash
-nx build demo-ssr
-nx serve demo-ssr   # http://localhost:4000
+nx serve demo-ssr                              # dev server, http://localhost:4200
+nx build demo-ssr && node dist/apps/demo-ssr/server/server.mjs   # production build, http://localhost:4000
 ```
 
 For a full worked example of wiring this into an Express server, see the [SSR with Express recipe](/recipes/ssr-with-express).
