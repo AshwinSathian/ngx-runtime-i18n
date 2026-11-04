@@ -1,7 +1,7 @@
 ---
 title: ICU-lite formatting
 description: What the built-in formatter supports (interpolation, plural, select, selectordinal, number/date/time, quoting) and what it deliberately leaves out.
-eyebrow: docs.core-concepts.icu-lite
+eyebrow: Core concepts
 order: 3
 section: Core concepts
 ---

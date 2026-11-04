@@ -150,7 +150,7 @@ const ROWS: readonly CompareRow[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="mx-auto max-w-6xl px-4 py-16 sm:py-24">
-      <app-key-eyebrow text="compare.matrix" />
+      <app-key-eyebrow text="Comparison" />
       <h1 class="font-display text-3xl font-semibold sm:text-4xl">
         How ngx-runtime-i18n compares
       </h1>

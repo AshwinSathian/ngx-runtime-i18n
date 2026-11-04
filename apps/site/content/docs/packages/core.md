@@ -1,7 +1,7 @@
 ---
 title: "@ngx-runtime-i18n/core"
 description: The framework-agnostic ICU-lite formatter and shared types the Angular wrapper builds on.
-eyebrow: docs.packages.core
+eyebrow: Packages
 order: 1
 section: Packages
 ---

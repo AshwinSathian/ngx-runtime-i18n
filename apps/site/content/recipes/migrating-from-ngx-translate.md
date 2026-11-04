@@ -1,7 +1,7 @@
 ---
 title: Migrating from ngx-translate
 description: A concept-mapping table and one worked component conversion for teams moving off @ngx-translate/core.
-eyebrow: recipes.migrating-from-ngx-translate
+eyebrow: Recipes
 order: 9
 packages: ['@ngx-runtime-i18n/angular']
 ---

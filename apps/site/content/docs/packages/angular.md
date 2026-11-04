@@ -1,7 +1,7 @@
 ---
 title: "@ngx-runtime-i18n/angular"
 description: The signals-first, SSR-safe Angular wrapper — provideRuntimeI18n(), I18nService, I18nPipe, and route-scoped catalogs.
-eyebrow: docs.packages.angular
+eyebrow: Packages
 order: 2
 section: Packages
 ---

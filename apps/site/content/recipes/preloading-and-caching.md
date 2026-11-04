@@ -1,7 +1,7 @@
 ---
 title: Preloading and caching
 description: Warm catalogs ahead of time with the preload helpers, and pick a cacheMode for how long they stay in memory.
-eyebrow: recipes.preloading-and-caching
+eyebrow: Recipes
 order: 3
 packages: ['@ngx-runtime-i18n/angular']
 ---

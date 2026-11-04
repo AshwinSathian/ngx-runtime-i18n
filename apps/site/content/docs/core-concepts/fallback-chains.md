@@ -1,7 +1,7 @@
 ---
 title: Fallback chains
 description: How a missing key resolves across the active language, configured fallbacks, and defaultLang.
-eyebrow: docs.core-concepts.fallback-chains
+eyebrow: Core concepts
 order: 1
 section: Core concepts
 ---

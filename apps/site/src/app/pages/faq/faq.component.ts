@@ -115,7 +115,7 @@ export const FAQS: readonly Faq[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="mx-auto max-w-3xl px-4 py-16 sm:py-24">
-      <app-key-eyebrow text="faq.questions" />
+      <app-key-eyebrow text="FAQ" />
       <h1 class="font-display text-3xl font-semibold sm:text-4xl">
         Frequently asked questions
       </h1>

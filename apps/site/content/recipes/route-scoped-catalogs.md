@@ -1,7 +1,7 @@
 ---
 title: Route-scoped catalogs
 description: Load a feature's translation catalog only when its route activates, using withI18nScope().
-eyebrow: recipes.route-scoped-catalogs
+eyebrow: Recipes
 order: 2
 packages: ['@ngx-runtime-i18n/angular']
 ---

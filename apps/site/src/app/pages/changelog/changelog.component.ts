@@ -16,7 +16,7 @@ import { SeoService } from '../../core/seo.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mx-auto max-w-3xl px-4 py-10">
-      <app-key-eyebrow text="changelog.history" />
+      <app-key-eyebrow text="Release history" />
       <h1 class="font-display text-3xl font-semibold">Changelog</h1>
       <div class="prose prose-neutral mt-8 max-w-none dark:prose-invert" [innerHTML]="html"></div>
     </div>

@@ -1,7 +1,7 @@
 ---
 title: Type safety
 description: Declare your catalog schema via module augmentation to get compile-time checked keys and params.
-eyebrow: docs.core-concepts.type-safety
+eyebrow: Core concepts
 order: 4
 section: Core concepts
 ---

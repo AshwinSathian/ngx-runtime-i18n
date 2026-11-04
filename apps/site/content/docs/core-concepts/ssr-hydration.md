@@ -1,7 +1,7 @@
 ---
 title: SSR and hydration
 description: Seed TransferState on the server with provideRuntimeI18nSsr() so the client hydrates without a mismatch.
-eyebrow: docs.core-concepts.ssr-hydration
+eyebrow: Core concepts
 order: 5
 section: Core concepts
 ---

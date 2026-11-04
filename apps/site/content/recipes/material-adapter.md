@@ -1,7 +1,7 @@
 ---
 title: Angular Material adapter
 description: Wire provideMaterialRuntimeI18n() into an app so the paginator, sort, stepper and datepicker Intl services switch language with everything else.
-eyebrow: recipes.material-adapter
+eyebrow: Recipes
 order: 5
 packages: ['@ngx-runtime-i18n/material']
 ---

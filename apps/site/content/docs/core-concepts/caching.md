@@ -1,7 +1,7 @@
 ---
 title: Catalog caching
 description: The three cacheMode strategies, cacheKeyPrefix, and why the server never touches localStorage.
-eyebrow: docs.core-concepts.caching
+eyebrow: Core concepts
 order: 2
 section: Core concepts
 ---
