@@ -116,7 +116,7 @@ export const FAQS: readonly Faq[] = [
   template: `
     <section class="mx-auto max-w-3xl px-4 py-16 sm:py-24">
       <app-key-eyebrow text="faq.questions" />
-      <h1 class="font-display text-3xl font-semibold sm:text-4xl">
+      <h1 class="font-display text-3xl font-bold sm:text-4xl">
         Frequently asked questions
       </h1>
       <p class="mt-4 text-ink/80">

@@ -1,4 +1,22 @@
+/* Same self-hosted faces as apps/site. Plex Devanagari (devanagari subset
+   only) covers the Hindi catalog, which none of the three faces do. */
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/figtree';
+@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource/ibm-plex-sans-devanagari/devanagari-400.css';
+@import '@fontsource/ibm-plex-sans-devanagari/devanagari-700.css';
+
 :root {
+  --font-body:
+    'Figtree Variable', 'Figtree', 'IBM Plex Sans Devanagari', system-ui,
+    -apple-system, 'Segoe UI', Roboto, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji';
+  --font-display:
+    'Bricolage Grotesque Variable', 'Bricolage Grotesque', 'Figtree Variable',
+    'Figtree', 'IBM Plex Sans Devanagari', system-ui, sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular,
+    Menlo, monospace;
   --bg: #0b0c10;
   --panel: #11131a;
   --muted: #a0a4ae;
@@ -21,8 +39,8 @@ body {
   margin: 0;
   background: radial-gradient(1200px 800px at 20% -5%, #0f1420, var(--bg));
   color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
-    'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji';
+  font-family: var(--font-body);
+  line-height: 1.5;
 }
 
 .page {
@@ -128,4 +146,23 @@ body {
 .footer {
   color: var(--muted);
   text-align: center;
+}
+
+/* Buttons don't inherit the page font by default. */
+button {
+  font: inherit;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+/* Ligatures off so `=0` and friends read as the characters typed. */
+code {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
 }

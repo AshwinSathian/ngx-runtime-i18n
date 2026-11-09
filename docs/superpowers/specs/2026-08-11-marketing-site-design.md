@@ -179,15 +179,18 @@ sample. The three accents are a functional coding system (language switcher, cod
 language badges, package cards, comparison table), always paired with a text label — never a
 color-only signal.
 
-**Typography:** IBM Plex Sans (+ Plex Sans Devanagari for `hi` copy) for body/UI, IBM Plex Mono
-for code, Bricolage Grotesque for display/headlines. IBM Plex is an open-source type system
-built for multi-script consistency, which is directly relevant given the hero sets English and
-Hindi side by side. Self-hosted via `@fontsource` packages (framework-agnostic, ships prebuilt
-`.woff2` files in the npm package — no runtime request to Google's font CDN, no layout shift).
+**Typography:** Figtree for body/UI, Bricolage Grotesque for display/headlines (weight 700,
+-0.03em tracking, balanced wrapping), JetBrains Mono for code with ligatures off so readers see
+the characters they'll paste. This is the font system shared with the author's other sites.
+None of the three faces cover Devanagari, so IBM Plex Sans Devanagari stays in every stack as
+the script fallback for `hi` copy. Self-hosted via `@fontsource-variable` packages (one variable
+`.woff2` per subset, no runtime request to Google's font CDN); the OG image script reads the
+static `@fontsource` builds of the same faces because satori can't load WOFF2 or variable fonts.
+(Originally specified as IBM Plex Sans/Mono; replaced in Nov 2026.)
 
 **Signature element:** section eyebrows styled as literal translation keys from the product's
 own catalog convention (`hero.tagline`, `features.grid`, `packages.matrix`,
-`docs.getting-started`) in Plex Mono — the wayfinding system is the product's own mental model,
+`docs.getting-started`) in the mono face — the wayfinding system is the product's own mental model,
 not generic numbering.
 
 **Real dogfooding (revised from the Next.js draft's simulated demo):** the hero's language-

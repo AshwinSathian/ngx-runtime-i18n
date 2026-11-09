@@ -18,14 +18,13 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 
 // ---------------------------------------------------------------------------
-// Fonts. Satori needs raw font binary data (TTF/OTF/WOFF — WOFF2 is NOT
-// supported: https://github.com/vercel/satori#fonts), not CSS. The exact file
-// names below were resolved empirically against the installed @fontsource
-// package versions (Task 21), not guessed:
-//   require.resolve('@fontsource/<pkg>/files/<family>-latin-<weight>-normal.woff')
-// Each resolved to a real file on disk at write time; if a future @fontsource
-// bump renames these files, this script fails loudly at `require.resolve()`
-// rather than silently rendering with a missing font.
+// Fonts. Satori needs raw font binary data (TTF/OTF/WOFF), not CSS, and supports
+// neither WOFF2 nor variable fonts: https://github.com/vercel/satori#fonts. The
+// site itself ships the @fontsource-variable WOFF2 builds, so this script reads
+// the static WOFF instances of the same three faces from the @fontsource
+// packages (devDependencies, build-time only). If a future @fontsource bump
+// renames these files, `require.resolve()` fails loudly instead of satori
+// silently rendering with a missing font.
 // ---------------------------------------------------------------------------
 
 function loadFont(pkg, fileName) {
@@ -44,14 +43,14 @@ const FONTS = [
     style: 'normal',
   },
   {
-    name: 'IBM Plex Sans',
-    data: loadFont('ibm-plex-sans', 'ibm-plex-sans-latin-400-normal.woff'),
+    name: 'Figtree',
+    data: loadFont('figtree', 'figtree-latin-400-normal.woff'),
     weight: 400,
     style: 'normal',
   },
   {
-    name: 'IBM Plex Mono',
-    data: loadFont('ibm-plex-mono', 'ibm-plex-mono-latin-400-normal.woff'),
+    name: 'JetBrains Mono',
+    data: loadFont('jetbrains-mono', 'jetbrains-mono-latin-400-normal.woff'),
     weight: 400,
     style: 'normal',
   },
@@ -86,7 +85,7 @@ async function renderOgImage({ eyebrow, title, description }, outPath) {
               style: {
                 display: 'flex',
                 fontSize: 20,
-                fontFamily: 'IBM Plex Mono',
+                fontFamily: 'JetBrains Mono',
                 color: '#2C5CE6',
                 textTransform: 'uppercase',
                 letterSpacing: 2,
@@ -103,6 +102,8 @@ async function renderOgImage({ eyebrow, title, description }, outPath) {
                 fontWeight: 700,
                 marginTop: 16,
                 fontFamily: 'Bricolage Grotesque',
+                letterSpacing: -1.7, // -0.03em at 56px, same tracking as site headings
+                lineHeight: 1.05,
               },
               children: title,
             },
@@ -115,7 +116,7 @@ async function renderOgImage({ eyebrow, title, description }, outPath) {
                 fontSize: 28,
                 marginTop: 16,
                 color: '#14181F99',
-                fontFamily: 'IBM Plex Sans',
+                fontFamily: 'Figtree',
               },
               children: description,
             },

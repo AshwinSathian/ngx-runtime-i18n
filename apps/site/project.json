@@ -57,7 +57,7 @@
               "maximumError": "8kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "bundles"
         },
         "development": {
           "optimization": false,
