@@ -6,6 +6,12 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <!-- First-screen faces, so the hero doesn't wait for the stylesheet to find
+         them. Paths are stable because the production build uses
+         outputHashing "bundles" (JS/CSS hashed, media not); keep them in sync
+         with the @fontsource-variable file names if those packages change. -->
+    <link rel="preload" href="media/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="media/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
     <script>
       (function () {
         try {

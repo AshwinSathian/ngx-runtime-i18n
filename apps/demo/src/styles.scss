@@ -1,4 +1,22 @@
+/* Same self-hosted faces as apps/site. Plex Devanagari (devanagari subset
+   only) covers the Hindi catalog, which none of the three faces do. */
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/figtree';
+@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource/ibm-plex-sans-devanagari/devanagari-400.css';
+@import '@fontsource/ibm-plex-sans-devanagari/devanagari-700.css';
+
 :root {
+  --font-body:
+    'Figtree Variable', 'Figtree', 'IBM Plex Sans Devanagari', system-ui,
+    -apple-system, 'Segoe UI', Roboto, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji';
+  --font-display:
+    'Bricolage Grotesque Variable', 'Bricolage Grotesque', 'Figtree Variable',
+    'Figtree', 'IBM Plex Sans Devanagari', system-ui, sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular,
+    Menlo, monospace;
   --bg: #0b1020;
   --card: #131a2b;
   --text: #e6edf3;
@@ -18,8 +36,8 @@ html,
 body {
   height: 100%;
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
-    'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji';
+  font-family: var(--font-body);
+  line-height: 1.5;
   background: linear-gradient(180deg, #0a0f1e, #0c1224 40%, #0b1020);
   color: var(--text);
 }
@@ -31,14 +49,14 @@ body {
   background: var(--card);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35),
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.35),
     0 0 0 1px rgba(122, 162, 255, 0.06) inset;
 }
 
 h1 {
   margin: 0 0 8px;
   font-size: 28px;
-  letter-spacing: 0.25px;
 }
 
 p {
@@ -60,7 +78,10 @@ button {
   background: var(--button-bg);
   color: var(--text);
   cursor: pointer;
-  transition: transform 0.04s ease, background 0.2s ease, border-color 0.2s ease,
+  transition:
+    transform 0.04s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 
@@ -85,8 +106,27 @@ button.primary:active {
 
 .status {
   margin-top: 10px;
-  font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
-    monospace;
+  font: 12px var(--font-mono);
+  font-variant-ligatures: none;
   color: var(--muted);
   opacity: 0.9;
+}
+
+/* Buttons don't inherit the page font by default. */
+button {
+  font: inherit;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+/* Ligatures off so `=0` and friends read as the characters typed. */
+code {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
 }

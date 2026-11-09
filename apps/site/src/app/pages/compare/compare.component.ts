@@ -151,8 +151,8 @@ const ROWS: readonly CompareRow[] = [
   template: `
     <section class="mx-auto max-w-6xl px-4 py-16 sm:py-24">
       <app-key-eyebrow text="compare.matrix" />
-      <h1 class="font-display text-3xl font-semibold sm:text-4xl">
-        How ngx-runtime-i18n compares
+      <h1 class="font-display text-3xl font-bold sm:text-4xl">
+        How <span class="whitespace-nowrap">ngx-runtime-i18n</span> compares
       </h1>
       <p class="mt-4 max-w-2xl text-ink/80">
         This is the library author's own comparison against ngx-translate,
