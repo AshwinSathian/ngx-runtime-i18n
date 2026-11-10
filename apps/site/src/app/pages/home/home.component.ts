@@ -6,7 +6,7 @@ import {
   inject,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
+import { EyebrowComponent } from '../../shared/eyebrow/eyebrow.component';
 import { HeroLangCycleComponent } from '../../features/hero-lang-cycle/hero-lang-cycle.component';
 import { FeatureGridComponent } from '../../features/feature-grid/feature-grid.component';
 import { PackageMatrixComponent } from '../../features/package-matrix/package-matrix.component';
@@ -59,7 +59,7 @@ const TEMPLATE_SNIPPET = `<!-- Template -->
   standalone: true,
   imports: [
     RouterLink,
-    KeyEyebrowComponent,
+    EyebrowComponent,
     HeroLangCycleComponent,
     FeatureGridComponent,
     PackageMatrixComponent,

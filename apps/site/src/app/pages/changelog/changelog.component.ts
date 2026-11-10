@@ -6,18 +6,18 @@ import {
 } from '@angular/core';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import changelog from '../../../../generated/changelog.json';
-import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
+import { EyebrowComponent } from '../../shared/eyebrow/eyebrow.component';
 import { SeoService } from '../../core/seo.service';
 
 @Component({
   selector: 'app-changelog',
   standalone: true,
-  imports: [KeyEyebrowComponent],
+  imports: [EyebrowComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mx-auto max-w-3xl px-4 py-10">
-      <app-key-eyebrow text="Release history" />
-      <h1 class="font-display text-3xl font-semibold">Changelog</h1>
+      <app-eyebrow text="Release history" />
+      <h1 class="font-display text-3xl font-bold">Changelog</h1>
       <div class="prose prose-neutral mt-8 max-w-none dark:prose-invert" [innerHTML]="html"></div>
     </div>
   `,

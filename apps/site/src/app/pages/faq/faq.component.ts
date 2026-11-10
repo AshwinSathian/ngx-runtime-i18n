@@ -5,7 +5,7 @@ import {
   inject,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
+import { EyebrowComponent } from '../../shared/eyebrow/eyebrow.component';
 import { FaqItemComponent } from '../../shared/faq-item/faq-item.component';
 import { StructuredDataService } from '../../core/structured-data.service';
 import { SeoService } from '../../core/seo.service';
@@ -111,12 +111,12 @@ export const FAQS: readonly Faq[] = [
 @Component({
   selector: 'app-faq',
   standalone: true,
-  imports: [RouterLink, KeyEyebrowComponent, FaqItemComponent],
+  imports: [RouterLink, EyebrowComponent, FaqItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="mx-auto max-w-3xl px-4 py-16 sm:py-24">
-      <app-key-eyebrow text="FAQ" />
-      <h1 class="font-display text-3xl font-semibold sm:text-4xl">
+      <app-eyebrow text="FAQ" />
+      <h1 class="font-display text-3xl font-bold sm:text-4xl">
         Frequently asked questions
       </h1>
       <p class="mt-4 text-ink/80">

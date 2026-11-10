@@ -18,21 +18,21 @@ import {
   breadcrumbJsonLd,
   type BreadcrumbItem,
 } from '../../core/json-ld';
-import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
+import { EyebrowComponent } from '../../shared/eyebrow/eyebrow.component';
 import { TocComponent } from '../../shared/toc/toc.component';
 import type { RecipeEntry } from '../../core/content.types';
 
 @Component({
   selector: 'app-recipe-page',
   standalone: true,
-  imports: [KeyEyebrowComponent, TocComponent, RouterLink],
+  imports: [EyebrowComponent, TocComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (recipe(); as r) {
       <div class="flex gap-8">
         <article class="min-w-0 flex-1">
-          <app-key-eyebrow [text]="r.frontmatter.eyebrow" />
-          <h1 class="font-display text-3xl font-semibold">
+          <app-eyebrow [text]="r.frontmatter.eyebrow" />
+          <h1 class="font-display text-3xl font-bold">
             {{ r.frontmatter.title }}
           </h1>
           <p class="mt-2 text-ink/70">{{ r.frontmatter.description }}</p>
@@ -57,7 +57,7 @@ import type { RecipeEntry } from '../../core/content.types';
     } @else {
       <div class="mx-auto flex max-w-2xl flex-col items-start px-4 py-24">
         <p class="font-mono text-sm text-accent-en">error.not-found</p>
-        <h1 class="mt-2 font-display text-3xl font-semibold">This recipe doesn't exist.</h1>
+        <h1 class="mt-2 font-display text-3xl font-bold">This recipe doesn't exist.</h1>
         <p class="mt-3 text-ink/70">Try the recipes index, or search with Cmd+K.</p>
         <a
           routerLink="/recipes"

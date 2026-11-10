@@ -16,7 +16,7 @@ import type { NavSection } from '../../core/content.types';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
-      <h1 class="font-display text-3xl font-semibold">Documentation</h1>
+      <h1 class="font-display text-3xl font-bold">Documentation</h1>
       <p class="mt-2 max-w-2xl text-ink/70">
         Guides for installing, configuring, and extending ngx-runtime-i18n.
       </p>

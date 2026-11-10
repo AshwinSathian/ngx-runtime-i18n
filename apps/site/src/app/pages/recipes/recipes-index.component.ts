@@ -16,7 +16,7 @@ import type { RecipeEntry } from '../../core/content.types';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
-      <h1 class="font-display text-3xl font-semibold">Recipes</h1>
+      <h1 class="font-display text-3xl font-bold">Recipes</h1>
       <p class="mt-2 max-w-2xl text-ink/70">
         Worked examples for wiring ngx-runtime-i18n into a real application.
       </p>

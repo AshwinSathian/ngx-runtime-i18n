@@ -13,30 +13,39 @@
    pattern: https://tailwindcss.com/docs/dark-mode#using-a-data-attribute */
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
-/* Fonts (self-hosted via @fontsource) */
-@import '@fontsource/bricolage-grotesque/600.css';
-@import '@fontsource/bricolage-grotesque/700.css';
-@import '@fontsource/ibm-plex-sans/400.css';
-@import '@fontsource/ibm-plex-sans/500.css';
-@import '@fontsource/ibm-plex-sans/600.css';
-@import '@fontsource/ibm-plex-sans/700.css';
-@import '@fontsource/ibm-plex-mono/400.css';
-@import '@fontsource/ibm-plex-mono/500.css';
-@import '@fontsource/ibm-plex-sans-devanagari/400.css';
-@import '@fontsource/ibm-plex-sans-devanagari/500.css';
-@import '@fontsource/ibm-plex-sans-devanagari/600.css';
-@import '@fontsource/ibm-plex-sans-devanagari/700.css';
-
-:root {
-  /* Font stacks. Family names below are the exact font-family values each
-     Fontsource package registers in its generated font-face rules
-     (verified directly in the installed package CSS), not assumed. */
-  --font-sans: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', sans-serif;
-  --font-display: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
-}
+/* Fonts, self-hosted (no runtime CDN). Variable builds, so every weight in
+   use comes from one file per subset. Each import declares latin, latin-ext
+   (and vietnamese/cyrillic/greek where the face has them) with unicode-range,
+   so the browser only downloads a subset when a page actually uses one of its
+   characters. The latin files for display and body are preloaded in
+   index.html. */
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/figtree';
+@import '@fontsource-variable/jetbrains-mono';
+/* None of the three faces cover Devanagari, and the hero cycles through Hindi.
+   Only the devanagari subset is imported: Figtree/Bricolage sit ahead of it in
+   every stack, so its latin glyphs would never be used. */
+@import '@fontsource/ibm-plex-sans-devanagari/devanagari-400.css';
+@import '@fontsource/ibm-plex-sans-devanagari/devanagari-500.css';
+@import '@fontsource/ibm-plex-sans-devanagari/devanagari-600.css';
+@import '@fontsource/ibm-plex-sans-devanagari/devanagari-700.css';
 
 @theme {
+  /* Font stacks. Defined as theme variables so Tailwind's font-sans /
+     font-display / font-mono utilities and preflight (html, code, pre, kbd,
+     samp) all read them. Family names are the exact values the Fontsource
+     packages register. 'IBM Plex Sans Devanagari' is the script fallback for
+     Hindi; system fonts come after it. */
+  --font-sans:
+    'Figtree Variable', 'Figtree', 'IBM Plex Sans Devanagari', system-ui,
+    -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display:
+    'Bricolage Grotesque Variable', 'Bricolage Grotesque', 'Figtree Variable',
+    'Figtree', 'IBM Plex Sans Devanagari', system-ui, sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular,
+    Menlo, monospace;
+
   --color-paper: #faf9f6;
   --color-ink: #14181f;
   --color-rule: #dedad1;
@@ -73,6 +82,47 @@ body {
   background-color: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+@layer base {
+  /* Headings use the display face. Utilities still win (base layer), so a
+     template can override size or weight per heading. Big headings get tight
+     tracking; small ones (h4+, card titles) keep the face but not the
+     squeeze, which reads as cramped below ~20px. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-wrap: balance;
+  }
+  h1,
+  h2 {
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+  h3 {
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+  }
+
+  /* Code is copied, so readers need to see the characters they'll paste.
+     JetBrains Mono's default ligatures draw `=>`, `!==` and `<=` as single
+     glyphs; turn them off everywhere monospace is used. Also covers the
+     font-mono utility (badges, tab labels). */
+  code,
+  kbd,
+  samp,
+  pre,
+  .font-mono {
+    font-variant-ligatures: none;
+  }
+
+  /* Numbers in tables (the compare matrix, package versions) line up. */
+  table {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 :focus-visible {
@@ -89,4 +139,14 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Inline code in docs prose. Typography asks for weight 600, which the old
+   static mono (400/500 only) quietly clamped to 500; the variable JetBrains
+   Mono honours it and reads too heavy next to Figtree. Its taller x-height
+   also looks a size larger than the old face at the same em, hence 0.85em.
+   Unlayered so it beats the plugin's `.prose :where(code)` rule. */
+.prose :where(code):not(:where(pre *)) {
+  font-weight: 500;
+  font-size: 0.85em;
 }

@@ -15,7 +15,7 @@ import { SeoService } from '../../core/seo.service';
   template: `
     <div class="mx-auto flex max-w-2xl flex-col items-start px-4 py-24">
       <p class="font-mono text-sm text-accent-en">error.not-found</p>
-      <h1 class="mt-2 font-display text-3xl font-semibold">This page doesn't exist.</h1>
+      <h1 class="mt-2 font-display text-3xl font-bold">This page doesn't exist.</h1>
       <p class="mt-3 text-ink/70">Try the docs, or search with Cmd+K.</p>
       <a
         routerLink="/docs"

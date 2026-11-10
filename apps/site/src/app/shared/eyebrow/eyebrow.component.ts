@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
-  selector: 'app-key-eyebrow',
+  selector: 'app-eyebrow',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<p class="mb-3 font-mono text-xs uppercase tracking-wide text-accent-en">{{ text() }}</p>`,
+  template: `<p class="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-accent-en">{{ text() }}</p>`,
 })
-export class KeyEyebrowComponent {
+export class EyebrowComponent {
   readonly text = input.required<string>();
 }
