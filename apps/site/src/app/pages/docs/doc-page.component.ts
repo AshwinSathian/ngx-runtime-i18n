@@ -18,20 +18,20 @@ import {
   softwareApplicationJsonLd,
   type BreadcrumbItem,
 } from '../../core/json-ld';
-import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
+import { EyebrowComponent } from '../../shared/eyebrow/eyebrow.component';
 import { TocComponent } from '../../shared/toc/toc.component';
 import type { DocEntry } from '../../core/content.types';
 
 @Component({
   selector: 'app-doc-page',
   standalone: true,
-  imports: [KeyEyebrowComponent, TocComponent, RouterLink],
+  imports: [EyebrowComponent, TocComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (doc(); as d) {
       <div class="flex gap-8">
         <article class="min-w-0 flex-1">
-          <app-key-eyebrow [text]="d.frontmatter.eyebrow" />
+          <app-eyebrow [text]="d.frontmatter.eyebrow" />
           <h1 class="font-display text-3xl font-bold">
             {{ d.frontmatter.title }}
           </h1>

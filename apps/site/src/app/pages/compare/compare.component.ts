@@ -4,7 +4,7 @@ import {
   OnInit,
   inject,
 } from '@angular/core';
-import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
+import { EyebrowComponent } from '../../shared/eyebrow/eyebrow.component';
 import { SITE_URL } from '../../core/json-ld';
 import { SeoService } from '../../core/seo.service';
 import {
@@ -146,11 +146,11 @@ const ROWS: readonly CompareRow[] = [
 @Component({
   selector: 'app-compare',
   standalone: true,
-  imports: [KeyEyebrowComponent, CompareTableComponent],
+  imports: [EyebrowComponent, CompareTableComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="mx-auto max-w-6xl px-4 py-16 sm:py-24">
-      <app-key-eyebrow text="compare.matrix" />
+      <app-eyebrow text="Comparison" />
       <h1 class="font-display text-3xl font-bold sm:text-4xl">
         How <span class="whitespace-nowrap">ngx-runtime-i18n</span> compares
       </h1>

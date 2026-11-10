@@ -1,7 +1,7 @@
 ---
 title: "@ngx-runtime-i18n/material"
 description: Angular Material adapter that keeps the paginator, sort, stepper, and datepicker Intl services in sync with runtime language switches.
-eyebrow: docs.packages.material
+eyebrow: Packages
 order: 4
 section: Packages
 ---

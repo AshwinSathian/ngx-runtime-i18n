@@ -172,7 +172,7 @@ async function main() {
 
   await renderOgImage(
     {
-      eyebrow: 'hero.tagline',
+      eyebrow: 'Open source, MIT licensed',
       title: 'ngx-runtime-i18n',
       description: 'Signals-first, SSR-safe runtime i18n for Angular 16+.',
     },
@@ -192,7 +192,7 @@ async function main() {
 
   await renderOgImage(
     {
-      eyebrow: 'compare.matrix',
+      eyebrow: 'Comparison',
       title: 'How ngx-runtime-i18n compares',
       description:
         "The library author's own comparison against ngx-translate, transloco, and Angular's built-in i18n.",
@@ -202,7 +202,7 @@ async function main() {
 
   await renderOgImage(
     {
-      eyebrow: 'faq.questions',
+      eyebrow: 'FAQ',
       title: 'Frequently asked questions',
       description:
         "Each answer traces to this repository's own source code, documentation, or a live npm registry check.",

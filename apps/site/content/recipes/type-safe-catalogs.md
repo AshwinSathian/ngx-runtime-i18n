@@ -1,7 +1,7 @@
 ---
 title: Type-safe catalogs
 description: Walk through module augmentation end to end — declaring a schema, seeing t() get checked, and reading what DeepKeys and ExtractParams actually compute.
-eyebrow: recipes.type-safe-catalogs
+eyebrow: Recipes
 order: 4
 packages: ['@ngx-runtime-i18n/core', '@ngx-runtime-i18n/angular']
 ---

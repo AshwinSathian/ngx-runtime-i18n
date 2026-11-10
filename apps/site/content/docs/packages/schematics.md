@@ -1,7 +1,7 @@
 ---
 title: "@ngx-runtime-i18n/schematics"
 description: An ng add schematic that wires provideRuntimeI18n() and sample catalogs into an existing Angular workspace.
-eyebrow: docs.packages.schematics
+eyebrow: Packages
 order: 5
 section: Packages
 ---

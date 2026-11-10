@@ -9,7 +9,7 @@ const tree: NavSection[] = [
       {
         href: '/docs/getting-started',
         title: 'Getting started',
-        eyebrow: 'docs.getting-started',
+        eyebrow: 'Docs',
       },
     ],
   },

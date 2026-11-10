@@ -1,7 +1,7 @@
 ---
 title: CI catalog validation
 description: Wire the ngx-i18n CLI's extract and check commands into a pull request gate that fails the build when code and catalogs drift.
-eyebrow: recipes.ci-catalog-validation
+eyebrow: Recipes
 order: 7
 packages: ['@ngx-runtime-i18n/cli']
 ---

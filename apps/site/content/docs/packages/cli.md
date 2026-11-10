@@ -1,7 +1,7 @@
 ---
 title: "@ngx-runtime-i18n/cli"
 description: The ngx-i18n binary — extract translation keys from source and validate catalogs against them.
-eyebrow: docs.packages.cli
+eyebrow: Packages
 order: 6
 section: Packages
 ---

@@ -110,7 +110,7 @@ body {
   /* Code is copied, so readers need to see the characters they'll paste.
      JetBrains Mono's default ligatures draw `=>`, `!==` and `<=` as single
      glyphs; turn them off everywhere monospace is used. Also covers the
-     font-mono utility (eyebrows, badges, tab labels). */
+     font-mono utility (badges, tab labels). */
   code,
   kbd,
   samp,

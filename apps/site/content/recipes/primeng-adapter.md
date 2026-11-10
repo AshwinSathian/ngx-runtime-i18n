@@ -1,7 +1,7 @@
 ---
 title: PrimeNG adapter
 description: Keep PrimeNG's own translation config in sync with I18nService.lang(), and pick between a static map and a lazy resolver.
-eyebrow: recipes.primeng-adapter
+eyebrow: Recipes
 order: 6
 packages: ['@ngx-runtime-i18n/primeng']
 ---

@@ -1,7 +1,7 @@
 ---
 title: ng add schematic
 description: See exactly what the ng-add schematic generates and patches in an existing Angular workspace, so running it holds no surprises.
-eyebrow: recipes.ng-add-schematic
+eyebrow: Recipes
 order: 8
 packages: ['@ngx-runtime-i18n/schematics']
 ---

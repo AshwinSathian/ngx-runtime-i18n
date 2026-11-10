@@ -1,7 +1,7 @@
 ---
 title: "@ngx-runtime-i18n/primeng"
 description: Optional PrimeNG adapter that keeps PrimeNG's own translation config in sync with I18nService.lang().
-eyebrow: docs.packages.primeng
+eyebrow: Packages
 order: 3
 section: Packages
 ---

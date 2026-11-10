@@ -188,10 +188,10 @@ the script fallback for `hi` copy. Self-hosted via `@fontsource-variable` packag
 static `@fontsource` builds of the same faces because satori can't load WOFF2 or variable fonts.
 (Originally specified as IBM Plex Sans/Mono; replaced in Nov 2026.)
 
-**Signature element:** section eyebrows styled as literal translation keys from the product's
-own catalog convention (`hero.tagline`, `features.grid`, `packages.matrix`,
-`docs.getting-started`) in the mono face — the wayfinding system is the product's own mental model,
-not generic numbering.
+**Signature element:** none. Section eyebrows were first specified as literal translation keys
+(`hero.tagline`, `features.grid`, `docs.getting-started`) in the mono face. They read as missing
+translations, which is the wrong first impression for an i18n library, so they are now plain English
+labels (`Features`, `Docs`, `Comparison`) in small uppercase Figtree. (Changed Nov 2026.)
 
 **Real dogfooding (revised from the Next.js draft's simulated demo):** the hero's language-
 cycling word is now powered by an actual `provideRuntimeI18n()` instance from

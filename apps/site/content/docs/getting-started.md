@@ -1,7 +1,7 @@
 ---
 title: Getting started
 description: Install the core and Angular packages and register provideRuntimeI18n().
-eyebrow: docs.getting-started
+eyebrow: Docs
 order: 0
 section: Start here
 ---

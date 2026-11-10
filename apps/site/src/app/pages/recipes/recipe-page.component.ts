@@ -18,20 +18,20 @@ import {
   breadcrumbJsonLd,
   type BreadcrumbItem,
 } from '../../core/json-ld';
-import { KeyEyebrowComponent } from '../../shared/key-eyebrow/key-eyebrow.component';
+import { EyebrowComponent } from '../../shared/eyebrow/eyebrow.component';
 import { TocComponent } from '../../shared/toc/toc.component';
 import type { RecipeEntry } from '../../core/content.types';
 
 @Component({
   selector: 'app-recipe-page',
   standalone: true,
-  imports: [KeyEyebrowComponent, TocComponent, RouterLink],
+  imports: [EyebrowComponent, TocComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (recipe(); as r) {
       <div class="flex gap-8">
         <article class="min-w-0 flex-1">
-          <app-key-eyebrow [text]="r.frontmatter.eyebrow" />
+          <app-eyebrow [text]="r.frontmatter.eyebrow" />
           <h1 class="font-display text-3xl font-bold">
             {{ r.frontmatter.title }}
           </h1>

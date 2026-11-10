@@ -1,7 +1,7 @@
 ---
 title: SSR with Express
 description: Wire provideRuntimeI18nSsr() into an Express + Angular SSR server so the first response already carries the right catalog.
-eyebrow: recipes.ssr-with-express
+eyebrow: Recipes
 order: 1
 packages: ['@ngx-runtime-i18n/angular']
 ---
